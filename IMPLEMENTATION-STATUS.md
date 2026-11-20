@@ -73,8 +73,9 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 - `tests/Unit/Domain/LicenseKeyTest.php` covers issuance, format/entropy length, successful verification, tampering, wrong pepper, malformed input, pepper/key-ID validation and uniqueness.
 - `tests/Unit/Domain/DomainNameTest.php` covers case/trailing-dot normalization, IDN conversion and rejection of schemes, paths, ports, credentials, queries, wildcards, whitespace and invalid labels.
 - `docs/security/LICENCE-KEY-VERIFICATION.md` defines pepper rotation constraints, including why old peppers must remain available until old verifiers are re-keyed on successful key presentation.
+- `docs/security/DOMAIN-NAME-NORMALIZATION.md` defines canonical IDNA, input rejection, environment policy and cross-language test-vector requirements.
 - CI includes PHP 8.3/8.4/8.5 matrix testing, intl, Composer validation, PHP syntax linting and the domain test runner. Checkout v5 and setup-php 2.40.0 are pinned to immutable SHAs.
-- Latest CI run 44816764710 passed documentation governance, OpenAPI lint and all PHP jobs. Each PHP runtime passed 9 licence-key tests plus 8 domain-name tests (17 test methods total).
+- Latest CI run 44816764710 passed documentation governance, OpenAPI lint and all PHP jobs. The previous green run passed 9 licence-key tests plus 8 domain-name tests on each PHP runtime. Three additional domain-name edge-case tests were then added (20 test methods total); the latest candidate must rerun CI before those additions are considered verified.
 
 ## Phase 0 remaining blockers
 
