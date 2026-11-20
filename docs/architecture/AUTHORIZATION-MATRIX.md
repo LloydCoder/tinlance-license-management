@@ -69,7 +69,11 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 - Vendor membership checks accept only vendor-scoped permissions; customer membership checks accept only customer-scoped permissions.
 - Customer billing uses `customer.billing.read`; the vendor `payments.read` permission cannot be used to authorize customer operations.
 - The membership authorization service reloads actor/resource status from the database to avoid trusting stale model instances.
-- Cross-scope role or permission pivots fail closed at authorization time. A write-time role assignment service, immutable assignment audit and resource-level ABAC remain pending.
+- Cross-scope role or permission pivots fail closed at authorization time.
+- `MembershipRoleAssignmentService` performs transactional, row-locked assignment/revocation, checks actor permission and target scope, blocks self-assignment and privileged roles, requires a reason, and records immutable vendor/customer membership-role events.
+- Generic grants are allowlisted; Super Admin, platform admin, finance admin, vendor product manager and customer owner grants require separate bootstrap/approval workflows.
+- Membership-role events are an application-level append-only precursor, not the future global hash-chained audit ledger.
+- Resource-level ABAC for products, resellers and nested customer resources remains pending.
 
 ## 4. Super Admin authority
 
