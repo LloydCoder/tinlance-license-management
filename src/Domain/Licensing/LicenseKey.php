@@ -54,7 +54,7 @@ final class LicenseKey
         self::assertPepper($pepper);
         self::assertPepperKeyId($pepperKeyId);
 
-        if (!self::isCanonicalKey($plaintext) || !preg_match('/\\\\A[a-f0-9]{64}\\\\z/D', $verifier)) {
+        if (!self::isCanonicalKey($plaintext) || !preg_match('/\A[a-f0-9]{64}\z/D', $verifier)) {
             return false;
         }
 
