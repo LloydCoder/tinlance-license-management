@@ -470,8 +470,7 @@ components:
               type: string
             licence_key:
               type: string
-              writeOnly: true
-              description: Shown once in this creation response only; never stored or retrievable.
+              description: Server-generated key shown once in this creation response only; never stored or retrievable.
         request_id:
           type: string
     Licence:
