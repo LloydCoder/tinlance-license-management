@@ -8,7 +8,7 @@ return [
     'bcrypt' => [
         'rounds' => max(12, (int) env('BCRYPT_ROUNDS', 12)),
         'verify' => env('HASH_VERIFY', true),
-        'limit' => env('BCRYPT_LIMIT'),
+        'limit' => max(72, (int) env('BCRYPT_LIMIT', 72)),
     ],
 
     'argon' => [
