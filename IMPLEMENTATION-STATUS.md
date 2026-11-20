@@ -40,7 +40,7 @@ No phase is declared 100% complete. Phase 0 and Phase 1 remain partially complet
 
 ## Latest verified engineering evidence
 
-CI run [44825741658](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44825741658) passed on PR #6 candidate head `b9b316f69103ed4ecc302f8433dda0d73f3f7806`:
+CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
 - PHP 8.3, 8.4 and 8.5 jobs passed.
 - 25 framework-independent domain test methods passed.
 - 47 Laravel feature tests passed (91 assertions).
@@ -50,7 +50,7 @@ CI run [44825741658](https://github.com/LloydCoder/tinlance-license-management/a
 - PHP syntax lint, Artisan bootstrap, documentation governance and OpenAPI 3.1.1 validation passed.
 - Password tests verify Argon2id with at least 19 MiB memory, two iterations and one lane; the explicit bcrypt fallback rejects inputs above 72 bytes.
 
-This run predates the status/README/decision-record reconciliation in the current PR branch. The resulting new exact head must receive a fresh full CI run before PR #6 is merged.
+This run includes the final status, README, architecture decision and identity-schema documentation reconciliation. It is the current exact-head acceptance candidate; no subsequent changes are included.
 
 ## Implemented identity and authorization boundaries
 

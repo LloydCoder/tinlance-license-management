@@ -38,7 +38,7 @@
 
 ## Verification evidence
 
-CI run [44825741658](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44825741658) passed on candidate head `b9b316f69103ed4ecc302f8433dda0d73f3f7806`. It passed Composer manifest/lock validation, locked dependency installation, Composer audit (no advisories), PHP syntax checks, Laravel Pint, 25 domain tests, 47 Laravel feature tests (91 assertions), Artisan bootstrap, documentation governance and OpenAPI validation across PHP 8.3/8.4/8.5, plus the same feature suite against MySQL 8.4.13.
+CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`. It passed Composer manifest/lock validation, locked dependency installation, Composer audit (no advisories), PHP syntax checks, Laravel Pint, 25 domain tests, 47 Laravel feature tests (91 assertions), Artisan bootstrap, documentation governance and OpenAPI validation across PHP 8.3/8.4/8.5, plus the same feature suite against MySQL 8.4.13.
 
 The bootstrap is still not a complete licensing service; identity/business APIs, authentication and production deployment remain separate implementation work.
 

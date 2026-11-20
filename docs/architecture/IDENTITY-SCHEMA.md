@@ -76,7 +76,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 ## Verification evidence
 
-CI run [44825741658](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44825741658) passed on candidate head `b9b316f69103ed4ecc302f8433dda0d73f3f7806`: 25 domain test methods and 47 Laravel feature tests (91 assertions) passed on PHP 8.3/8.4/8.5 and MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql. Composer audit, Pint (49 PHP files), PHP syntax, OpenAPI and documentation governance also passed. This run predates the latest project-status and decision-record reconciliation; the resulting exact head requires a fresh CI run.
+CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`: 25 domain test methods and 47 Laravel feature tests (91 assertions) passed on PHP 8.3/8.4/8.5 and MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql. Composer audit, Pint (49 PHP files), PHP syntax, OpenAPI and documentation governance all passed, including the final status and decision-record documentation.
 
 ## Remaining acceptance work
 
