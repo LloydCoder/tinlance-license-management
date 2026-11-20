@@ -52,6 +52,9 @@
 - `docs/architecture/API-CONTRACTS.md` — API conventions, authentication profiles, idempotency and SDK/webhook contracts.
 - `docs/api/openapi.yaml` — OpenAPI 3.1.1 v1 draft.
 - `docs/architecture/REQUIREMENTS-TRACEABILITY.md` — requirement-to-artifact and future test mapping.
+- `docs/architecture/STATE-MACHINES.md` — licence, payment, credential, release and subscription lifecycle baselines.
+- `docs/security/PRIVACY-AND-DATA-GOVERNANCE.md` — classification, privacy workflows and provisional retention schedule.
+- `docs/operations/SHARED-HOSTING-OPERATIONS.md` — provider qualification, synchronous/recoverable processing, backup and recovery baseline.
 
 These documents are an initial architecture baseline. Phase 1 is not complete until lifecycle state machines, privacy/data classification and retention, hosting/recovery requirements, schema/API validation, security review, unresolved decisions and acceptance traceability have been reviewed and approved.
 
