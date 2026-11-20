@@ -22,7 +22,7 @@ The PHP `intl` extension is mandatory. If it is unavailable, normalization fails
 - Apply the exact same normalization algorithm and version to activation, verification, transfer, migration and SDK test vectors.
 - Do not infer subdomain equivalence. Exact host matching is the baseline; wildcard and parent-domain matching require explicit product policy and tests.
 - A domain match is only one activation binding signal. It does not replace licence state, product, installation identity, environment, entitlement or authorization checks.
-- IP literals are rejected by this baseline. Localhost and private DNS suffix policy must be decided explicitly before production SDK use.
+- IP literals are rejected by this baseline. Hostnames such as localhost and private DNS suffixes are permitted only for development, staging or NFR grants; they must never satisfy production activation policy.
 - Persist the normalized ASCII hostname and, if required for support display, the separately supplied original input with a documented privacy/retention policy. Never use the original input for security comparisons.
 
 ## Required future tests
