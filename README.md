@@ -39,11 +39,11 @@ composer validate --no-check-publish --no-check-lock
 composer test
 ```
 
-The current dependency-free domain test harness is temporary scaffolding. It will be replaced or integrated with the selected Laravel/Pest test stack as the application foundation is introduced.
+The current dependency-free domain test harness is temporary scaffolding. It requires PHP intl for IDNA normalization and will be replaced or integrated with the selected Laravel/Pest test stack as the application foundation is introduced. The first tested domain primitives cover licence-key issuance/verifier handling and canonical DNS-domain normalization.
 
 ## Roadmap
 
-See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md) and [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md) and the architecture decision records in [docs/adr](docs/adr).
+See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md) and [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md), plus [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md) and the architecture decision records in [docs/adr](docs/adr).
 
 ## Security
 
