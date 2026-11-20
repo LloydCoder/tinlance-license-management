@@ -5,8 +5,8 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 
 $tests = [
-    new Tlms\\Tests\\Unit\\Domain\\LicenseKeyTest(),
-    new Tlms\\Tests\\Unit\\Domain\\DomainNameTest(),
+    new Tlms\Tests\Unit\Domain\LicenseKeyTest(),
+    new Tlms\Tests\Unit\Domain\DomainNameTest(),
 ];
 
 $failures = 0;
@@ -20,14 +20,14 @@ foreach ($tests as $test) {
 
         try {
             $test->{$method}();
-            fwrite(STDOUT, "PASS " . $test::class . "::{$method}\\n");
+            fwrite(STDOUT, "PASS " . $test::class . "::{$method}\n");
             $passed++;
         } catch (Throwable $exception) {
-            fwrite(STDERR, "FAIL " . $test::class . "::{$method}: {$exception->getMessage()}\\n");
+            fwrite(STDERR, "FAIL " . $test::class . "::{$method}: {$exception->getMessage()}\n");
             $failures++;
         }
     }
 }
 
-fwrite(STDOUT, sprintf("\\n%d passed; %d failed\\n", $passed, $failures));
+fwrite(STDOUT, sprintf("\n%d passed; %d failed\n", $passed, $failures));
 exit($failures === 0 ? 0 : 1);
