@@ -15,6 +15,7 @@ required_files=(
   "docs/architecture/DOMAIN-MODEL.md"
   "docs/architecture/API-CONTRACTS.md"
   "docs/architecture/REQUIREMENTS-TRACEABILITY.md"
+  "docs/architecture/OPEN-DECISIONS.md"
   "docs/architecture/STATE-MACHINES.md"
   "docs/security/PRIVACY-AND-DATA-GOVERNANCE.md"
   "docs/operations/SHARED-HOSTING-OPERATIONS.md"
