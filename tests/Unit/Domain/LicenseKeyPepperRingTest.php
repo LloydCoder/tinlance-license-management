@@ -54,7 +54,7 @@ final class LicenseKeyPepperRingTest
     {
         expectThrows(
             static fn () => new LicenseKeyPepperRing(['pepper-v1' => self::OLD_PEPPER], 'pepper-v2'),
-            InvalidArgumentException::class,
+            \\InvalidArgumentException::class,
         );
     }
 
