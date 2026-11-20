@@ -6,7 +6,7 @@ TLMS is being built by Tinlance Limited as a commercially licensable platform fo
 
 ## Project status
 
-**Development status:** Phase 4 identity and organization foundation. Laravel 13, a committed Composer lockfile, licensing-key/domain primitives, ULID-backed identity and membership schema, a scoped role/permission catalogue and deny-by-default membership authorization service are implemented. Login/MFA flows, one-time Super Admin bootstrap, resource-level ABAC, portals, licence lifecycle APIs, payments, SDKs, secure updates and production deployment remain unimplemented.
+**Development status:** Phase 4 identity/authorization foundation. Laravel 13, a committed Composer lockfile, licensing-key/domain primitives, ULID-backed user/vendor/customer schema, scoped permissions, deny-by-default membership authorization and transactional allowlisted membership role assignment/revocation with immutable membership-role event models are implemented. Argon2id is the default password hashing algorithm. Login/MFA flows, one-time Super Admin bootstrap, resource-level ABAC, portals, licence lifecycle APIs, payments, SDKs, secure updates and production deployment remain unimplemented.
 
 This repository is public by deliberate strategy. Public visibility does not mean the project is open source or grant general commercial, production, white-label or redistribution rights. Read [LICENSE](LICENSE), [Commercial Licensing](COMMERCIAL-LICENSING.md) and [Trademarks](TRADEMARKS.md).
 
@@ -21,6 +21,7 @@ No production-ready application is currently published. Do not use this reposito
 - One self-hosted TLMS deployment per vendor initially; preserve a path to hosted multi-tenancy without making it a launch dependency.
 - Independent PHP customer SDK with no Laravel runtime dependency.
 - Ed25519 signatures using PHP Sodium, offline root authority and delegated operational keys.
+- Argon2id password hashing by default (19 MiB memory, 2 iterations, 1 lane), with a bounded explicit bcrypt fallback only for approved compatibility cases.
 - Signed offline licence leases and bounded degraded operation.
 - Platform-wide Super Admin authority through a centralized Control Center spanning all modules, with server-side authorization, MFA/step-up, audited actions and explicit cross-tenant controls.
 - Super Admin-managed provider API credentials in Admin Settings, stored as authenticated ciphertext with write-only secret fields, scoped access, validation and rotation.
@@ -32,7 +33,7 @@ These are approved planning defaults, not evidence that the capabilities have be
 
 ## Local development
 
-Requirements: PHP 8.3, 8.4 or 8.5; Composer 2; PHP intl, PDO SQLite and the extensions required by Laravel 13.
+Requirements: PHP 8.3, 8.4 or 8.5; Composer 2; PHP intl, PDO SQLite and the extensions required by Laravel 13, including Argon2id password hashing support.
 
 ~~~bash
 composer install
@@ -43,14 +44,14 @@ composer test:framework
 composer format:check
 ~~~
 
-- composer test runs the dependency-free domain suite (currently 25 test methods).
-- composer test:framework runs the Laravel PHPUnit feature suite.
-- composer format:check enforces Laravel Pint formatting.
-- CI exercises PHP 8.3, 8.4 and 8.5. The local SQLite test database is not a substitute for MySQL 8.4 integration testing.
+- `composer test` runs the dependency-free domain suite (25 test methods).
+- `composer test:framework` runs the Laravel PHPUnit feature suite (47 test methods).
+- `composer format:check` enforces Laravel Pint formatting.
+- CI exercises PHP 8.3, 8.4 and 8.5, plus the same feature suite against MySQL 8.4.13. Local SQLite is a fast secondary test driver, not a substitute for MySQL integration.
 
 ## Hosting and security boundaries
 
-The HTTP document root must point to public/, never the repository root. Keep .env, application source, vendor/, logs, backups and private keys outside the public webroot. Production must use APP_DEBUG=false, a unique generated APP_KEY, HTTPS, and SESSION_SECURE_COOKIE=true. The bootstrap defaults to file sessions/cache and synchronous queue processing for shared-hosting compatibility; durable database-backed outbox and cron processing are future implementation work.
+The HTTP document root must point to `public/`, never the repository root. Keep `.env`, application source, `vendor/`, logs, backups and private keys outside the public webroot. Production must use `APP_DEBUG=false`, a unique generated `APP_KEY`, HTTPS, and Secure session cookies (enabled by default). Password hashing defaults to Argon2id; a hosting provider must support it and pass a resource/concurrency benchmark. The bootstrap uses encrypted file sessions, file cache and synchronous queue processing for shared-hosting compatibility; durable database-backed outbox and cron processing are future implementation work.
 
 ## Roadmap
 
