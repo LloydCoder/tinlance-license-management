@@ -115,6 +115,14 @@ final readonly class MembershipRoleAssignmentService
                 ->lockForUpdate()
                 ->first();
 
+            $targetUser = $target === null
+                ? null
+                : User::query()
+                    ->whereKey($target->user_id)
+                    ->where('status', 'active')
+                    ->lockForUpdate()
+                    ->first();
+
             $currentRole = Role::query()
                 ->whereKey($role->getKey())
                 ->where('scope', 'vendor')
@@ -127,6 +135,7 @@ final readonly class MembershipRoleAssignmentService
                 || $activeVendor === null
                 || $actorMembership === null
                 || $target === null
+                || $targetUser === null
                 || $currentRole === null
                 || $target->user_id === $actor->getKey()
                 || !$this->authorization->vendorCan($actor, $vendor, 'admins.manage')
@@ -212,6 +221,14 @@ final readonly class MembershipRoleAssignmentService
                 ->lockForUpdate()
                 ->first();
 
+            $targetUser = $target === null
+                ? null
+                : User::query()
+                    ->whereKey($target->user_id)
+                    ->where('status', 'active')
+                    ->lockForUpdate()
+                    ->first();
+
             $currentRole = Role::query()
                 ->whereKey($role->getKey())
                 ->where('scope', 'customer')
@@ -225,6 +242,7 @@ final readonly class MembershipRoleAssignmentService
                 || $activeVendor === null
                 || $actorMembership === null
                 || $target === null
+                || $targetUser === null
                 || $currentRole === null
                 || $target->user_id === $actor->getKey()
                 || ! $this->authorization->customerCan($actor, $organization, 'customer.members.manage')
