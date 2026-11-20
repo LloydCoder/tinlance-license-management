@@ -45,6 +45,21 @@ final class DomainNameTest
         expectThrows(static fn () => DomainName::normalize(''), InvalidArgumentException::class);
     }
 
+    public function testRejectsIpAddressLiterals(): void
+    {
+        expectThrows(static fn () => DomainName::normalize('192.0.2.10'), InvalidArgumentException::class);
+    }
+
+    public function testRejectsMultipleTerminalDots(): void
+    {
+        expectThrows(static fn () => DomainName::normalize('example.com..'), InvalidArgumentException::class);
+    }
+
+    public function testRejectsPercentEncodedInput(): void
+    {
+        expectThrows(static fn () => DomainName::normalize('example%2ecom'), InvalidArgumentException::class);
+    }
+
     public function testRejectsInvalidHostnameLabels(): void
     {
         expectThrows(static fn () => DomainName::normalize('bad_label.example'), InvalidArgumentException::class);
