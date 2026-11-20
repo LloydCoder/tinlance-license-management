@@ -32,7 +32,7 @@ These are approved planning defaults, not evidence that the capabilities have be
 
 ## Roadmap
 
-See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [docs/architecture/ROADMAP.md](docs/architecture/ROADMAP.md) and the architecture decision records in [docs/adr](docs/adr).
+See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md) and the architecture decision records in [docs/adr](docs/adr).
 
 ## Security
 
