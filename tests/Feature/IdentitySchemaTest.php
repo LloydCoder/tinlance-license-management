@@ -43,6 +43,12 @@ final class IdentitySchemaTest extends TestCase
 
         $this->assertNotSame('correct-horse-battery-staple', $user->password);
         $this->assertTrue(Hash::check('correct-horse-battery-staple', $user->password));
+
+        $hashInfo = password_get_info($user->password);
+        $this->assertSame('argon2id', $hashInfo['algoName']);
+        $this->assertGreaterThanOrEqual(19456, $hashInfo['options']['memory_cost']);
+        $this->assertGreaterThanOrEqual(2, $hashInfo['options']['time_cost']);
+        $this->assertGreaterThanOrEqual(1, $hashInfo['options']['threads']);
     }
 
     public function test_user_email_uniqueness_is_case_insensitive(): void
