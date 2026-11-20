@@ -101,7 +101,7 @@ final class LicenseKey
 
     private static function assertPepperKeyId(string $pepperKeyId): void
     {
-        if (!preg_match('/\\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\\z/D', $pepperKeyId)) {
+        if (!preg_match('/\\A[A-Za-z][A-Za-z0-9._-]{0,63}\\z/D', $pepperKeyId)) {
             throw new InvalidArgumentException('The licence-key pepper identifier has an invalid format.');
         }
     }
