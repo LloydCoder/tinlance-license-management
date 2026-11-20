@@ -89,6 +89,25 @@ final readonly class MembershipRoleAssignmentService
         }
 
         return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action): bool {
+            $activeActor = User::query()
+                ->whereKey($actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            $activeVendor = VendorAccount::query()
+                ->whereKey($vendor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            $actorMembership = VendorMembership::query()
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('user_id', $actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
             $target = VendorMembership::query()
                 ->whereKey($membership->getKey())
                 ->where('vendor_account_id', $vendor->getKey())
@@ -104,7 +123,10 @@ final readonly class MembershipRoleAssignmentService
                 ->first();
 
             if (
-                $target === null
+                $activeActor === null
+                || $activeVendor === null
+                || $actorMembership === null
+                || $target === null
                 || $currentRole === null
                 || $target->user_id === $actor->getKey()
                 || ! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')
@@ -156,6 +178,33 @@ final readonly class MembershipRoleAssignmentService
         }
 
         return DB::transaction(function () use ($actor, $organization, $membership, $role, $reason, $action): bool {
+            $activeActor = User::query()
+                ->whereKey($actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            $activeOrganization = CustomerOrganization::query()
+                ->whereKey($organization->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            $activeVendor = $activeOrganization === null
+                ? null
+                : VendorAccount::query()
+                    ->whereKey($activeOrganization->vendor_account_id)
+                    ->where('status', 'active')
+                    ->lockForUpdate()
+                    ->first();
+
+            $actorMembership = CustomerMembership::query()
+                ->where('customer_organization_id', $organization->getKey())
+                ->where('user_id', $actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
             $target = CustomerMembership::query()
                 ->whereKey($membership->getKey())
                 ->where('customer_organization_id', $organization->getKey())
@@ -171,7 +220,11 @@ final readonly class MembershipRoleAssignmentService
                 ->first();
 
             if (
-                $target === null
+                $activeActor === null
+                || $activeOrganization === null
+                || $activeVendor === null
+                || $actorMembership === null
+                || $target === null
                 || $currentRole === null
                 || $target->user_id === $actor->getKey()
                 || ! $this->authorization->customerCan($actor, $organization, 'customer.members.manage')
