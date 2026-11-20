@@ -84,7 +84,7 @@ final readonly class MembershipRoleAssignmentService
     ): bool {
         $reason = trim($reason);
 
-        if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, self::ASSIGNABLE_VENDOR_ROLES, true)) {
+        if ($reason === '' || mb_strlen($reason) > 500 || !in_array($role->slug, self::ASSIGNABLE_VENDOR_ROLES, true)) {
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
@@ -129,7 +129,7 @@ final readonly class MembershipRoleAssignmentService
                 || $target === null
                 || $currentRole === null
                 || $target->user_id === $actor->getKey()
-                || ! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')
+                || !$this->authorization->vendorCan($actor, $vendor, 'admins.manage')
             ) {
                 throw new AuthorizationException('The requested vendor role change is not permitted.');
             }
