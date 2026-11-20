@@ -30,7 +30,7 @@
   "scripts": {
     "test": "@php tests/run.php",
     "test:framework": "@php vendor/bin/phpunit",
-    "format:check": "@php vendor/bin/pint --test"
+    "format:check": "@php vendor/bin/pint --test -v"
   },
   "config": {
     "optimize-autoloader": true,
