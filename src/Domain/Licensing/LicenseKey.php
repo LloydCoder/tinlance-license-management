@@ -55,7 +55,7 @@ final class LicenseKey
 
     private static function createVerifier(string $plaintext, string $pepper, string $pepperKeyId): string
     {
-        return hash_hmac('sha256', $pepperKeyId . "\\0" . $plaintext, $pepper);
+        return hash_hmac('sha256', $pepperKeyId . chr(0) . $plaintext, $pepper);
     }
 
     private static function assertPepper(string $pepper): void
