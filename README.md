@@ -22,6 +22,7 @@ No production-ready application is currently published. Do not use this reposito
 - Independent PHP customer SDK with no Laravel runtime dependency.
 - Ed25519 signatures using PHP Sodium, offline root authority and delegated operational keys.
 - Signed offline licence leases and bounded degraded operation.
+- Super Admin-managed provider API credentials in Admin Settings, stored as authenticated ciphertext with write-only secret fields, scoped access, validation and rotation.
 - Provider-adapter payment architecture; crypto activation gated on legal and provider qualification.
 - TUF-compatible secure update metadata and signed release artifacts.
 - Test-driven development, CI enforcement, security analysis and documented recovery.
