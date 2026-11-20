@@ -6,7 +6,7 @@ This roadmap is the ordered delivery plan. Phase dependencies are intentional; d
 Public repository governance, reserved-rights policy, contribution policy, security disclosure, project charter, ADRs, branch protection, secret scanning, risk register, requirements register and definition of done.
 
 ## Phase 1 — Requirements discovery and architecture freeze
-PRD; customer/vendor personas; deployment model; domain model; lifecycle/state machines; API and event contracts; credential schema; threat model; privacy/data classification; hosting and recovery requirements; acceptance traceability.
+PRD; customer/vendor personas; deployment model; domain model; lifecycle/state machines; API and event contracts; integration credential lifecycle and Super Admin settings; threat model; privacy/data classification; hosting and recovery requirements; acceptance traceability.
 
 ## Phase 2 — Shared-hosting qualification
 Select candidate annual cPanel providers only after validating PHP/Sodium/cURL/OpenSSL/PDO, MySQL or MariaDB, HTTPS egress, webhook reachability, cron behavior, document root, resource limits, backups, restore and commercial API policy. Prove deployment on a real test account before annual purchase.
