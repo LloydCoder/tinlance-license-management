@@ -1,7 +1,7 @@
 # API security and contract review
 
-**Review date:** 2026-11-20  
-**Contract:** `docs/api/openapi.yaml` (OpenAPI 3.1.1)  
+**Review date:** 2026-11-20
+**Contract:** `docs/api/openapi.yaml` (OpenAPI 3.1.1)
 **Status:** Architecture review; no endpoint implementation is claimed.
 
 ## 1. Validator evidence and limits
