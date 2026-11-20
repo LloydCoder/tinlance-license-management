@@ -8,7 +8,7 @@
 
 | Phase | Scope | Status | Exit evidence |
 |---|---|---|---|
-| 0 | Repository governance and project control | In progress | Public repo verified; initial governance docs committed to working branch; branch protection and required checks not yet verified |
+| 0 | Repository governance and project control | In progress | Public repo verified; initial governance docs committed to working branch; branch protection and required checks not verified; GitHub API returned 403 for the protection endpoint |
 | 1 | Requirements and architecture freeze | Not started | Approved PRD, ADR set, data/API contracts, threat model and traceability matrix |
 | 2 | Shared-hosting qualification | Not started | Real provider proof-of-concept and written capability evidence |
 | 3 | Engineering foundation and CI/CD | Not started | Reproducible install/build and green CI matrix |
@@ -32,7 +32,7 @@
 - Initial audited tree: .gitignore, README.md.
 - Initial commit: 95a853c2696e610de52da39249038f7374ba5ef3.
 - Working branch: chore/phase-0-governance-baseline.
-- Phase 0 documentation changes are being prepared on the working branch.
+- Phase 0 governance documents and the initial documentation CI workflow are committed on the working branch. PR #1 is open. GitHub Actions run 44809957547 completed successfully for commit d14cb2a048fa0d8c61a719d1c2153a2519d454e4.
 - No application code, migrations, CI workflows or release artifacts have been established.
 - Branch protection status is unknown; the available GitHub connection could not verify it.
 
