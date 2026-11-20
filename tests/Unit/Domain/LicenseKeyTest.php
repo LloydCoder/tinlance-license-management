@@ -31,7 +31,7 @@ final class LicenseKeyTest
 
     public function testTamperedKeyIsRejected(): void
     {
-        $issued = LicenseKey::issue(self::PEPPER);
+        $issued = LicenseKey::issue(self::PEPPER, self::PEPPER_KEY_ID);
         $tampered = $issued->plaintext . 'x';
 
         expectFalse(LicenseKey::verify($tampered, $issued->verifier, self::PEPPER, self::PEPPER_KEY_ID));
@@ -39,7 +39,7 @@ final class LicenseKeyTest
 
     public function testWrongPepperIsRejected(): void
     {
-        $issued = LicenseKey::issue(self::PEPPER);
+        $issued = LicenseKey::issue(self::PEPPER, self::PEPPER_KEY_ID);
 
         expectFalse(LicenseKey::verify($issued->plaintext, $issued->verifier, 'a-different-pepper-material-that-is-long-enough', self::PEPPER_KEY_ID));
     }
@@ -74,8 +74,8 @@ final class LicenseKeyTest
 
     public function testDistinctIssuancesProduceDistinctKeys(): void
     {
-        $first = LicenseKey::issue(self::PEPPER);
-        $second = LicenseKey::issue(self::PEPPER);
+        $first = LicenseKey::issue(self::PEPPER, self::PEPPER_KEY_ID);
+        $second = LicenseKey::issue(self::PEPPER, self::PEPPER_KEY_ID);
 
         expectFalse(hash_equals($first->plaintext, $second->plaintext));
     }
