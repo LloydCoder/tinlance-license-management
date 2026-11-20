@@ -18,6 +18,8 @@ required_files=(
   "docs/architecture/STATE-MACHINES.md"
   "docs/security/PRIVACY-AND-DATA-GOVERNANCE.md"
   "docs/operations/SHARED-HOSTING-OPERATIONS.md"
+  "docs/security/PRIVACY-AND-DATA-GOVERNANCE.md"
+  "docs/operations/SHARED-HOSTING-OPERATIONS.md"
   "docs/security/THREAT-MODEL.md"
   "docs/adr/0004-initial-deployment-and-tenancy-model.md"
   "docs/api/openapi.yaml"
