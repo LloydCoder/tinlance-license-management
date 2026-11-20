@@ -23,6 +23,7 @@ required_files=(
   "docs/operations/SHARED-HOSTING-OPERATIONS.md"
   "docs/security/THREAT-MODEL.md"
   "docs/adr/0004-initial-deployment-and-tenancy-model.md"
+  "docs/adr/0005-initial-implementation-technical-baseline.md"
   "docs/api/openapi.yaml"
   "docs/adr/0001-public-commercial-repository.md"
   "docs/adr/0002-super-admin-managed-integration-credentials.md"
