@@ -31,10 +31,10 @@
 - Default branch: `main`.
 - Architecture review branch: `chore/phase-1-contract-security-review`.
 - Engineering branch: `feat/phase-3-domain-foundation`.
-- PR #1: https://github.com/LloydCoder/tinlance-license-management/pull/1 — open and unmerged.
-- Latest Phase 0 CI candidate before Phase 1 documentation: commit `a021bdabc9d89d9b962cded7173de42a285a3cba`.
-- GitHub Actions push run `44811522610`: completed successfully.
-- GitHub Actions pull-request run `44811528330`: completed successfully.
+- PR #1: https://github.com/LloydCoder/tinlance-license-management/pull/1 — merged into `main` at merge commit `d5fb57731c16128e35e5b251d7c4d2b3bfa0284c`.
+- PR #2: https://github.com/LloydCoder/tinlance-license-management/pull/2 — merged into its Phase 1 working branch, not directly into `main`; its required architecture content is reconciled in the current feature stack.
+- PR #5: https://github.com/LloydCoder/tinlance-license-management/pull/5 — Phase 1 API security/contract documentation merged into `main` at `2ed9198098d9ba2ae6ce030dbada46fb2f52bb29` after trailing-whitespace CI failure was fixed.
+- PR #3 is now retargeted directly to `main`; its mergeability and exact-base CI are being revalidated.
 - Live GitHub branch metadata reports `main.protected=false` and required status checks disabled. The repository owner can configure protection independently; engineering work continues on feature branches.
 - Initial PHP domain code now exists under `src/Domain/Licensing/`; it is not yet integrated with Laravel, persistence, API endpoints or SDKs.
 
@@ -78,8 +78,9 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 - `docs/security/LICENCE-KEY-VERIFICATION.md` defines pepper rotation constraints, including why old peppers must remain available until old verifiers are re-keyed on successful key presentation.
 - `docs/security/DOMAIN-NAME-NORMALIZATION.md` defines canonical IDNA, input rejection, environment policy and cross-language test-vector requirements.
 - CI includes PHP 8.3/8.4/8.5 matrix testing, intl, Composer validation, PHP syntax linting and the domain test runner. Checkout v5 and setup-php 2.40.0 are pinned to immutable SHAs.
-- Latest fully green baseline run `44817157192` passed all 20 then-registered test methods on PHP 8.3, 8.4 and 8.5, along with PHP syntax lint, Composer manifest validation, documentation governance and OpenAPI lint. This does not cover the later pepper-ring test addition.
-- Latest candidate run `44817454362` passed documentation governance and OpenAPI lint, but all three PHP jobs failed during syntax lint because `tests/Unit/Domain/LicenseKeyPepperRingTest.php` contained an over-escaped `InvalidArgumentException` class reference at line 57. The test command was skipped; the 25-test suite did not run. This was corrected in commit `6eb01d2821d075ff93c20108b596ed64075d5e0c` by importing `InvalidArgumentException` and using the imported class name. The corrected commit's CI result has not yet been surfaced by the available run/status queries; do not accept the candidate until PHP 8.3/8.4/8.5 syntax lint and all 25 tests pass.
+- Historical failure: run `44817454362` failed PHP syntax lint because the pepper-ring test referenced an exception class incorrectly. The defect was corrected.
+- Verified domain foundation: run [44819261202](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44819261202) passed on exact domain branch head `b47c173351165acc1a58193691efb6475e90edf1`, including all 25 domain test methods on PHP 8.3/8.4/8.5, PHP syntax lint, Composer validation, documentation governance and OpenAPI lint.
+- The PR #3 base was subsequently changed from the Phase 1 working branch to `main`; the resulting PR merge candidate requires its own exact-head/base CI run before merge.
 
 ## Phase 0 remaining blockers
 
@@ -87,7 +88,7 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 2. Confirm secret scanning, push protection and dependency review settings.
 3. Review commercial rights notice, contributor ownership and dependency licensing with qualified counsel before external sale.
 4. Re-run all required CI checks on the final Phase 0 candidate commit and complete forensic review.
-5. Merge PR #1 only after governance gates are verified. This does not block isolated feature-branch engineering.
+5. PR #1 is merged; configure branch protection, required checks, secret scanning/push protection and dependency review through owner-authorized repository settings. These controls remain release blockers.
 
 ## Phase 1 remaining work
 
