@@ -148,3 +148,12 @@ Never expose exception messages from providers, database errors, stack traces, c
 - Signed licence and update metadata have explicit schema version and key ID.
 - Additive fields are optional for old clients; unknown critical security claims cause safe rejection.
 - Breaking changes require migration window, deprecation notice and compatibility tests.
+
+## 10. Normative protocol references
+
+- [OpenAPI Specification 3.1.1](https://spec.openapis.org/oas/v3.1.1.html) — machine-readable HTTP API contract.
+- [RFC 9457 — Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457.html) — interoperable error representation.
+- [RFC 9110 — HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html) — method and status semantics.
+- [RFC 8785 — JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) — canonical serialization for signed JSON claims where applicable.
+
+The OpenAPI document is a first contract draft and must pass schema validation, security review and SDK contract tests before implementation is considered conformant.
