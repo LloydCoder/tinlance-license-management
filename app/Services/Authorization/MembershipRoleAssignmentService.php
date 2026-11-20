@@ -29,10 +29,7 @@ final readonly class MembershipRoleAssignmentService
         'customer_member',
     ];
 
-    public function __construct(
-        private MembershipAuthorization $authorization,
-    ) {
-    }
+    public function __construct(private MembershipAuthorization $authorization) {}
 
     public function assignVendorRole(
         User $actor,
@@ -84,7 +81,7 @@ final readonly class MembershipRoleAssignmentService
     ): bool {
         $reason = trim($reason);
 
-        if ($reason === '' || mb_strlen($reason) > 500 || !in_array($role->slug, self::ASSIGNABLE_VENDOR_ROLES, true)) {
+        if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, self::ASSIGNABLE_VENDOR_ROLES, true)) {
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
@@ -138,7 +135,7 @@ final readonly class MembershipRoleAssignmentService
                 || $targetUser === null
                 || $currentRole === null
                 || $target->user_id === $actor->getKey()
-                || !$this->authorization->vendorCan($actor, $vendor, 'admins.manage')
+                || ! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')
             ) {
                 throw new AuthorizationException('The requested vendor role change is not permitted.');
             }
