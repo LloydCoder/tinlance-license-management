@@ -70,11 +70,15 @@ jobs:
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
+          extensions: intl
           coverage: none
           tools: composer:v2
 
       - name: Validate Composer manifest
         run: composer validate --no-check-publish --no-check-lock
+
+      - name: Lint PHP source and tests
+        run: find src tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Run domain tests
         run: composer test
