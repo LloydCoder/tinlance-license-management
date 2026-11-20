@@ -45,6 +45,7 @@ final class MembershipRoleAssignmentTest extends TestCase
 
         $this->assertTrue($assigned);
         $this->assertTrue($target->fresh()->roles()->whereKey($role->id)->exists());
+        $this->assertSame(1, $target->fresh()->roleEvents()->count());
         $this->assertDatabaseHas('vendor_membership_role_events', [
             'vendor_membership_id' => $target->id,
             'role_id' => $role->id,
@@ -169,6 +170,7 @@ final class MembershipRoleAssignmentTest extends TestCase
 
         $this->assertTrue($assigned);
         $this->assertTrue($target->fresh()->roles()->whereKey($role->id)->exists());
+        $this->assertSame(1, $target->fresh()->roleEvents()->count());
         $this->assertDatabaseHas('customer_membership_role_events', [
             'customer_membership_id' => $target->id,
             'role_id' => $role->id,
