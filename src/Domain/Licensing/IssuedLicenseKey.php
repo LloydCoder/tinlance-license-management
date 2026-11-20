@@ -9,11 +9,12 @@ final readonly class IssuedLicenseKey
     private function __construct(
         public string $plaintext,
         public string $verifier,
+        public string $pepperKeyId,
     ) {
     }
 
-    public static function fromParts(string $plaintext, string $verifier): self
+    public static function fromParts(string $plaintext, string $verifier, string $pepperKeyId): self
     {
-        return new self($plaintext, $verifier);
+        return new self($plaintext, $verifier, $pepperKeyId);
     }
 }
