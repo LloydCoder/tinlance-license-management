@@ -15,7 +15,7 @@ final class DomainName
             throw new InvalidArgumentException('A domain name is required without surrounding whitespace.');
         }
 
-        if (preg_match('/[\\/:?#@\\[\\]\\\\%*]/', $input)) {
+        if (strpbrk($input, '/:?#@[]\\\\%*') !== false) {
             throw new InvalidArgumentException('A domain name must not contain a scheme, port, path, query, credentials, wildcard or URL syntax.');
         }
 
