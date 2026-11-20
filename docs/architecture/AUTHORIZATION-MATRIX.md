@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Phase 1 architecture baseline. Permission names and role boundaries are normative design inputs; implementation and tests are pending.
+**Status:** Initial vendor/customer role catalogue and membership-level authorization service implemented and tested. Resource-level ABAC, endpoint policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 

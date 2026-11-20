@@ -1,6 +1,6 @@
 # TLMS domain model
 
-**Status:** Phase 1 conceptual model. Physical schema and migrations are not yet implemented.
+**Status:** Phase 1 conceptual model with the initial vendor, user, role, permission, membership and customer-organization schema now implemented. Product, commercial, licensing, payments, updates and operations aggregates remain conceptual; full production schema is not complete.
 
 ## 1. Ownership and deployment boundary
 

@@ -10,12 +10,15 @@
   },
   "require-dev": {
     "laravel/pint": "^1.27",
-    "phpunit/phpunit": "^12.5.12"
+    "phpunit/phpunit": "^12.5.12",
+    "mockery/mockery": "^1.6.12"
   },
   "autoload": {
     "psr-4": {
       "App\\": "app/",
-      "Tlms\\": "src/"
+      "Tlms\\": "src/",
+      "Database\\Factories\\": "database/factories/",
+      "Database\\Seeders\\": "database/seeders/"
     }
   },
   "autoload-dev": {

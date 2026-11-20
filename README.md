@@ -6,7 +6,7 @@ TLMS is being built by Tinlance Limited as a commercially licensable platform fo
 
 ## Project status
 
-**Development status:** Phase 3 engineering foundation. A Laravel 13 application bootstrap, committed Composer lockfile, framework-independent licensing primitives and initial Laravel feature tests are implemented. Database persistence, identity, authorization, licence lifecycle APIs, payment integrations, SDKs, secure updates and production deployment remain unimplemented.
+**Development status:** Phase 4 identity and organization foundation. Laravel 13, a committed Composer lockfile, licensing-key/domain primitives, ULID-backed identity and membership schema, a scoped role/permission catalogue and deny-by-default membership authorization service are implemented. Login/MFA flows, one-time Super Admin bootstrap, resource-level ABAC, portals, licence lifecycle APIs, payments, SDKs, secure updates and production deployment remain unimplemented.
 
 This repository is public by deliberate strategy. Public visibility does not mean the project is open source or grant general commercial, production, white-label or redistribution rights. Read [LICENSE](LICENSE), [Commercial Licensing](COMMERCIAL-LICENSING.md) and [Trademarks](TRADEMARKS.md).
 
@@ -54,7 +54,7 @@ The HTTP document root must point to public/, never the repository root. Keep .e
 
 ## Roadmap
 
-See [Implementation Status](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [Laravel application foundation](docs/architecture/LARAVEL-APPLICATION-FOUNDATION.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md), [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md), [domain-name normalization](docs/security/DOMAIN-NAME-NORMALIZATION.md) and the architecture decision records in [docs/adr](docs/adr).
+See [Implementation Status](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [Laravel application foundation](docs/architecture/LARAVEL-APPLICATION-FOUNDATION.md), [identity schema](docs/architecture/IDENTITY-SCHEMA.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md), [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md), [domain-name normalization](docs/security/DOMAIN-NAME-NORMALIZATION.md) and the architecture decision records in [docs/adr](docs/adr).
 
 ## Security
 

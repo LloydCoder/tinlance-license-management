@@ -1,18 +1,18 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-20 (Laravel 13 runtime-security configuration increment)
-**Current phase:** Phase 3 — engineering foundation and CI/CD
-**Overall status:** Laravel 13 application bootstrap and PHP domain primitives implemented; no production licensing service, database schema or deployment exists.
+**Last reviewed:** 2026-11-20 (identity, membership and authorization foundation increment)
+**Current phase:** Phase 4 — identity, organizations and authorization
+**Overall status:** Laravel 13 foundation and initial identity/RBAC persistence implemented; no production licensing service, authentication flow, customer portal or deployment exists.
 
 ## Evidence-based status
 
 | Phase | Scope | Status | Exit evidence |
 |---|---|---|---|
-| 0 | Repository governance and project control | Documentation CI verified; owner governance still incomplete | Main branch protection is disabled in live GitHub metadata; owner security settings and legal rights review remain outstanding |
+| 0 | Repository governance and project control | Documentation CI verified; owner governance still incomplete | Verify main branch protection, required checks, secret scanning and legal rights with owner access |
 | 1 | Requirements and architecture freeze | Baseline documented; semantic authorization, lifecycle and external qualification gates remain | Operation-level authorization review, detailed lifecycle contracts, privacy/legal review, real hosting PoC and explicit decision closure |
 | 2 | Shared-hosting qualification | Not started | Real provider proof-of-concept and written capability evidence |
-| 3 | Engineering foundation and CI/CD | Laravel 13 bootstrap, committed Composer lock, Pint, Composer audit and PHP 8.3–8.5 CI verified; database, static analysis, security scanning and deployment artifact remain | MySQL 8.4 integration, static analysis/security gates, deployment artifact and shared-hosting PoC |
-| 4 | Identity, organizations and portals | Not started | Authentication, authorization and isolation tests |
+| 3 | Engineering foundation and CI/CD | Laravel 13 bootstrap, locked dependencies, Pint, Composer audit, PHP 8.3–8.5 and MySQL 8.4 integration verified; static analysis, security scanning and deployment artifact remain | Static analysis/security gates, prebuilt deployment artifact and shared-hosting PoC |
+| 4 | Identity, organizations and portals | ULID-backed user/vendor/customer schema, scoped role catalogue and membership authorization implemented; login/MFA/bootstrap, ABAC and portals remain | One-time Super Admin bootstrap, authentication/MFA, resource-level ABAC, portal authorization and IDOR tests |
 | 5 | Product, plans and entitlements | Not started | Versioned product and entitlement contract tests |
 | 6 | Licence engine | Initial licence-key cryptographic primitive only; no lifecycle engine | Persisted key verifier/pepper-key ID, issuance transaction, activation/state machine, concurrency and database tests |
 | 7 | Cryptographic signing | Not started | Independent verifier and cross-language test vectors |
@@ -32,11 +32,11 @@
 - Architecture review branch: `chore/phase-1-contract-security-review`.
 - Domain foundation branch: `feat/phase-3-domain-foundation`.
 - Laravel foundation branch: `feat/phase-3-laravel-foundation` (stacked on the domain foundation branch).
-- PR #1: https://github.com/LloydCoder/tinlance-license-management/pull/1 — merged into `main` at `d5fb57731c16128e35e5b251d7c4d2b3bfa0284c`.
-- PR #3: https://github.com/LloydCoder/tinlance-license-management/pull/3 — merged into `main` at `1a446a743b4b877d32c1d28c6cc061dbf465f0b8` after exact-head CI passed.
-- PR #4: https://github.com/LloydCoder/tinlance-license-management/pull/4 — open; Laravel foundation CI is green on the latest candidate, pending exact-head status-document reconciliation.
-- PR #5: https://github.com/LloydCoder/tinlance-license-management/pull/5 — merged into `main` at `2ed9198098d9ba2ae6ce030dbada46fb2f52bb29`.
-- PR #6: https://github.com/LloydCoder/tinlance-license-management/pull/6 — draft identity/authorization increment, not merged.
+- Identity foundation branch: `feat/phase-4-identity-foundation` (stacked on the Laravel foundation branch).
+- PR #1: https://github.com/LloydCoder/tinlance-license-management/pull/1 — open and unmerged.
+- Latest Phase 0 CI candidate before Phase 1 documentation: commit `a021bdabc9d89d9b962cded7173de42a285a3cba`.
+- GitHub Actions push run `44811522610`: completed successfully.
+- GitHub Actions pull-request run `44811528330`: completed successfully.
 - Main branch protection could not be verified through the current GitHub integration (the branch-protection endpoint returned 403; an empty rulesets response does not establish the state of legacy branch protection). The owner must verify Settings → Branches and Settings → Code security and analysis.
 - PHP domain code exists under `src/Domain/Licensing/` and is Composer-autoloaded alongside the Laravel 13 application bootstrap. It is not yet persisted or exposed through business APIs or SDKs.
 
@@ -90,11 +90,22 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 - `composer.json` now requires Laravel Framework `^13.17`, PHP 8.3–8.5, PHPUnit and Laravel Pint. `composer.lock` is committed and locks Laravel Framework v13.43.0, PHPUnit 12.5.45 and Pint 1.32.3.
 - Laravel application entry points exist at `artisan`, `bootstrap/app.php`, `bootstrap/providers.php` and `public/index.php`; application code uses the App namespace while the Tlms domain namespace is preserved.
 - Runtime configuration defaults to MySQL, file-backed encrypted sessions, file cache and synchronous queue processing. Session serialization uses JSON; production environment requires HTTPS, APP_DEBUG=false, a unique APP_KEY and SESSION_SECURE_COOKIE=true.
-- No default users, organizations, tenants or migrations were added. Identity and authorization schema must be designed with ULID and isolation invariants before persistence.
-- `tests/Feature/HealthCheckTest.php` contains two Laravel feature tests; `tests/Feature/RuntimeSecurityConfigurationTest.php` covers secure/encrypted/HttpOnly/SameSite session configuration and the application timezone default. The framework suite currently contains four tests (8 assertions). The retained domain test runner executes 25 test methods.
+- Initial identity and organization migrations are now present. No default administrator account is seeded; the one-time Super Admin bootstrap remains future work.
+- Laravel feature coverage now includes health checks, identity persistence, uniqueness, role scoping, password hashing and membership authorization. The retained domain test runner currently executes 25 test methods.
 - `composer test`, `composer test:framework`, `composer format:check`, `composer audit --locked` and PHP syntax lint are integrated into the PHP 8.3/8.4/8.5 CI matrix.
 - One-time dependency-lock and formatting bootstrap workflows were removed after generating the lockfile and applying Pint. Ordinary CI uses the committed lock and does not run composer update.
 - `docs/architecture/LARAVEL-APPLICATION-FOUNDATION.md` records runtime boundaries, secrets policy and remaining acceptance gates.
+
+## Identity and authorization foundation evidence
+
+- Branch: `feat/phase-4-identity-foundation`, stacked on `feat/phase-3-laravel-foundation`; no PR in this stack has been merged.
+- Migrations create vendor_accounts, users, password_reset_tokens, roles, permissions, role_permissions, vendor_memberships, vendor_membership_roles, customer_organizations, customer_memberships and customer_membership_roles.
+- All primary entity IDs use Laravel HasUlids. User email is trimmed/lowercased and uniquely indexed; Laravel's hashed cast hashes passwords before persistence.
+- Vendor and customer memberships are separate authorization contexts. A user can hold both contexts without inheriting permissions across them.
+- AuthorizationCatalogSeeder deterministically seeds vendor/customer roles and explicit permission identifiers. Super Admin receives catalogued permissions but there are no permission identifiers for provider-secret readback, dashboard signing-root control or audit deletion/editing.
+- MembershipAuthorization checks active user, active vendor/customer resource, active membership, matching role scope and explicit permission. It does not yet enforce product/reseller ABAC assignments, step-up, MFA or maker-checker.
+- MySQL 8.4.13 integration uses a pinned image digest and an explicit test assertion that MySQL is the active database driver. This caught and corrected an overlong generated unique-index identifier before acceptance.
+- CI run `44822096072` completed successfully on commit `8d3df9bfe225d8620c3da75bedc51f353dbd60a3`. It passed 25 domain tests, 17 Laravel feature tests, Composer audit, Pint, PHP syntax, PHP 8.3/8.4/8.5, MySQL 8.4.13 integration, OpenAPI and documentation governance.
 
 ## Phase 0 remaining blockers
 
@@ -102,7 +113,7 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 2. Confirm secret scanning, push protection and dependency review settings.
 3. Review commercial rights notice, contributor ownership and dependency licensing with qualified counsel before external sale.
 4. Re-run all required CI checks on the final Phase 0 candidate commit and complete forensic review.
-5. PR #1 is merged. Owner-level branch protection, required checks, secret scanning/push protection and dependency review remain unconfigured or unverified and must be completed before production release.
+5. Merge PR #1 only after governance gates are verified. This does not block isolated feature-branch engineering.
 
 ## Phase 1 remaining work
 
