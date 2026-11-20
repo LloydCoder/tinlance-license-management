@@ -12,10 +12,10 @@ use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Database\QueryException;
-use InvalidArgumentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 final class IdentitySchemaTest extends TestCase
