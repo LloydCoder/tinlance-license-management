@@ -36,6 +36,10 @@
 - No application code, migrations, CI workflows or release artifacts have been established.
 - Branch protection status is unknown; the available GitHub connection could not verify it.
 
+## Newly approved requirement — Super Admin API credential settings
+
+ADR 0002 and the integration credential security/requirements documents are committed on the Phase 0 working branch. The requirement is approved at architecture level; dashboard UI, encrypted storage, provider adapters, authorization and tests are not implemented yet. Do not mark it complete until the INT-CRED acceptance tests pass.
+
 ## Rules for status changes
 
 A phase is not complete because documents exist or a workflow file is present. Mark a phase complete only when deliverables are committed and reviewed; required tests execute against intended runtimes and dependencies; all required CI jobs pass on the exact candidate commit; a phase-specific forensic review checks code, tests, documentation, security and traceability; remaining risks are closed or explicitly accepted; and evidence links, commit SHA and review date are recorded here.
