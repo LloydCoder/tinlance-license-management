@@ -13,18 +13,18 @@ This matrix links approved requirements to architecture artifacts and future ver
 | Licence lifecycle | DOMAIN-MODEL.md, STATE-MACHINES.md, API-CONTRACTS.md | State transition, activation race, offline lease and revocation tests |
 | Payment/ledger | DOMAIN-MODEL.md, API-CONTRACTS.md, THREAT-MODEL.md | Webhook signature, replay, duplicate, amount mismatch, ledger reconciliation |
 | Secure updates | DOMAIN-MODEL.md, THREAT-MODEL.md | TUF metadata, signature, expiry, rollback and artifact provenance |
-| Shared hosting | ADR 0004, SHARED-HOSTING-OPERATIONS.md, ROADMAP.md, THREAT-MODEL.md | Real cPanel install, cron recovery, backup/restore and outbound HTTPS |
+| Shared hosting | ADR 0004, ADR 0005, SHARED-HOSTING-OPERATIONS.md, ROADMAP.md, THREAT-MODEL.md | Real cPanel install, cron recovery, backup/restore and outbound HTTPS |
 | Privacy/retention | DOMAIN-MODEL.md, PRIVACY-AND-DATA-GOVERNANCE.md, THREAT-MODEL.md | Data inventory, export, deletion/pseudonymization, retention tests |
-| API compatibility | API-CONTRACTS.md, docs/api/openapi.yaml | OpenAPI lint, schema compatibility and SDK contract tests |
-| Supply chain | THREAT-MODEL.md, DEFINITION-OF-DONE.md | Pinned Actions, dependency audit, SBOM, provenance and release verification |
+| API compatibility | ADR 0005, API-CONTRACTS.md, docs/api/openapi.yaml | OpenAPI lint, schema compatibility and SDK contract tests |
+| Supply chain | ADR 0005, THREAT-MODEL.md, DEFINITION-OF-DONE.md | Pinned Actions, dependency audit, SBOM, provenance and release verification |
 
 ## Phase 1 exit criteria
 
-- [ ] Deployment and tenancy model accepted.
-- [ ] Domain model and ownership boundaries reviewed.
-- [ ] Authorization matrix covers every actor, scope and privileged action.
-- [ ] Threat model covers trust boundaries, assets, STRIDE threats, shared-hosting risks and mitigations.
-- [ ] API conventions and OpenAPI v1 contract reviewed.
+- [x] Initial deployment and tenancy model documented in ADR 0004.
+- [x] Conceptual domain model and ownership boundaries documented.
+- [x] Authorization matrix baseline covers actor classes, scopes and privileged actions.
+- [x] Threat model baseline covers trust boundaries, assets, STRIDE threats, shared-hosting risks and mitigations.
+- [x] API conventions and OpenAPI v1 draft documented; machine validation and contract review remain pending.
 - [x] Initial state machines for licence, payment, credential, release and subscription lifecycles documented; detailed transitions and tests remain implementation gates.
 - [x] Privacy/data classification and provisional retention schedule drafted; legal periods and roles remain unresolved.
 - [x] Shared-hosting provider qualification and recovery baseline documented; real-provider proof-of-concept remains pending.
