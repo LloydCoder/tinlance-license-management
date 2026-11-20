@@ -46,13 +46,14 @@
 ## Phase 1 architecture artifacts committed
 
 - ADR 0004 — initial vendor-operated deployment and tenancy model.
+- ADR 0005 — initial technical baseline: Laravel/PHP matrix, MySQL/MariaDB policy, ULIDs, key/token formats, domain normalization, offline lease defaults, audit anchoring and TUF profile.
 - `docs/architecture/AUTHORIZATION-MATRIX.md` — actor classes, permissions, scopes and step-up policy.
 - `docs/architecture/DOMAIN-MODEL.md` — conceptual aggregates, ownership, relationships and invariants.
 - `docs/security/THREAT-MODEL.md` — trust boundaries, assets, STRIDE-oriented threat register and shared-hosting residual risks.
 - `docs/architecture/API-CONTRACTS.md` — API conventions, authentication profiles, idempotency and SDK/webhook contracts.
 - `docs/api/openapi.yaml` — OpenAPI 3.1.1 v1 draft.
 - `docs/architecture/REQUIREMENTS-TRACEABILITY.md` — requirement-to-artifact and future test mapping.
-- `docs/architecture/OPEN-DECISIONS.md` — 28 explicit decisions with owners and closure gates.
+- `docs/architecture/OPEN-DECISIONS.md` — 30 explicit decisions, with technical defaults selected where safe and external/provider/legal gates left open.
 - `docs/architecture/STATE-MACHINES.md` — licence, payment, credential, release and subscription lifecycle baselines.
 - `docs/security/PRIVACY-AND-DATA-GOVERNANCE.md` — classification, privacy workflows and provisional retention schedule.
 - `docs/operations/SHARED-HOSTING-OPERATIONS.md` — provider qualification, synchronous/recoverable processing, backup and recovery baseline.
