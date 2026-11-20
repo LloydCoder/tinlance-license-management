@@ -11,6 +11,7 @@ use Tlms\Domain\Licensing\LicenseKeyPepperRing;
 final class LicenseKeyPepperRingTest
 {
     private const OLD_PEPPER = 'old-test-pepper-material-at-least-32-bytes-long';
+
     private const NEW_PEPPER = 'new-test-pepper-material-at-least-32-bytes-long';
 
     public function testValidOldKeyIsVerifiedAndRehashedToTheActivePepper(): void
@@ -45,7 +46,7 @@ final class LicenseKeyPepperRingTest
     {
         $ring = new LicenseKeyPepperRing(['pepper-v2' => self::NEW_PEPPER], 'pepper-v2');
 
-        $result = $ring->verifyAndUpgrade('tlms_' . str_repeat('A', 43), str_repeat('a', 64), 'retired-v0');
+        $result = $ring->verifyAndUpgrade('tlms_'.str_repeat('A', 43), str_repeat('a', 64), 'retired-v0');
 
         expectFalse($result->valid);
         expectSame(null, $result->replacementVerifier);
@@ -67,7 +68,7 @@ final class LicenseKeyPepperRingTest
             'pepper-v2' => self::NEW_PEPPER,
         ], 'pepper-v2');
 
-        $result = $ring->verifyAndUpgrade($issued->plaintext . 'x', $issued->verifier, $issued->pepperKeyId);
+        $result = $ring->verifyAndUpgrade($issued->plaintext.'x', $issued->verifier, $issued->pepperKeyId);
 
         expectFalse($result->valid);
         expectSame(null, $result->replacementVerifier);

@@ -10,8 +10,7 @@ final readonly class LicenseKeyVerificationResult
         public bool $valid,
         public ?string $pepperKeyId,
         public ?string $replacementVerifier,
-    ) {
-    }
+    ) {}
 
     public static function invalid(): self
     {

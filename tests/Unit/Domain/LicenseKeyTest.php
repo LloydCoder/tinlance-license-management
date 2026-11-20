@@ -10,6 +10,7 @@ use Tlms\Domain\Licensing\LicenseKey;
 final class LicenseKeyTest
 {
     private const PEPPER = 'test-only-pepper-material-at-least-32-bytes-long';
+
     private const PEPPER_KEY_ID = 'licence-pepper-2026-01';
 
     public function testIssueProducesAHighEntropyPrefixedKeyAndVerifier(): void
@@ -32,7 +33,7 @@ final class LicenseKeyTest
     public function testTamperedKeyIsRejected(): void
     {
         $issued = LicenseKey::issue(self::PEPPER, self::PEPPER_KEY_ID);
-        $tampered = $issued->plaintext . 'x';
+        $tampered = $issued->plaintext.'x';
 
         expectFalse(LicenseKey::verify($tampered, $issued->verifier, self::PEPPER, self::PEPPER_KEY_ID));
     }

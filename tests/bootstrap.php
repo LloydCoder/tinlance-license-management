@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 spl_autoload_register(static function (string $class): void {
     $prefixes = [
-        'Tlms\\Tests\\' => __DIR__ . '/',
-        'Tlms\\' => dirname(__DIR__) . '/src/',
+        'Tlms\\Tests\\' => __DIR__.'/',
+        'Tlms\\' => dirname(__DIR__).'/src/',
     ];
 
     foreach ($prefixes as $prefix => $baseDirectory) {
-        if (!str_starts_with($class, $prefix)) {
+        if (! str_starts_with($class, $prefix)) {
             continue;
         }
 
         $relative = substr($class, strlen($prefix));
-        $file = $baseDirectory . str_replace('\\', DIRECTORY_SEPARATOR, $relative) . '.php';
+        $file = $baseDirectory.str_replace('\\', DIRECTORY_SEPARATOR, $relative).'.php';
 
         if (is_file($file)) {
             require $file;
@@ -26,20 +26,20 @@ spl_autoload_register(static function (string $class): void {
 
 function expectTrue(bool $condition, string $message = 'Expected condition to be true'): void
 {
-    if (!$condition) {
+    if (! $condition) {
         throw new RuntimeException($message);
     }
 }
 
 function expectFalse(bool $condition, string $message = 'Expected condition to be false'): void
 {
-    expectTrue(!$condition, $message);
+    expectTrue(! $condition, $message);
 }
 
 function expectSame(mixed $expected, mixed $actual, string $message = 'Values are not identical'): void
 {
     if ($expected !== $actual) {
-        throw new RuntimeException($message . ': expected ' . var_export($expected, true) . ', got ' . var_export($actual, true));
+        throw new RuntimeException($message.': expected '.var_export($expected, true).', got '.var_export($actual, true));
     }
 }
 
@@ -52,8 +52,8 @@ function expectThrows(callable $operation, string $exceptionClass): void
             return;
         }
 
-        throw new RuntimeException('Expected ' . $exceptionClass . ', got ' . $exception::class);
+        throw new RuntimeException('Expected '.$exceptionClass.', got '.$exception::class);
     }
 
-    throw new RuntimeException('Expected exception ' . $exceptionClass . ' was not thrown');
+    throw new RuntimeException('Expected exception '.$exceptionClass.' was not thrown');
 }

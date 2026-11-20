@@ -6,7 +6,7 @@ TLMS is being built by Tinlance Limited as a commercially licensable platform fo
 
 ## Project status
 
-**Development status:** Early engineering implementation / Phase 3 foundation in progress. The first framework-independent PHP licensing primitive and PHP 8.3–8.5 CI tests are present; Laravel integration, persistence, APIs, SDKs and production deployment are not implemented.
+**Development status:** Phase 3 engineering foundation. A Laravel 13 application bootstrap, committed Composer lockfile, framework-independent licensing primitives and initial Laravel feature tests are implemented. Database persistence, identity, authorization, licence lifecycle APIs, payment integrations, SDKs, secure updates and production deployment remain unimplemented.
 
 This repository is public by deliberate strategy. Public visibility does not mean the project is open source or grant general commercial, production, white-label or redistribution rights. Read [LICENSE](LICENSE), [Commercial Licensing](COMMERCIAL-LICENSING.md) and [Trademarks](TRADEMARKS.md).
 
@@ -16,7 +16,7 @@ No production-ready application is currently published. Do not use this reposito
 
 - Laravel modular monolith for the central control plane.
 - PHP 8.5 production target, with compatibility testing across supported PHP 8.3–8.5 runtimes.
-- MySQL/MariaDB deployment profile, qualified against actual shared-hosting providers.
+- MySQL 8.4 canonical production database; MariaDB compatibility only after a separate test suite.
 - Annual prepaid cPanel/shared hosting as the initial central hosting target, subject to a real-provider proof of concept.
 - One self-hosted TLMS deployment per vendor initially; preserve a path to hosted multi-tenancy without making it a launch dependency.
 - Independent PHP customer SDK with no Laravel runtime dependency.
@@ -32,18 +32,29 @@ These are approved planning defaults, not evidence that the capabilities have be
 
 ## Local development
 
-Requirements: PHP 8.3, 8.4 or 8.5 and Composer 2.
+Requirements: PHP 8.3, 8.4 or 8.5; Composer 2; PHP intl, PDO SQLite and the extensions required by Laravel 13.
 
-```bash
-composer validate --no-check-publish --no-check-lock
+~~~bash
+composer install
+composer validate --strict
+composer audit --locked
 composer test
-```
+composer test:framework
+composer format:check
+~~~
 
-The current dependency-free domain test harness is temporary scaffolding. It requires PHP intl for IDNA normalization and will be replaced or integrated with the selected Laravel/Pest test stack as the application foundation is introduced. The first tested domain primitives cover licence-key issuance/verifier handling and canonical DNS-domain normalization.
+- composer test runs the dependency-free domain suite (currently 25 test methods).
+- composer test:framework runs the Laravel PHPUnit feature suite.
+- composer format:check enforces Laravel Pint formatting.
+- CI exercises PHP 8.3, 8.4 and 8.5. The local SQLite test database is not a substitute for MySQL 8.4 integration testing.
+
+## Hosting and security boundaries
+
+The HTTP document root must point to public/, never the repository root. Keep .env, application source, vendor/, logs, backups and private keys outside the public webroot. Production must use APP_DEBUG=false, a unique generated APP_KEY, HTTPS, and SESSION_SECURE_COOKIE=true. The bootstrap defaults to file sessions/cache and synchronous queue processing for shared-hosting compatibility; durable database-backed outbox and cron processing are future implementation work.
 
 ## Roadmap
 
-See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md) and [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md), [domain-name normalization](docs/security/DOMAIN-NAME-NORMALIZATION.md) and the architecture decision records in [docs/adr](docs/adr).
+See [Implementation Status](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [Laravel application foundation](docs/architecture/LARAVEL-APPLICATION-FOUNDATION.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md), [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md), [domain-name normalization](docs/security/DOMAIN-NAME-NORMALIZATION.md) and the architecture decision records in [docs/adr](docs/adr).
 
 ## Security
 
