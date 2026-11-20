@@ -40,3 +40,16 @@ Pepper provisioning, encryption-at-rest, access controls, dual-control approval,
 ## Current test evidence
 
 The domain test suite covers entropy/format, successful verification, tampering, wrong pepper, weak pepper, malformed key, pepper-key-ID domain separation, invalid key ID and distinct issuance. The suite is executed in CI on PHP 8.3, 8.4 and 8.5. This primitive is not yet wired into persistence, activation endpoints or SDKs.
+
+
+## Implemented pepper-ring primitive
+
+The framework-independent domain layer now includes:
+
+- `LicenseKeyPepperRing`: validates a configured map of immutable pepper IDs to pepper material and requires the active pepper to exist.
+- `verifyAndUpgrade()`: selects exactly the pepper named by the persisted record, verifies the presented key, and—only after successful verification—returns a replacement verifier under the active pepper when the stored pepper is old.
+- `LicenseKeyVerificationResult`: reports validity, the effective pepper ID and an optional replacement verifier.
+
+The ring does not write to storage. The future application service must persist the replacement verifier and active pepper ID atomically with the successful activation/verification transaction, using optimistic locking to prevent lost updates. If persistence fails, the old verifier remains authoritative and the client request must not be treated as committed. Unknown/retired pepper IDs fail closed; the ring never tries all peppers.
+
+The primitive is not a secret manager. Production pepper retrieval, process memory exposure, deployment configuration, backup, access auditing, rotation approvals and incident response remain application/operations responsibilities.
