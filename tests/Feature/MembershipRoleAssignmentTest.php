@@ -26,7 +26,7 @@ final class MembershipRoleAssignmentTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\AuthorizationCatalogSeeder::class);
+        $this->seed(AuthorizationCatalogSeeder::class);
     }
 
     public function test_vendor_admin_can_assign_non_privileged_role_to_another_member_and_audit_it(): void
