@@ -1,26 +1,43 @@
 {
+  "$schema": "https://getcomposer.org/schema.json",
   "name": "tinlance/tlms",
   "description": "Tinlance License Management System",
   "type": "project",
   "license": "proprietary",
   "require": {
-    "php": "^8.3 || ^8.4 || ^8.5"
+    "php": "^8.3 || ^8.4 || ^8.5",
+    "laravel/framework": "^13.17"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.27",
+    "phpunit/phpunit": "^12.5.12"
   },
   "autoload": {
     "psr-4": {
+      "App\\": "app/",
       "Tlms\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
+      "Tests\\": "tests/",
       "Tlms\\Tests\\": "tests/"
     }
   },
   "scripts": {
-    "test": "php tests/run.php"
+    "test": "@php tests/run.php",
+    "test:framework": "@php vendor/bin/phpunit",
+    "format:check": "@php vendor/bin/pint --test"
   },
   "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
     "sort-packages": true,
-    "allow-plugins": {}
-  }
+    "allow-plugins": {
+      "pestphp/pest-plugin": false,
+      "php-http/discovery": false
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }

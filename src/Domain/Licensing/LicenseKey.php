@@ -9,7 +9,9 @@ use InvalidArgumentException;
 final class LicenseKey
 {
     private const PREFIX = 'tlms_';
+
     private const ENTROPY_BYTES = 32;
+
     private const MIN_PEPPER_BYTES = 32;
 
     public static function issue(string $pepper, string $pepperKeyId): IssuedLicenseKey
@@ -18,7 +20,7 @@ final class LicenseKey
         self::assertPepperKeyId($pepperKeyId);
 
         $encodedSecret = rtrim(strtr(base64_encode(random_bytes(self::ENTROPY_BYTES)), '+/', '-_'), '=');
-        $plaintext = self::PREFIX . $encodedSecret;
+        $plaintext = self::PREFIX.$encodedSecret;
         $verifier = self::createVerifier($plaintext, $pepper, $pepperKeyId);
 
         return IssuedLicenseKey::fromParts($plaintext, $verifier, $pepperKeyId);
@@ -32,7 +34,7 @@ final class LicenseKey
         self::assertPepper($pepper);
         self::assertPepperKeyId($pepperKeyId);
 
-        if (!self::isCanonicalKey($plaintext)) {
+        if (! self::isCanonicalKey($plaintext)) {
             throw new InvalidArgumentException('The licence key has an invalid format.');
         }
 
@@ -54,7 +56,7 @@ final class LicenseKey
         self::assertPepper($pepper);
         self::assertPepperKeyId($pepperKeyId);
 
-        if (!self::isCanonicalKey($plaintext) || !preg_match('/\A[a-f0-9]{64}\z/D', $verifier)) {
+        if (! self::isCanonicalKey($plaintext) || ! preg_match('/\A[a-f0-9]{64}\z/D', $verifier)) {
             return false;
         }
 
@@ -65,7 +67,7 @@ final class LicenseKey
 
     private static function isCanonicalKey(string $plaintext): bool
     {
-        if (strlen($plaintext) !== strlen(self::PREFIX) + 43 || !str_starts_with($plaintext, self::PREFIX)) {
+        if (strlen($plaintext) !== strlen(self::PREFIX) + 43 || ! str_starts_with($plaintext, self::PREFIX)) {
             return false;
         }
 
@@ -76,7 +78,7 @@ final class LicenseKey
             return false;
         }
 
-        $decodedSecret = base64_decode(strtr($encodedSecret, '-_', '+/') . '=', true);
+        $decodedSecret = base64_decode(strtr($encodedSecret, '-_', '+/').'=', true);
 
         if ($decodedSecret === false || strlen($decodedSecret) !== self::ENTROPY_BYTES) {
             return false;
@@ -89,7 +91,7 @@ final class LicenseKey
 
     private static function createVerifier(string $plaintext, string $pepper, string $pepperKeyId): string
     {
-        return hash_hmac('sha256', $pepperKeyId . chr(0) . $plaintext, $pepper);
+        return hash_hmac('sha256', $pepperKeyId.chr(0).$plaintext, $pepper);
     }
 
     private static function assertPepper(string $pepper): void
@@ -101,7 +103,7 @@ final class LicenseKey
 
     private static function assertPepperKeyId(string $pepperKeyId): void
     {
-        if (!preg_match('/\\A[A-Za-z][A-Za-z0-9._-]{0,63}\\z/D', $pepperKeyId)) {
+        if (! preg_match('/\\A[A-Za-z][A-Za-z0-9._-]{0,63}\\z/D', $pepperKeyId)) {
             throw new InvalidArgumentException('The licence-key pepper identifier has an invalid format.');
         }
     }

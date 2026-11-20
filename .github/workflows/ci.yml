@@ -29,7 +29,6 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
       - name: Validate required project documents
         shell: bash
         run: bash scripts/ci/check-docs.sh
@@ -43,19 +42,17 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
-
       - name: Validate OpenAPI 3.1.1 contract
         run: npx --yes @redocly/cli@1.34.24 lint docs/api/openapi.yaml --extends=spec --format=github-actions
 
-  php-domain:
-    name: PHP domain tests (PHP ${{ matrix.php }})
+  php-laravel:
+    name: PHP and Laravel tests (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -65,20 +62,26 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
-
       - name: Set up PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
-          extensions: intl
+          extensions: intl, pdo_mysql, pdo_sqlite
           coverage: none
           tools: composer:v2
-
-      - name: Validate Composer manifest
-        run: composer validate --no-check-publish --no-check-lock
-
-      - name: Lint PHP source and tests
-        run: find src tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
-
-      - name: Run domain tests
+      - name: Validate Composer manifest and lock
+        run: composer validate --strict
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Audit locked dependencies
+        run: composer audit --locked --no-interaction
+      - name: Lint application and domain PHP
+        run: find app bootstrap config public routes src tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Enforce Laravel Pint formatting
+        run: composer format:check
+      - name: Run framework-independent domain tests
         run: composer test
+      - name: Run Laravel feature tests
+        run: composer test:framework
+      - name: Verify Artisan bootstrap
+        run: php artisan about --only=environment

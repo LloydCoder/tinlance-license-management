@@ -25,7 +25,7 @@ final class DomainName
             throw new InvalidArgumentException('The domain name has an invalid terminal dot.');
         }
 
-        if (!function_exists('idn_to_ascii')) {
+        if (! function_exists('idn_to_ascii')) {
             throw new RuntimeException('The PHP intl extension is required for safe IDNA domain normalization.');
         }
 
