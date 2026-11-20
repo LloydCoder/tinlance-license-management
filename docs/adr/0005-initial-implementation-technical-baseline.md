@@ -9,6 +9,7 @@
 - Use Laravel 13.x modular monolith for the central control plane.
 - PHP 8.3 is the minimum supported runtime because Laravel 13 requires PHP 8.3; test PHP 8.3, 8.4 and 8.5 in CI.
 - PHP 8.5 is the preferred production runtime when available from the selected host.
+- PHP intl is required for IDNA hostname normalization; fail closed if the extension is unavailable.
 - Do not claim PHP 8.6 compatibility until Laravel 13 and all dependencies explicitly support it and CI verifies it.
 - Keep the customer PHP SDK framework-independent and compatible with its separately declared PHP runtime matrix.
 
