@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class VendorMembership extends BaseModel
 {
@@ -30,6 +31,11 @@ final class VendorMembership extends BaseModel
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function roleEvents(): HasMany
+    {
+        return $this->hasMany(VendorMembershipRoleEvent::class);
     }
 
     public function roles(): BelongsToMany
