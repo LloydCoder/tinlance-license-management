@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-20 (Phase 3 domain foundation started)
+**Last reviewed:** 2026-11-20 (Phase 3 domain foundation increment)
 **Current phase:** Phase 3 — engineering foundation and CI/CD
 **Overall status:** Initial PHP domain foundation implemented and under CI verification; no production application or deployment exists.
 
@@ -68,11 +68,13 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 - `composer.json` establishes PHP 8.3–8.5 and PSR-4 namespace mapping.
 - `tests/run.php` and `tests/bootstrap.php` provide a dependency-free test harness while the framework foundation is being established.
 - `src/Domain/Licensing/LicenseKey.php` issues 256-bit random keys and computes version-bound HMAC-SHA-256 verifiers using a separate pepper.
+- `src/Domain/Licensing/DomainName.php` canonicalizes domains using UTS #46 IDNA processing, lowercase ASCII, one terminal-dot removal, and strict rejection of URL syntax, credentials, ports, wildcards, invalid labels and IP literals. PHP intl is now mandatory for this operation.
 - `src/Domain/Licensing/IssuedLicenseKey.php` returns the plaintext once alongside verifier and pepper key ID.
 - `tests/Unit/Domain/LicenseKeyTest.php` covers issuance, format/entropy length, successful verification, tampering, wrong pepper, malformed input, pepper/key-ID validation and uniqueness.
+- `tests/Unit/Domain/DomainNameTest.php` covers case/trailing-dot normalization, IDN conversion and rejection of schemes, paths, ports, credentials, queries, wildcards, whitespace and invalid labels.
 - `docs/security/LICENCE-KEY-VERIFICATION.md` defines pepper rotation constraints, including why old peppers must remain available until old verifiers are re-keyed on successful key presentation.
-- CI includes a PHP 8.3/8.4/8.5 matrix and uses pinned Node 24-compatible checkout and PHP setup actions.
-- Initial CI run 44816280072 passed PHP 8.3, PHP 8.4 and PHP 8.5 (7 tests at that commit). The versioned-pepper-ID extension and Node 24 checkout update are newer commits and require their own final CI run.
+- CI includes PHP 8.3/8.4/8.5 matrix testing, intl, Composer validation, PHP syntax linting and the domain test runner. Checkout v5 and setup-php 2.40.0 are pinned to immutable SHAs.
+- Latest CI run 44816764710 passed documentation governance, OpenAPI lint and all PHP jobs. Each PHP runtime passed 9 licence-key tests plus 8 domain-name tests (17 test methods total).
 
 ## Phase 0 remaining blockers
 
