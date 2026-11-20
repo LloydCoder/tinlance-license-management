@@ -19,7 +19,14 @@
 - Sessions are file-backed by default for shared-hosting compatibility, encrypted, Secure by default, HttpOnly, SameSite=Lax, and use JSON serialization. Production must preserve SESSION_SECURE_COOKIE=true; only local HTTP development may explicitly disable it.
 - Cache uses the file driver and queue uses the synchronous driver at this bootstrap stage. Durable DB-backed outbox and cron processing are separate implementation work.
 - No default user, organization or tenant migration is introduced before identity and authorization invariants are implemented.
-- MySQL is the canonical production database. SQLite is only the isolated feature-test database, not evidence of MySQL compatibility.
+- MySQL 8.4 is the canonical production database. The identity schema and feature suite are exercised against a MySQL 8.4.13 CI service with an explicit driver assertion; SQLite remains a fast secondary test driver.
+
+## Password hashing
+
+- New accounts use Argon2id by default with minimum parameters of 19 MiB memory, 2 iterations and 1 lane. Configuration floors prevent lowering these parameters through environment values.
+- These parameters meet the minimum Argon2id configuration in the [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html). Production providers must benchmark the chosen work factor under realistic concurrency and memory limits before qualification.
+- The explicit bcrypt fallback is not the default; it is constrained to work factor 12 or higher and a maximum 72-byte password input. It should only be selected after a documented compatibility/security decision.
+- Password hashes are generated through Laravel's hashing service and stored only via the model's hashed cast. Rehash-on-login remains enabled.
 
 ## Secret and environment rules
 
@@ -37,10 +44,10 @@ The two Laravel feature tests assert the framework /up health endpoint and the n
 
 ## Acceptance gates still open
 
-1. MySQL 8.4 migration/transaction suite added before schema implementation is accepted.
-2. Static analysis and security scanning are integrated and pass.
-3. Identity, organization, membership, authorization and Super Admin bootstrap are implemented with deny-by-default tests.
+1. Static analysis and security scanning are integrated and pass.
+2. One-time Super Admin bootstrap, authentication, MFA, session revocation and recovery are implemented with deny-by-default tests.
+3. Resource-level ABAC and cross-customer IDOR protections are implemented for business resources.
 4. Production artifact excludes secrets, tests, development dependencies and writable runtime data.
-5. Shared-hosting provider proof-of-concept validates PHP extensions, outbound HTTPS, cron, webhooks, file permissions and restore procedure.
+5. Shared-hosting provider proof-of-concept validates Argon2id support, PHP extensions, outbound HTTPS, cron, webhooks, file permissions and restore procedure.
 
 This bootstrap does not complete Phase 3.
