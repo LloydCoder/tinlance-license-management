@@ -6,6 +6,7 @@ require __DIR__ . '/bootstrap.php';
 
 $tests = [
     new Tlms\Tests\Unit\Domain\LicenseKeyTest(),
+    new Tlms\Tests\Unit\Domain\LicenseKeyPepperRingTest(),
     new Tlms\Tests\Unit\Domain\DomainNameTest(),
 ];
 
