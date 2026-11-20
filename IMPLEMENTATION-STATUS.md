@@ -52,6 +52,7 @@
 - `docs/architecture/API-CONTRACTS.md` — API conventions, authentication profiles, idempotency and SDK/webhook contracts.
 - `docs/api/openapi.yaml` — OpenAPI 3.1.1 v1 draft.
 - `docs/architecture/REQUIREMENTS-TRACEABILITY.md` — requirement-to-artifact and future test mapping.
+- `docs/architecture/OPEN-DECISIONS.md` — 28 explicit decisions with owners and closure gates.
 - `docs/architecture/STATE-MACHINES.md` — licence, payment, credential, release and subscription lifecycle baselines.
 - `docs/security/PRIVACY-AND-DATA-GOVERNANCE.md` — classification, privacy workflows and provisional retention schedule.
 - `docs/operations/SHARED-HOSTING-OPERATIONS.md` — provider qualification, synchronous/recoverable processing, backup and recovery baseline.
