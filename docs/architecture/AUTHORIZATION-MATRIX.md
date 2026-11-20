@@ -42,7 +42,11 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 | licences.issue | Yes | Scoped | Approved/manual workflow only | No | No | Scoped workflow | No | No | No |
 | licences.read | Yes | Scoped | Scoped | Scoped diagnostics | Read-only | Assigned products | Assigned products | Assigned referrals | Own org |
 | licences.mutate | Yes | Scoped | No | No | No | Scoped | No | No | Technical admin: own org limited actions |
-| payments.read | Yes | Scoped | Yes | Redacted status | Read-only | No | No | Commission scope | Billing scope |
+| payments.read | Yes | Scoped | Yes | Redacted status | Read-only | No | No | Commission scope | No — vendor scope only |
+| customer.billing.read | No | No | No | No | No | No | No | No | Customer Owner / Billing Admin: own organization |
+| customer.members.manage | No | No | No | No | No | No | No | No | Customer Owner: own organization |
+| customer.licences.read | No | No | No | No | No | No | No | No | Customer Owner / Technical Admin / Member: own organization |
+| customer.activations.manage | No | No | No | No | No | No | No | No | Customer Owner / Technical Admin: own organization |
 | payments.refund | Yes + step-up/approval | No by default | Maker-checker | No | Read-only | No | No | No | No |
 | ledger.adjust | Yes + step-up/approval | No | Maker-checker | No | Read-only | No | No | No | No |
 | integrations.credentials.write | Yes + MFA/reauth | Explicit delegated credential admin only if separately approved | No | No | Metadata only | No | No | No | No |
@@ -57,6 +61,15 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 | system.maintenance.manage | Yes + step-up | Explicit ops scope | No | No | Read-only | No | No | No | No |
 
 **Customer roles:** “Customer roles” column is constrained by organization membership and the named billing/technical/member role. Organization Owner may administer members but cannot elevate themselves into vendor staff.
+
+
+## 3A. Implemented permission scope boundary
+
+- Permission records carry an explicit `vendor` or `customer` scope and are unique by `(scope, name)`.
+- Vendor membership checks accept only vendor-scoped permissions; customer membership checks accept only customer-scoped permissions.
+- Customer billing uses `customer.billing.read`; the vendor `payments.read` permission cannot be used to authorize customer operations.
+- The membership authorization service reloads actor/resource status from the database to avoid trusting stale model instances.
+- Cross-scope role or permission pivots fail closed at authorization time. A write-time role assignment service, immutable assignment audit and resource-level ABAC remain pending.
 
 ## 4. Super Admin authority
 
