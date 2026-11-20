@@ -58,6 +58,7 @@
 - `docs/architecture/STATE-MACHINES.md` — licence, payment, credential, release and subscription lifecycle baselines.
 - `docs/security/PRIVACY-AND-DATA-GOVERNANCE.md` — classification, privacy workflows and provisional retention schedule.
 - `docs/operations/SHARED-HOSTING-OPERATIONS.md` — provider qualification, synchronous/recoverable processing, backup and recovery baseline.
+- `docs/operations/CPANEL-PROVIDER-QUALIFICATION.md` — researched cPanel shortlist and mandatory live proof-of-concept; no provider is approved for annual purchase yet.
 
 These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAPI lint is integrated in CI; this is structural/lint evidence, not runtime contract or authorization proof. Phase 1 is not complete until operation permissions are normalized, lifecycle transition contracts and tests are complete, privacy/legal roles and retention are reviewed, a real cPanel host is qualified, recovery is exercised, and all remaining decisions have owners and acceptance evidence.
 
@@ -74,7 +75,7 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 1. Expand licence, payment, credential and release lifecycle contracts into actor/precondition/transaction/side-effect/idempotency test specifications (baseline expansion is now recorded in STATE-MACHINES.md).
 2. OpenAPI 3.1.1 lint is integrated; complete semantic schema, authorization, idempotency and compatibility review; add executable contract tests with the application.
 3. Complete privacy/data classification, retention/deletion/export and data-processing requirements.
-4. Complete deployment, backup, restore, monitoring, cron and recovery architecture.
+4. Execute the real-account cPanel proof-of-concept in `CPANEL-PROVIDER-QUALIFICATION.md`; public provider pages do not prove database versions, PHP extensions, cron cadence, egress, webhooks or recovery.
 5. Reconcile every requirement ID with API operation, domain entity, threat and future automated test.
 6. Record unresolved choices and obtain architecture sign-off before Laravel bootstrap.
 
