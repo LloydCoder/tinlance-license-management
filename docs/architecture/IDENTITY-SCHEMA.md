@@ -37,7 +37,9 @@ The vendor account is identified by a non-user-editable installation key whose i
 - MembershipAuthorization re-reads the actor and resource status from the database for each decision, then requires an active membership, matching role scope, matching permission scope and explicit permission. Stale in-memory models, unknown permissions and missing memberships deny by default.
 - Super Admin receives the catalogued administrative permissions but the catalogue deliberately omits integrations.credentials.read_secret, signing.root.manage and audit.delete_or_edit.
 - Customer roles are separate from vendor roles; attaching a customer-scoped role to a vendor membership does not authorize vendor actions. A permission from the opposite scope is also rejected even if an invalid pivot assignment is present.
-- No role-assignment service or authenticated role-management endpoint exists yet; role grants are currently seeded or created directly in tests. Production write paths must not be exposed until the scope-validating, audited assignment service is implemented.
+- MembershipRoleAssignmentService is the only implemented write boundary for vendor/customer membership role assignment and revocation. It locks actor, resource and membership rows in a transaction, revalidates scope and permission, blocks self-assignment and privileged roles, requires a reason, and writes an immutable membership-role event in the same transaction.
+- Vendor generic grants are allowlisted to support_agent, security_auditor and vendor_developer. Customer generic grants are allowlisted to customer_billing_admin, customer_technical_admin and customer_member. Super Admin, platform admin, finance admin, vendor product manager and customer owner grants require a separate future approval/bootstrap workflow.
+- Membership-role event models reject Eloquent update/delete operations. This is application-level append-only evidence, not a replacement for the future global hash-chained audit ledger or database-level tamper controls.
 
 ## Identifier and deletion rules
 
@@ -69,6 +71,8 @@ The vendor account is identified by a non-user-editable installation key whose i
 - customer_organizations
 - customer_memberships
 - customer_membership_roles
+- vendor_membership_role_events
+- customer_membership_role_events
 
 ## Verification evidence
 
@@ -76,9 +80,9 @@ The current identity branch CI run must be recorded after exact-head verificatio
 
 ## Remaining acceptance work
 
-1. Add a role-assignment service that rejects scope mismatches at write time and enforces invitation/approval rules.
-2. Add resource-level ABAC for product assignment, reseller relationships, customer ownership and vendor scope; membership permission alone is not sufficient for these resources.
-3. Implement one-time Super Admin bootstrap, login/logout, password reset, email verification, session rotation/revocation, MFA enrollment and recovery.
-4. Implement passkeys/WebAuthn, TOTP replay protection, recovery-code verification, step-up authentication and maker-checker workflows.
-5. Add positive and negative authorization tests for every future endpoint, including cross-customer IDOR tests for reads, writes, exports and nested resources.
+1. Add resource-level ABAC for product assignment, reseller relationships, customer ownership and vendor scope; membership permission alone is not sufficient for these resources.
+2. Implement one-time Super Admin bootstrap, login/logout, password reset, email verification, session rotation/revocation, MFA enrollment and recovery.
+3. Implement passkeys/WebAuthn, TOTP replay protection, recovery-code verification, step-up authentication and maker-checker workflows.
+4. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment/revocation.
+5. Integrate global append-only/hash-chained audit anchoring; membership-role events are a local transactional audit precursor only.
 6. Add static analysis and security scanning before identity endpoints are exposed.
