@@ -27,11 +27,11 @@ final class CustomerMembershipRoleEvent extends BaseModel
 
     protected static function booted(): void
     {
-        static::updating(static function (): never {
+        self::updating(static function (): never {
             throw new LogicException('Membership role events are immutable.');
         });
 
-        static::deleting(static function (): never {
+        self::deleting(static function (): never {
             throw new LogicException('Membership role events are immutable.');
         });
     }
