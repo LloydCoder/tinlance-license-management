@@ -98,3 +98,12 @@ Map controls and verification to:
 - Legal treatment of crypto payment processing, tax and cross-border data processing must be reviewed before enabling relevant integrations.
 
 No residual risk is accepted merely because it is listed here. Each must be assigned an owner, mitigation, test evidence and explicit release decision.
+
+## 8. Standards and external references
+
+- [OWASP Application Security Verification Standard 5.0.0](https://asvs.owasp.org/) — detailed verification requirements; target Level 2 coverage with selected higher-assurance controls.
+- [OWASP Top 10:2025](https://owasp.org/Top10/) — application risk awareness and threat coverage.
+- [OWASP API Security Project](https://owasp.org/www-project-api-security/) — API-specific risk coverage.
+- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) — implementation guidance for authentication, authorization, secrets, logging, cryptography and SSRF.
+
+Standards versions must be rechecked at each release gate; this baseline does not claim certification or formal ASVS compliance.
