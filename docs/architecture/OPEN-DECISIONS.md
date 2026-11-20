@@ -7,12 +7,12 @@ This register prevents unresolved design choices from being silently converted i
 | DEC-001 | Initial deployment topology | One self-hosted installation per software vendor; customer organizations are records inside that installation | Accepted in ADR 0004 |
 | DEC-002 | Future hosted multi-tenancy | Explicitly deferred; vendor_account_id is a migration seam, not proof of tenant isolation | Separate ADR + isolation architecture before SaaS implementation |
 | DEC-003 | Exact cPanel provider and plan | Annual prepaid shared hosting is mandatory target; provider not selected | Written capability confirmation + real-account PoC / Operations |
-| DEC-004 | Database engine/version | MySQL/MariaDB family only; exact supported engines and versions not yet frozen | Test matrix against actual provider and Laravel support |
-| DEC-005 | PHP runtime matrix | PHP 8.3 minimum baseline; PHP 8.4/8.5 compatibility target | Verify Laravel/dependency support and provider runtime |
-| DEC-006 | Identifier strategy | Stable opaque identifiers; ULID/UUID selection open | Schema/URL leakage review and DB portability test |
-| DEC-007 | Licence key format and entropy | Random high-entropy secret; keyed verifier at rest; one-time display | Threat model, entropy analysis, lookup/index and support workflow |
-| DEC-008 | Domain binding semantics | Canonical IDNA domain normalization; apex/subdomain/wildcard rules require explicit policy | Domain policy ADR and property/fuzz tests |
-| DEC-009 | Offline lease TTL and grace | Bounded signed lease; exact TTL, grace and clock rollback policy open | Risk analysis balancing outage tolerance and revocation delay |
+| DEC-004 | Database engine/version | **Selected:** MySQL 8.4 LTS canonical; MariaDB 11.8 LTS optional only after independent compatibility tests | ADR 0005; provider PoC and DB matrix remain open |
+| DEC-005 | PHP runtime matrix | **Selected:** Laravel 13; PHP 8.3 minimum, CI 8.3/8.4/8.5, PHP 8.5 preferred production runtime | ADR 0005; provider PoC remains open |
+| DEC-006 | Identifier strategy | **Selected:** ULID identifiers; never treated as authorization secrets | ADR 0005; schema and portability tests remain open |
+| DEC-007 | Licence key format and entropy | **Selected:** 256-bit CSPRNG secret, one-time display, keyed HMAC-SHA-256 verifier at rest | ADR 0005; format/vector and entropy tests remain open |
+| DEC-008 | Domain binding semantics | **Selected:** IDNA ASCII normalization, lowercase, strip one trailing dot, reject URL/path/port; wildcard off by default | ADR 0005; domain property/fuzz tests remain open |
+| DEC-009 | Offline lease TTL and grace | **Selected baseline:** 72-hour lease, refresh attempt around 24 hours, enterprise hard max 7 days; licence grace is separate | ADR 0005; SDK outage/clock tests and final risk review remain open |
 | DEC-010 | Installation identity recovery | Stable random installation ID; clone/backup/restore recovery process open | SDK and migration threat tests |
 | DEC-011 | Signing-key custody and thresholds | Offline root + delegated operational keys; exact roles, threshold and ceremony open | Signing architecture ADR and compromise drill |
 | DEC-012 | Secure update metadata profile | TUF-compatible role separation; exact metadata versions, thresholds and delegation open | TUF profile ADR and conformance tests |
@@ -22,16 +22,18 @@ This register prevents unresolved design choices from being silently converted i
 | DEC-016 | Subscription and dunning policy | Explicit subscription state machine; grace/proration/retry policy open | Product/pricing policy and contract tests |
 | DEC-017 | Refund/chargeback entitlement policy | Financial event remains separate from licence state; suspension/refund policy open | Finance and customer-contract approval |
 | DEC-018 | Reseller attribution and commission | Versioned rules and immutable accruals; rates/windows/payout rules open | Commercial policy and reconciliation tests |
-| DEC-019 | Admin MFA and bootstrap | MFA and step-up required for privileged actions; exact WebAuthn/TOTP and bootstrap/recovery flows open | Authentication ADR and recovery exercise |
-| DEC-020 | API token format and rotation | Opaque hashed tokens with scopes, expiry and revocation | Token lifecycle spec and leakage/revocation tests |
+| DEC-019 | Admin MFA and bootstrap | **Selected:** WebAuthn/passkeys preferred, TOTP fallback, one-time bootstrap, single-use recovery codes | ADR 0005; recovery flow tests and exercise remain open |
+| DEC-020 | API token format and rotation | **Selected:** 256-bit opaque token, public identifier + secret, keyed verifier, scopes, expiry, rotation and revocation | ADR 0005; token lifecycle tests remain open |
 | DEC-021 | Email/SMS providers | Adapter model; initial providers not selected | Provider qualification and delivery testing |
 | DEC-022 | Retention periods and controller/processor roles | Data classification and provisional schedule documented | Qualified legal review per jurisdiction and deployment |
-| DEC-023 | Backup RPO/RTO | 15-minute RPO / 4-hour RTO are unverified targets only | Measured backup/restore drill on selected host |
-| DEC-024 | Monitoring and cron cadence | DB-backed recoverable jobs + external monitoring; provider cadence unknown | Real-host cron, heartbeat and catch-up test |
+| DEC-023 | Backup RPO/RTO | 15-minute RPO / 4-hour RTO remain unverified targets only | Real-provider backup/restore drill required |
+| DEC-024 | Monitoring and cron cadence | **Selected baseline:** DB-backed recoverable jobs; 5-minute cPanel cron where supported; external monitoring | Real-host cron, heartbeat and catch-up test required |
 | DEC-025 | Availability/SLA commitments | No public SLA committed | Measure production behavior and legal/commercial review |
-| DEC-026 | API schema validation | OpenAPI 3.1.1 draft committed; CI schema lint not yet integrated | Automated validator + contract review |
+| DEC-026 | API schema validation | **Selected:** OpenAPI 3.1.1; machine validation/lint not yet integrated | Add pinned validator to CI and complete contract review |
 | DEC-027 | Commercial source-visible licence | Reserved-rights policy documented | Counsel review, contributor rights and dependency audit |
 | DEC-028 | Data export/deletion workflow | Scoped export and deletion/pseudonymization principles documented | Legal retention matrix and automated workflow tests |
+| DEC-029 | Audit tamper evidence | Application append-only log + hash chain; periodic external digest anchoring | Design and test anchoring destination, key custody and tamper detection |
+| DEC-030 | Secure update metadata profile | TUF root/targets/snapshot/timestamp roles; delegated targets where required | Finalize production thresholds and key custody; conformance tests |
 
 ## Rules
 
