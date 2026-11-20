@@ -9,7 +9,7 @@
 | Phase | Scope | Status | Exit evidence |
 |---|---|---|---|
 | 0 | Repository governance and project control | In progress | Public repo verified; initial governance docs committed to working branch; branch protection and required checks not verified; GitHub API returned 403 for the protection endpoint |
-| 1 | Requirements and architecture freeze | Not started | Approved PRD, ADR set, data/API contracts, threat model and traceability matrix |
+| 1 | Requirements and architecture freeze | In progress — approved requirements documented; full architecture freeze pending | Approved PRD, ADR set, data/API contracts, threat model and traceability matrix |
 | 2 | Shared-hosting qualification | Not started | Real provider proof-of-concept and written capability evidence |
 | 3 | Engineering foundation and CI/CD | Not started | Reproducible install/build and green CI matrix |
 | 4 | Identity, organizations and portals | Not started | Authentication, authorization and isolation tests |
@@ -32,11 +32,17 @@
 - Initial audited tree: .gitignore, README.md.
 - Initial commit: 95a853c2696e610de52da39249038f7374ba5ef3.
 - Working branch: chore/phase-0-governance-baseline.
-- Phase 0 governance documents and the initial documentation CI workflow are committed on the working branch. PR #1 is open. GitHub Actions run 44809957547 completed successfully for commit d14cb2a048fa0d8c61a719d1c2153a2519d454e4.
-- No application code, migrations, CI workflows or release artifacts have been established.
+- Phase 0 governance documents and the initial documentation CI workflow are committed on the working branch. PR #1 is open. Earlier GitHub Actions run 44809957547 completed successfully for commit d14cb2a048fa0d8c61a719d1c2153a2519d454e4; latest commit checks must be reverified.
+- No application code, migrations or production release artifacts have been established.
 - Branch protection status is unknown; the available GitHub connection could not verify it.
 
-## Newly approved requirement — Super Admin API credential settings
+## Approved Super Admin authority
+
+ADR 0003 and `docs/requirements/SUPER-ADMIN-REQUIREMENTS.md` record the approved platform-wide Super Admin role and centralized Control Center. Super Admin authority spans platform configuration, administrators, customers, products, plans, licences, payments, integrations, resellers, white-label, releases, notifications, security, operations, monitoring, backups, reporting and audit.
+
+This is an approved architecture requirement, not an implemented feature. Server-side authorization, MFA/re-authentication, audited privileged actions, tenant isolation, secret non-disclosure, signing-root separation and sensitive-operation safeguards are mandatory acceptance criteria.
+
+## Approved Super Admin API credential settings
 
 ADR 0002 and the integration credential security/requirements documents are committed on the Phase 0 working branch. The requirement is approved at architecture level; dashboard UI, encrypted storage, provider adapters, authorization and tests are not implemented yet. Do not mark it complete until the INT-CRED acceptance tests pass.
 
