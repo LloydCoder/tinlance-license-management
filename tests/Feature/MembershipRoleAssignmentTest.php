@@ -12,6 +12,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipRoleEvent;
 use App\Services\Authorization\MembershipRoleAssignmentService;
+use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
