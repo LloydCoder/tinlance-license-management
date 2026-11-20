@@ -89,7 +89,15 @@ These values are initial risk-based defaults, not a claim that revocation is ins
 - Publish immutable artifacts with digest, SBOM and build provenance.
 - The exact root threshold and operational key custody ceremony must be finalized before production signing.
 
-## 10. Consequences and release gates
+## 10. Human password hashing
+
+- Use Argon2id as the default password hashing algorithm with minimum parameters of 19 MiB memory, 2 iterations and 1 lane, meeting the OWASP Password Storage Cheat Sheet baseline.
+- Enforce configuration floors so environment settings cannot silently reduce the selected minimum. Rehash on login remains enabled.
+- An explicit bcrypt fallback is available only for approved compatibility cases, with work factor at least 12 and a hard 72-byte input limit; bcrypt is not the default for new installations.
+- The selected host must expose Argon2id through PHP password hashing and pass realistic memory/concurrency benchmarks before qualification.
+- Store password hashes only through Laravel's hashing service and hashed model cast. Never store plaintext or reversible password encryption.
+
+## 11. Consequences and release gates
 
 - This ADR is the baseline for architecture and CI, not proof of provider compatibility.
 - The selected cPanel provider must support PHP 8.3+ and a qualified database/extension set; if it does not, choose another provider rather than silently lowering the runtime.

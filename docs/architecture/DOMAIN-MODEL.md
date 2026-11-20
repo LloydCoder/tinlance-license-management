@@ -1,6 +1,6 @@
 # TLMS domain model
 
-**Status:** Phase 1 conceptual model. Physical schema and migrations are not yet implemented.
+**Status:** Phase 1 conceptual model with the initial vendor, user, role, permission, membership and customer-organization schema now implemented. Product, commercial, licensing, payments, updates and operations aggregates remain conceptual; full production schema is not complete.
 
 ## 1. Ownership and deployment boundary
 
@@ -12,7 +12,7 @@ Every vendor-owned business record carries `vendor_account_id` (directly or thro
 
 | Aggregate | Principal entities | Invariants |
 |---|---|---|
-| Vendor & identity | VendorAccount, User, Role, Permission, Membership, MFAFactor, Session, ApiToken | One vendor account per initial installation; no privilege from user-supplied role claims |
+| Vendor & identity | VendorAccount, User, Role, Permission, VendorMembership, CustomerMembership, MembershipRoleEvent, MFAFactor, Session, ApiToken | One vendor account per initial installation; no privilege from user-supplied role claims |
 | Customer | CustomerOrganization, CustomerContact, CustomerMembership, Address, TaxProfile | Customer members are scoped to one organization; ownership changes are audited |
 | Product catalogue | Product, ProductVersion, ReleaseChannel, Plan, PlanVersion, EntitlementDefinition, PriceVersion | Published versions are immutable; changes create new versions |
 | Commercial | Quote, Order, OrderLine, Subscription, Invoice, InvoiceLine, Coupon, TaxCalculation | Order/price/entitlement snapshots preserve what was purchased |
@@ -68,6 +68,11 @@ The diagram is conceptual; exact cardinalities, join entities, and deletion rule
 - `id`, `vendor_account_id`, `external_reference`, `legal_name`, `display_name`, `status`, `billing_email`, `created_at`.
 - Unique `(vendor_account_id, external_reference)` where external reference is present.
 - Soft deletion only where legally and operationally appropriate; financial/audit references must remain.
+
+### Membership role assignment events
+- Separate vendor/customer membership-role event tables record target membership, role, actor, action, reason and creation time in the same transaction as role assignment/revocation.
+- Generic assignment is allowlisted; self-assignment and privileged role grants are blocked until dedicated bootstrap/approval workflows exist.
+- Eloquent model instance updates/deletes are rejected. These events are not a substitute for the global hash-chained AuditEvent ledger or database-level tamper evidence.
 
 ### Product / PlanVersion / EntitlementDefinition
 - Product has immutable stable identifier, slug, vendor owner, lifecycle status.
