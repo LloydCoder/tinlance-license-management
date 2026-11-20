@@ -1,0 +1,26 @@
+{
+  "name": "tinlance/tlms",
+  "description": "Tinlance License Management System",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3 || ^8.4 || ^8.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Tlms\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tlms\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/run.php"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {}
+  }
+}
