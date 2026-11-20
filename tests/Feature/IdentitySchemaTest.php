@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Database\QueryException;
+use InvalidArgumentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -49,6 +50,13 @@ final class IdentitySchemaTest extends TestCase
         $this->assertGreaterThanOrEqual(19456, $hashInfo['options']['memory_cost']);
         $this->assertGreaterThanOrEqual(2, $hashInfo['options']['time_cost']);
         $this->assertGreaterThanOrEqual(1, $hashInfo['options']['threads']);
+    }
+
+    public function test_explicit_bcrypt_fallback_rejects_passwords_over_72_bytes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Hash::driver('bcrypt')->make(str_repeat('x', 73));
     }
 
     public function test_user_email_uniqueness_is_case_insensitive(): void
