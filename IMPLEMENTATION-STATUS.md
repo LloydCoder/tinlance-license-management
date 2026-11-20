@@ -1,20 +1,20 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-20 (Phase 1 contract/security review update)
-**Current phase:** Phase 1 — requirements and architecture freeze
-**Overall status:** Architecture baseline in progress; no production application implemented.
+**Last reviewed:** 2026-11-20 (Phase 3 domain foundation started)
+**Current phase:** Phase 3 — engineering foundation and CI/CD
+**Overall status:** Initial PHP domain foundation implemented and under CI verification; no production application or deployment exists.
 
 ## Evidence-based status
 
 | Phase | Scope | Status | Exit evidence |
 |---|---|---|---|
-| 0 | Repository governance and project control | CI verified; governance incomplete | Latest candidate CI must pass; branch protection/required checks remain unverified because GitHub API returned 403; legal rights review remains pending |
-| 1 | Requirements and architecture freeze | In progress — baseline artifacts committed; review and contract validation pending | Approved domain model, authorization matrix, threat model, OpenAPI contract, state machines, privacy/retention design and traceability |
+| 0 | Repository governance and project control | Documentation CI verified; owner governance still incomplete | Main branch protection is disabled in live GitHub metadata; owner security settings and legal rights review remain outstanding |
+| 1 | Requirements and architecture freeze | Baseline documented; semantic authorization, lifecycle and external qualification gates remain | Operation-level authorization review, detailed lifecycle contracts, privacy/legal review, real hosting PoC and explicit decision closure |
 | 2 | Shared-hosting qualification | Not started | Real provider proof-of-concept and written capability evidence |
-| 3 | Engineering foundation and CI/CD | Not started | Reproducible install/build and green CI matrix |
+| 3 | Engineering foundation and CI/CD | In progress — Composer manifest, framework-independent PHP autoloading/test runner, PHP 8.3–8.5 CI matrix and first domain primitive added | Laravel 13 bootstrap, dependency lock, static analysis, formatting, security scanning, DB matrix and deployment artifact |
 | 4 | Identity, organizations and portals | Not started | Authentication, authorization and isolation tests |
 | 5 | Product, plans and entitlements | Not started | Versioned product and entitlement contract tests |
-| 6 | Licence engine | Not started | State-machine, activation and concurrency tests |
+| 6 | Licence engine | Initial licence-key cryptographic primitive only; no lifecycle engine | Persisted key verifier/pepper-key ID, issuance transaction, activation/state machine, concurrency and database tests |
 | 7 | Cryptographic signing | Not started | Independent verifier and cross-language test vectors |
 | 8 | Activation and offline operation | Not started | Outage, lease expiry and migration tests |
 | 9 | Payments and ledger | Not started | Webhook, reconciliation, manual issuance and ledger tests |
@@ -29,13 +29,14 @@
 
 - Repository: public `LloydCoder/tinlance-license-management`.
 - Default branch: `main`.
-- Working branch: `chore/phase-0-governance-baseline`.
+- Architecture review branch: `chore/phase-1-contract-security-review`.
+- Engineering branch: `feat/phase-3-domain-foundation`.
 - PR #1: https://github.com/LloydCoder/tinlance-license-management/pull/1 — open and unmerged.
 - Latest Phase 0 CI candidate before Phase 1 documentation: commit `a021bdabc9d89d9b962cded7173de42a285a3cba`.
 - GitHub Actions push run `44811522610`: completed successfully.
 - GitHub Actions pull-request run `44811528330`: completed successfully.
-- Live GitHub branch metadata reports `main.protected=false` and required status checks disabled. Branch protection is therefore **not configured** at this review, not merely unverified. The available integration has no branch-protection write action; repository owner must configure it in Settings.
-- No application code, database migrations or production release artifacts have been established.
+- Live GitHub branch metadata reports `main.protected=false` and required status checks disabled. The repository owner can configure protection independently; engineering work continues on feature branches.
+- Initial PHP domain code now exists under `src/Domain/Licensing/`; it is not yet integrated with Laravel, persistence, API endpoints or SDKs.
 
 ## Approved platform authority and credential requirements
 
@@ -62,13 +63,24 @@
 
 These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAPI lint is integrated in CI; this is structural/lint evidence, not runtime contract or authorization proof. Phase 1 is not complete until operation permissions are normalized, lifecycle transition contracts and tests are complete, privacy/legal roles and retention are reviewed, a real cPanel host is qualified, recovery is exercised, and all remaining decisions have owners and acceptance evidence.
 
+## Initial Phase 3 implementation evidence
+
+- `composer.json` establishes PHP 8.3–8.5 and PSR-4 namespace mapping.
+- `tests/run.php` and `tests/bootstrap.php` provide a dependency-free test harness while the framework foundation is being established.
+- `src/Domain/Licensing/LicenseKey.php` issues 256-bit random keys and computes version-bound HMAC-SHA-256 verifiers using a separate pepper.
+- `src/Domain/Licensing/IssuedLicenseKey.php` returns the plaintext once alongside verifier and pepper key ID.
+- `tests/Unit/Domain/LicenseKeyTest.php` covers issuance, format/entropy length, successful verification, tampering, wrong pepper, malformed input, pepper/key-ID validation and uniqueness.
+- `docs/security/LICENCE-KEY-VERIFICATION.md` defines pepper rotation constraints, including why old peppers must remain available until old verifiers are re-keyed on successful key presentation.
+- CI includes a PHP 8.3/8.4/8.5 matrix and uses pinned Node 24-compatible checkout and PHP setup actions.
+- Initial CI run 44816280072 passed PHP 8.3, PHP 8.4 and PHP 8.5 (7 tests at that commit). The versioned-pepper-ID extension and Node 24 checkout update are newer commits and require their own final CI run.
+
 ## Phase 0 remaining blockers
 
 1. Verify main branch protection, required pull-request review policy and required status checks through an owner-authorized GitHub session.
 2. Confirm secret scanning, push protection and dependency review settings.
 3. Review commercial rights notice, contributor ownership and dependency licensing with qualified counsel before external sale.
 4. Re-run all required CI checks on the final Phase 0 candidate commit and complete forensic review.
-5. Merge PR #1 only after governance gates are verified.
+5. Merge PR #1 only after governance gates are verified. This does not block isolated feature-branch engineering.
 
 ## Phase 1 remaining work
 
@@ -77,7 +89,7 @@ These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAP
 3. Complete privacy/data classification, retention/deletion/export and data-processing requirements.
 4. Execute the real-account cPanel proof-of-concept in `CPANEL-PROVIDER-QUALIFICATION.md`; public provider pages do not prove database versions, PHP extensions, cron cadence, egress, webhooks or recovery.
 5. Reconcile every requirement ID with API operation, domain entity, threat and future automated test.
-6. Record unresolved choices and obtain architecture sign-off before Laravel bootstrap.
+6. Record unresolved choices and obtain architecture sign-off before production deployment. The current isolated domain slice proceeds on a feature branch without claiming architecture freeze.
 
 ## Completion policy
 
