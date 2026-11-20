@@ -54,18 +54,7 @@ final class LicenseKey
         self::assertPepper($pepper);
         self::assertPepperKeyId($pepperKeyId);
 
-        if (!preg_match('/\\Atlms_[A-Za-z0-9_-]{43}\\z/D', $plaintext)) {
-            return false;
-        }
-
-        $encodedSecret = substr($plaintext, strlen(self::PREFIX));
-        $decodedSecret = base64_decode(strtr($encodedSecret, '-_', '+/') . '=', true);
-
-        if ($decodedSecret === false || strlen($decodedSecret) !== self::ENTROPY_BYTES) {
-            return false;
-        }
-
-        if (!preg_match('/\\A[a-f0-9]{64}\\z/D', $verifier)) {
+        if (!self::isCanonicalKey($plaintext) || !preg_match('/\\\\A[a-f0-9]{64}\\\\z/D', $verifier)) {
             return false;
         }
 
@@ -76,14 +65,26 @@ final class LicenseKey
 
     private static function isCanonicalKey(string $plaintext): bool
     {
-        if (!preg_match('/\\\\Atlms_[A-Za-z0-9_-]{43}\\\\z/D', $plaintext)) {
+        if (strlen($plaintext) !== strlen(self::PREFIX) + 43 || !str_starts_with($plaintext, self::PREFIX)) {
             return false;
         }
 
         $encodedSecret = substr($plaintext, strlen(self::PREFIX));
+        $allowedCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+        if (strspn($encodedSecret, $allowedCharacters) !== 43) {
+            return false;
+        }
+
         $decodedSecret = base64_decode(strtr($encodedSecret, '-_', '+/') . '=', true);
 
-        return $decodedSecret !== false && strlen($decodedSecret) === self::ENTROPY_BYTES;
+        if ($decodedSecret === false || strlen($decodedSecret) !== self::ENTROPY_BYTES) {
+            return false;
+        }
+
+        $canonicalEncoding = rtrim(strtr(base64_encode($decodedSecret), '+/', '-_'), '=');
+
+        return hash_equals($canonicalEncoding, $encodedSecret);
     }
 
     private static function createVerifier(string $plaintext, string $pepper, string $pepperKeyId): string
