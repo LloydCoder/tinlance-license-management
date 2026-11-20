@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tlms\Tests\Unit\Domain;
 
+use InvalidArgumentException;
 use Tlms\Domain\Licensing\LicenseKey;
 use Tlms\Domain\Licensing\LicenseKeyPepperRing;
 
@@ -54,7 +55,7 @@ final class LicenseKeyPepperRingTest
     {
         expectThrows(
             static fn () => new LicenseKeyPepperRing(['pepper-v1' => self::OLD_PEPPER], 'pepper-v2'),
-            \\InvalidArgumentException::class,
+            InvalidArgumentException::class,
         );
     }
 
