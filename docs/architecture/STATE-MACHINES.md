@@ -86,3 +86,31 @@ Initial states: trialing, active, past_due, paused, cancelled, expired. Define g
 - Audit/outbox events commit atomically with domain state.
 - Step-up and maker-checker rules are enforced on privileged transitions.
 - Clock, timezone, retry and outage conditions are deterministic under tests.
+
+
+## 8. Implementation contract still required
+
+The transition tables above are architectural baselines, not a complete executable specification. Before implementing each aggregate, add a transition contract containing:
+
+- Stable transition identifier and aggregate version.
+- Permitted source state(s) and target state.
+- Initiating actor class and exact permission identifier.
+- Resource/vendor/customer scope checks.
+- Required MFA freshness, step-up authentication and maker-checker approval.
+- Preconditions, including payment evidence, plan snapshot, ownership proof or release signature as applicable.
+- Transaction boundary, uniqueness constraints and optimistic-lock behavior.
+- Idempotency-key scope, retention and same-key/different-payload behavior.
+- Immutable audit event and transactional outbox event.
+- External side effects, retry policy and dead-letter/recovery behavior.
+- Stable success, conflict, forbidden and validation response codes.
+- Positive, negative, concurrency, duplicate-delivery, clock and rollback tests.
+
+### Required aggregate-specific clarifications
+
+- **Licence:** define transfer acceptance, replacement linkage, reinstatement after revocation, perpetual grant versus maintenance expiry, and the precise effect of chargeback/refund policy.
+- **Payment:** distinguish provider event receipt from verified settlement; define partial refund aggregation, dispute reversal and reconciliation authority. A webhook must never directly grant an entitlement.
+- **Credential:** define draft expiry, validation evidence freshness, concurrent rotation, active-version rollback, disable versus revoke semantics and provider-side revocation evidence.
+- **Release:** define metadata version monotonicity, expiry, threshold verification, delegated target scope, freeze/rollback rejection and emergency root recovery.
+- **Subscription:** define each transition for renewal, retry, grace, pause, cancellation timing, proration and entitlement projection. Subscription and licence state remain separate aggregates.
+
+No aggregate is implementation-ready solely because its state names are listed. Domain service tests and database concurrency tests are mandatory acceptance evidence.

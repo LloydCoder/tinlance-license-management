@@ -29,11 +29,11 @@ This register prevents unresolved design choices from being silently converted i
 | DEC-023 | Backup RPO/RTO | 15-minute RPO / 4-hour RTO remain unverified targets only | Real-provider backup/restore drill required |
 | DEC-024 | Monitoring and cron cadence | **Selected baseline:** DB-backed recoverable jobs; 5-minute cPanel cron where supported; external monitoring | Real-host cron, heartbeat and catch-up test required |
 | DEC-025 | Availability/SLA commitments | No public SLA committed | Measure production behavior and legal/commercial review |
-| DEC-026 | API schema validation | **Selected:** OpenAPI 3.1.1; machine validation/lint not yet integrated | Add pinned validator to CI and complete contract review |
+| DEC-026 | API schema validation | **Selected and CI-integrated:** OpenAPI 3.1.1; Redocly CLI 1.34.24 lint runs in the `OpenAPI contract validation` workflow job | Keep the validator pinned; complete semantic authorization, compatibility and request/response contract review; add executable contract tests when application code exists |
 | DEC-027 | Commercial source-visible licence | Reserved-rights policy documented | Counsel review, contributor rights and dependency audit |
 | DEC-028 | Data export/deletion workflow | Scoped export and deletion/pseudonymization principles documented | Legal retention matrix and automated workflow tests |
 | DEC-029 | Audit tamper evidence | Application append-only log + hash chain; periodic external digest anchoring | Design and test anchoring destination, key custody and tamper detection |
-| DEC-030 | Secure update metadata profile | TUF root/targets/snapshot/timestamp roles; delegated targets where required | Finalize production thresholds and key custody; conformance tests |
+| DEC-030 | TUF production trust thresholds and key custody | Separate from DEC-012: production root/delegated-role thresholds, key custody, rotation and compromise recovery are not yet approved | Signing architecture ADR, documented key ceremony, compromise/recovery exercise and TUF conformance tests |
 
 ## Rules
 
