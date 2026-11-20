@@ -12,7 +12,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 - User is the installation-wide human identity.
 - Email is trimmed and lowercased before persistence, then uniquely indexed. Authentication and password reset flows must use the canonical stored address.
-- Passwords use Laravel's hashed cast; plaintext is never persisted or returned.
+- Passwords use Laravel's hashed cast with Argon2id by default (19 MiB memory, 2 iterations, 1 lane); plaintext is never persisted or returned. An explicit bcrypt fallback is bounded to work factor ≥12 and 72 bytes.
 - Users have explicit status, email verification timestamp, remember token and last-login timestamp.
 - A user can hold a vendor membership and one or more customer memberships. These are separate authorization contexts.
 - Membership removal is represented by status and retained records, not cascading deletion.
@@ -76,7 +76,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 ## Verification evidence
 
-The current identity branch CI run must be recorded after exact-head verification. Earlier run [44824350106](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44824350106) passed 25 domain tests, 28 Laravel feature tests (47 assertions), Pint, Composer audit, PHP syntax, OpenAPI and documentation governance across PHP 8.3/8.4/8.5, plus the identity migration/feature suite against MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql; this run predates the final rebase onto the merged Laravel baseline.
+CI run [44825741658](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44825741658) passed on candidate head `b9b316f69103ed4ecc302f8433dda0d73f3f7806`: 25 domain test methods and 47 Laravel feature tests (91 assertions) passed on PHP 8.3/8.4/8.5 and MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql. Composer audit, Pint (49 PHP files), PHP syntax, OpenAPI and documentation governance also passed. This run predates the latest project-status and decision-record reconciliation; the resulting exact head requires a fresh CI run.
 
 ## Remaining acceptance work
 

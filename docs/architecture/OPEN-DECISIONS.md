@@ -34,6 +34,7 @@ This register prevents unresolved design choices from being silently converted i
 | DEC-028 | Data export/deletion workflow | Scoped export and deletion/pseudonymization principles documented | Legal retention matrix and automated workflow tests |
 | DEC-029 | Audit tamper evidence | Application append-only log + hash chain; periodic external digest anchoring | Design and test anchoring destination, key custody and tamper detection |
 | DEC-030 | TUF production trust thresholds and key custody | Separate from DEC-012: production root/delegated-role thresholds, key custody, rotation and compromise recovery are not yet approved | Signing architecture ADR, documented key ceremony, compromise/recovery exercise and TUF conformance tests |
+| DEC-031 | Human password hashing | **Selected:** Argon2id by default, minimum 19 MiB memory / 2 iterations / 1 lane; rehash-on-login enabled. Explicit bcrypt fallback is non-default, work factor ≥12 and 72-byte input ceiling. | OWASP baseline covered by feature tests; benchmark on the selected cPanel host and retain Argon2id as a provider qualification requirement |
 
 ## Rules
 
