@@ -269,6 +269,66 @@ final class MembershipRoleAssignmentTest extends TestCase
         $event->delete();
     }
 
+    public function test_vendor_admin_can_revoke_assignable_role_and_audit_it(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser('revoke-vendor-target'));
+        $role = $this->role('vendor', 'vendor_developer');
+        $target->roles()->attach($role);
+        $service = app(MembershipRoleAssignmentService::class);
+
+        $this->assertTrue($service->revokeVendorRole($actor, $vendor, $target, $role, 'Remove developer access after offboarding.'));
+        $this->assertFalse($target->fresh()->roles()->whereKey($role->id)->exists());
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $target->id,
+            'role_id' => $role->id,
+            'actor_user_id' => $actor->id,
+            'action' => 'revoked',
+        ]);
+    }
+
+    public function test_customer_owner_can_revoke_assignable_customer_role_and_audit_it(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_owner');
+        $target = $this->customerMembership($organization, $this->createUser('revoke-customer-target'));
+        $role = $this->role('customer', 'customer_technical_admin');
+        $target->roles()->attach($role);
+        $service = app(MembershipRoleAssignmentService::class);
+
+        $this->assertTrue($service->revokeCustomerRole(
+            $actor,
+            $organization,
+            $target,
+            $role,
+            'Remove technical access after contract completion.',
+        ));
+        $this->assertFalse($target->fresh()->roles()->whereKey($role->id)->exists());
+        $this->assertDatabaseHas('customer_membership_role_events', [
+            'customer_membership_id' => $target->id,
+            'role_id' => $role->id,
+            'actor_user_id' => $actor->id,
+            'action' => 'revoked',
+        ]);
+    }
+
+    public function test_repeated_role_revocation_is_idempotent(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser('idempotent-revoke-target'));
+        $role = $this->role('vendor', 'vendor_developer');
+        $target->roles()->attach($role);
+        $service = app(MembershipRoleAssignmentService::class);
+
+        $this->assertTrue($service->revokeVendorRole($actor, $vendor, $target, $role, 'Approved role removal.'));
+        $this->assertFalse($service->revokeVendorRole($actor, $vendor, $target, $role, 'Duplicate removal delivery.'));
+
+        $this->assertSame(1, VendorMembershipRoleEvent::query()
+            ->where('vendor_membership_id', $target->id)
+            ->where('role_id', $role->id)
+            ->where('action', 'revoked')
+            ->count());
+    }
+
     private function vendorActor(string $roleSlug): array
     {
         $actor = $this->createUser('vendor-actor');
