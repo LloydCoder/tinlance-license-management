@@ -24,9 +24,10 @@ This matrix links approved requirements to architecture artifacts and future ver
 - [x] Conceptual domain model and ownership boundaries documented.
 - [x] Authorization matrix baseline covers actor classes, scopes and privileged actions.
 - [x] Threat model baseline covers trust boundaries, assets, STRIDE threats, shared-hosting risks and mitigations.
-- [x] API conventions and OpenAPI v1 draft documented; machine validation and contract review remain pending.
+- [x] API conventions and OpenAPI v1 draft documented; Redocly CLI 1.34.24 lint is enforced in CI; semantic authorization, compatibility and executable contract review remain pending.
 - [x] Initial state machines for licence, payment, credential, release and subscription lifecycles documented; detailed transitions and tests remain implementation gates.
 - [x] Privacy/data classification and provisional retention schedule drafted; legal periods and roles remain unresolved.
 - [x] Shared-hosting provider qualification and recovery baseline documented; real-provider proof-of-concept remains pending.
-- [ ] ADRs and unresolved decisions recorded.
-- [ ] Requirements trace to tests and release evidence.
+- [x] ADRs and unresolved decisions recorded; DEC-026 reflects CI validator integration and DEC-030 separates TUF trust-threshold decisions from the metadata profile.
+- [ ] Every API operation mapped to actor, permission, scope, step-up, audit and negative tests (see `API-SECURITY-REVIEW.md`).
+- [ ] Requirements trace to executable tests and release evidence; architecture documents alone are not implementation evidence.
