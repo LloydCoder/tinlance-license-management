@@ -71,6 +71,24 @@ final class MembershipRoleAssignmentTest extends TestCase
             ->count());
     }
 
+    public function test_suspended_target_user_cannot_receive_vendor_role(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $targetUser = $this->createUser('suspended-vendor-target');
+        $target = $this->vendorMembership($vendor, $targetUser);
+        User::query()->whereKey($targetUser->id)->update(['status' => 'suspended']);
+
+        $this->expectException(AuthorizationException::class);
+
+        app(MembershipRoleAssignmentService::class)->assignVendorRole(
+            $actor,
+            $vendor,
+            $target,
+            $this->role('vendor', 'vendor_developer'),
+            'Do not grant access to suspended accounts.',
+        );
+    }
+
     public function test_vendor_assignment_rejects_membership_from_another_vendor(): void
     {
         [$actor, $vendor] = $this->vendorActor('super_admin');
@@ -177,6 +195,24 @@ final class MembershipRoleAssignmentTest extends TestCase
             'actor_user_id' => $actor->id,
             'action' => 'assigned',
         ]);
+    }
+
+    public function test_suspended_target_user_cannot_receive_customer_role(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_owner');
+        $targetUser = $this->createUser('suspended-customer-target');
+        $target = $this->customerMembership($organization, $targetUser);
+        User::query()->whereKey($targetUser->id)->update(['status' => 'suspended']);
+
+        $this->expectException(AuthorizationException::class);
+
+        app(MembershipRoleAssignmentService::class)->assignCustomerRole(
+            $actor,
+            $organization,
+            $target,
+            $this->role('customer', 'customer_member'),
+            'Do not grant access to suspended customer accounts.',
+        );
     }
 
     public function test_generic_customer_assignment_cannot_transfer_customer_owner_role(): void
