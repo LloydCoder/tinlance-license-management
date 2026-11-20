@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-20 (membership role assignment and Argon2id baseline)
+**Last reviewed:** 2026-11-20 (PR #6 merged; identity and authorization baseline)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -36,7 +36,8 @@ No phase is declared 100% complete. Phase 0 and Phase 1 remain partially complet
 - PR #3 — PHP domain foundation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/3), merge commit `1a446a743b4b877d32c1d28c6cc061dbf465f0b8`.
 - PR #4 — Laravel 13 foundation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/4), merge commit `f7f2ed5fa71ad7bbffc406e5736f42b7db5ce093`.
 - PR #5 — Phase 1 API security/contract documentation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/5), merge commit `2ed9198098d9ba2ae6ce030dbada46fb2f52bb29`.
-- PR #6 — identity and membership authorization: [open, draft](https://github.com/LloydCoder/tinlance-license-management/pull/6). It must remain unmerged until the final documentation commit's exact-head CI is green and review is complete.
+- PR #6 — identity and membership authorization: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/6), merge commit `282e526aa4e6395d95621965a732a630022f9505`.
+- No pull requests remain open. The next implementation increment should be a new PR with a narrowly scoped acceptance gate.
 
 ## Latest verified engineering evidence
 
@@ -50,7 +51,7 @@ CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/a
 - PHP syntax lint, Artisan bootstrap, documentation governance and OpenAPI 3.1.1 validation passed.
 - Password tests verify Argon2id with at least 19 MiB memory, two iterations and one lane; the explicit bcrypt fallback rejects inputs above 72 bytes.
 
-This run includes the final status, README, architecture decision and identity-schema documentation reconciliation. It is the current exact-head acceptance candidate; no subsequent changes are included.
+The PR #6 exact-head run passed before merge. The merge commit contains the same tested tree; the post-merge main-branch workflow is the final integration gate.
 
 ## Implemented identity and authorization boundaries
 
