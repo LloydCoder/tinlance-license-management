@@ -6,7 +6,7 @@ TLMS is being built by Tinlance Limited as a commercially licensable platform fo
 
 ## Project status
 
-**Development status:** Pre-implementation / Phase 0 governance baseline.
+**Development status:** Early engineering implementation / Phase 3 foundation in progress. The first framework-independent PHP licensing primitive and PHP 8.3–8.5 CI tests are present; Laravel integration, persistence, APIs, SDKs and production deployment are not implemented.
 
 This repository is public by deliberate strategy. Public visibility does not mean the project is open source or grant general commercial, production, white-label or redistribution rights. Read [LICENSE](LICENSE), [Commercial Licensing](COMMERCIAL-LICENSING.md) and [Trademarks](TRADEMARKS.md).
 
@@ -30,9 +30,20 @@ No production-ready application is currently published. Do not use this reposito
 
 These are approved planning defaults, not evidence that the capabilities have been implemented.
 
+## Local development
+
+Requirements: PHP 8.3, 8.4 or 8.5 and Composer 2.
+
+```bash
+composer validate --no-check-publish --no-check-lock
+composer test
+```
+
+The current dependency-free domain test harness is temporary scaffolding. It will be replaced or integrated with the selected Laravel/Pest test stack as the application foundation is introduced.
+
 ## Roadmap
 
-See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md) and [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md) and the architecture decision records in [docs/adr](docs/adr).
+See [IMPLEMENTATION-STATUS.md](IMPLEMENTATION-STATUS.md), [the engineering roadmap](docs/architecture/ROADMAP.md), [authorization matrix](docs/architecture/AUTHORIZATION-MATRIX.md), [domain model](docs/architecture/DOMAIN-MODEL.md), [API contracts](docs/architecture/API-CONTRACTS.md), [OpenAPI v1 draft](docs/api/openapi.yaml), [threat model](docs/security/THREAT-MODEL.md), [licence-key verification and pepper lifecycle](docs/security/LICENCE-KEY-VERIFICATION.md), [requirements traceability](docs/architecture/REQUIREMENTS-TRACEABILITY.md), [architecture decision register](docs/architecture/OPEN-DECISIONS.md), [lifecycle state machines](docs/architecture/STATE-MACHINES.md), [privacy and data governance](docs/security/PRIVACY-AND-DATA-GOVERNANCE.md) and [shared-hosting operations](docs/operations/SHARED-HOSTING-OPERATIONS.md) and the architecture decision records in [docs/adr](docs/adr).
 
 ## Security
 
