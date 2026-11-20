@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Models\CustomerMembership;
 use App\Models\CustomerOrganization;
-use App\Models\CustomerMembershipRoleEvent;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
