@@ -9,8 +9,8 @@ The central TLMS application must be deployable to an annual prepaid cPanel/shar
 Proposed runtime:
 - Laravel modular monolith.
 - PHP 8.3 minimum; PHP 8.4/8.5 tested and preferred where provider and dependencies support them.
-- MySQL 8+ or a specifically qualified MariaDB version; do not claim all MariaDB/MySQL variants are interchangeable.
-- PHP extensions: Sodium, OpenSSL, cURL, PDO driver, JSON, Mbstring, tokenizer, XML, Ctype, fileinfo, filter, hash, session and required Laravel extensions.
+- MySQL 8.4 LTS is canonical; MariaDB 11.8 LTS is optional only after the full compatibility suite passes. Do not claim all MariaDB/MySQL variants are interchangeable.
+- PHP extensions: Sodium, OpenSSL, cURL, PDO MySQL, JSON, Mbstring, tokenizer, XML, intl, Ctype, fileinfo, filter, hash, session and required Laravel extensions.
 - HTTPS ingress and outbound HTTPS.
 - Public document root points only to Laravel public directory; application source, environment, storage, backups and private keys remain outside webroot.
 
