@@ -12,6 +12,9 @@ required_files=(
   "docs/architecture/ROADMAP.md"
   "docs/architecture/DEFINITION-OF-DONE.md"
   "docs/adr/0001-public-commercial-repository.md"
+  "docs/adr/0002-super-admin-managed-integration-credentials.md"
+  "docs/security/INTEGRATION-CREDENTIALS.md"
+  "docs/requirements/INTEGRATION-CREDENTIALS-REQUIREMENTS.md"
 )
 
 for file in "${required_files[@]}"; do
