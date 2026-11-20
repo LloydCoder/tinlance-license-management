@@ -29,14 +29,15 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 - Roles have an explicit scope: vendor or customer.
 - Role slug uniqueness is scoped, so a vendor role and customer role may share a slug without sharing authority.
-- Permissions have globally unique stable names.
+- Permissions carry an explicit `vendor` or `customer` scope and are unique by `(scope, name)`. Current catalogue identifiers use disjoint vendor and `customer.*` namespaces.
 - Role-permission, vendor-membership-role and customer-membership-role assignments use composite primary keys to prevent duplicate grants.
 - Role scope and membership status are checked by MembershipAuthorization before evaluation; a pivot relationship is not itself proof of authorization.
 - No role is assigned directly to a User. Permissions are derived through the applicable membership context.
 - AuthorizationCatalogSeeder idempotently seeds vendor/customer roles and stable permission identifiers.
-- MembershipAuthorization requires an active user, active vendor/customer resource, active membership, matching role scope and explicit permission. Unknown permissions and missing memberships deny by default.
+- MembershipAuthorization re-reads the actor and resource status from the database for each decision, then requires an active membership, matching role scope, matching permission scope and explicit permission. Stale in-memory models, unknown permissions and missing memberships deny by default.
 - Super Admin receives the catalogued administrative permissions but the catalogue deliberately omits integrations.credentials.read_secret, signing.root.manage and audit.delete_or_edit.
-- Customer roles are separate from vendor roles; attaching a customer-scoped role to a vendor membership does not authorize vendor actions.
+- Customer roles are separate from vendor roles; attaching a customer-scoped role to a vendor membership does not authorize vendor actions. A permission from the opposite scope is also rejected even if an invalid pivot assignment is present.
+- No role-assignment service or authenticated role-management endpoint exists yet; role grants are currently seeded or created directly in tests. Production write paths must not be exposed until the scope-validating, audited assignment service is implemented.
 
 ## Identifier and deletion rules
 
@@ -71,7 +72,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 ## Verification evidence
 
-CI run [44822096072](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44822096072) passed on commit 8d3df9bfe225d8620c3da75bedc51f353dbd60a3. It verifies 25 domain tests, 17 Laravel feature tests, Pint, Composer audit, PHP syntax, OpenAPI and documentation governance across PHP 8.3/8.4/8.5, plus the identity migration/feature suite against MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql.
+The current identity branch CI run must be recorded after exact-head verification. Earlier run [44824350106](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44824350106) passed 25 domain tests, 28 Laravel feature tests (47 assertions), Pint, Composer audit, PHP syntax, OpenAPI and documentation governance across PHP 8.3/8.4/8.5, plus the identity migration/feature suite against MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql; this run predates the final rebase onto the merged Laravel baseline.
 
 ## Remaining acceptance work
 
