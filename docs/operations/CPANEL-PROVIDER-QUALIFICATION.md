@@ -10,7 +10,7 @@ TLMS central control plane must run on annual-prepaid cPanel/shared hosting. The
 The selected plan must prove all of the following in an actual account:
 
 - cPanel access and a supported PHP 8.3+ selector/runtime compatible with Laravel 13 (PHP 8.3–8.5 supported range).
-- Required Laravel extensions: Ctype, cURL, DOM, Fileinfo, Filter, Hash, Mbstring, OpenSSL, PCRE, PDO, Session, Tokenizer and XML; also verify PDO MySQL and Sodium for the selected cryptographic libraries.
+- Required Laravel extensions: Ctype, cURL, DOM, Fileinfo, Filter, Hash, Mbstring, OpenSSL, PCRE, PDO, Session, Tokenizer, XML and intl; also verify PDO MySQL and Sodium for the selected cryptographic libraries.
 - MySQL 8.4 LTS is the canonical target. MariaDB 11.8 LTS is acceptable only after the full application compatibility suite passes. Do not assume the provider's advertised “MySQL databases” feature identifies its engine/version.
 - Database size, connection, query and CPU limits adequate for transactional licensing, ledger, webhook inbox and outbox workloads.
 - cPanel Cron Jobs can invoke PHP CLI or a protected HTTP scheduler endpoint at five-minute cadence, with documented execution limits and reliable catch-up behavior.
