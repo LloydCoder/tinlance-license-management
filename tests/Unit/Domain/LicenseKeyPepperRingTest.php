@@ -50,6 +50,14 @@ final class LicenseKeyPepperRingTest
         expectSame(null, $result->replacementVerifier);
     }
 
+    public function testMissingActivePepperFailsDuringConfiguration(): void
+    {
+        expectThrows(
+            static fn () => new LicenseKeyPepperRing(['pepper-v1' => self::OLD_PEPPER], 'pepper-v2'),
+            InvalidArgumentException::class,
+        );
+    }
+
     public function testTamperedKeyNeverProducesReplacementVerifier(): void
     {
         $issued = LicenseKey::issue(self::OLD_PEPPER, 'pepper-v1');
