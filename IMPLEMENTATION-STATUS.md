@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-20
+**Last reviewed:** 2026-11-20 (Phase 1 contract/security review update)
 **Current phase:** Phase 1 — requirements and architecture freeze
 **Overall status:** Architecture baseline in progress; no production application implemented.
 
@@ -34,7 +34,7 @@
 - Latest Phase 0 CI candidate before Phase 1 documentation: commit `a021bdabc9d89d9b962cded7173de42a285a3cba`.
 - GitHub Actions push run `44811522610`: completed successfully.
 - GitHub Actions pull-request run `44811528330`: completed successfully.
-- Branch protection endpoint read returned HTTP 403 (Resource not accessible by integration). Therefore branch protection and required status-check settings are **unverified**, not configured/verified.
+- Live GitHub branch metadata reports `main.protected=false` and required status checks disabled. Branch protection is therefore **not configured** at this review, not merely unverified. The available integration has no branch-protection write action; repository owner must configure it in Settings.
 - No application code, database migrations or production release artifacts have been established.
 
 ## Approved platform authority and credential requirements
@@ -53,12 +53,13 @@
 - `docs/architecture/API-CONTRACTS.md` — API conventions, authentication profiles, idempotency and SDK/webhook contracts.
 - `docs/api/openapi.yaml` — OpenAPI 3.1.1 v1 draft.
 - `docs/architecture/REQUIREMENTS-TRACEABILITY.md` — requirement-to-artifact and future test mapping.
-- `docs/architecture/OPEN-DECISIONS.md` — 30 explicit decisions, with technical defaults selected where safe and external/provider/legal gates left open.
+- `docs/architecture/OPEN-DECISIONS.md` — 30 explicit decisions; DEC-026 now records the CI-integrated Redocly validator, and DEC-030 separates TUF trust-threshold/key custody from metadata role design.
+- `docs/architecture/API-SECURITY-REVIEW.md` — existing API operation authorization register, webhook invariants and missing contract surface.
 - `docs/architecture/STATE-MACHINES.md` — licence, payment, credential, release and subscription lifecycle baselines.
 - `docs/security/PRIVACY-AND-DATA-GOVERNANCE.md` — classification, privacy workflows and provisional retention schedule.
 - `docs/operations/SHARED-HOSTING-OPERATIONS.md` — provider qualification, synchronous/recoverable processing, backup and recovery baseline.
 
-These documents are an initial architecture baseline. Phase 1 is not complete until lifecycle state machines, privacy/data classification and retention, hosting/recovery requirements, schema/API validation, security review, unresolved decisions and acceptance traceability have been reviewed and approved.
+These documents are an initial architecture baseline. Redocly CLI 1.34.24 OpenAPI lint is integrated in CI; this is structural/lint evidence, not runtime contract or authorization proof. Phase 1 is not complete until operation permissions are normalized, lifecycle transition contracts and tests are complete, privacy/legal roles and retention are reviewed, a real cPanel host is qualified, recovery is exercised, and all remaining decisions have owners and acceptance evidence.
 
 ## Phase 0 remaining blockers
 
@@ -70,8 +71,8 @@ These documents are an initial architecture baseline. Phase 1 is not complete un
 
 ## Phase 1 remaining work
 
-1. Finalize licence, payment, credential and release state machines with transition/actor/side-effect/idempotency tables.
-2. Validate OpenAPI 3.1.1 syntax and schema semantics; add CI contract linting.
+1. Expand licence, payment, credential and release lifecycle contracts into actor/precondition/transaction/side-effect/idempotency test specifications (baseline expansion is now recorded in STATE-MACHINES.md).
+2. OpenAPI 3.1.1 lint is integrated; complete semantic schema, authorization, idempotency and compatibility review; add executable contract tests with the application.
 3. Complete privacy/data classification, retention/deletion/export and data-processing requirements.
 4. Complete deployment, backup, restore, monitoring, cron and recovery architecture.
 5. Reconcile every requirement ID with API operation, domain entity, threat and future automated test.
