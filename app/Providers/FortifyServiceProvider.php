@@ -31,7 +31,15 @@ final class FortifyServiceProvider extends ServiceProvider
                 return null;
             }
 
-            return Hash::check($password, $user->password) ? $user : null;
+            if (! Hash::check($password, $user->password)) {
+                return null;
+            }
+
+            if (Hash::needsRehash($user->password)) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+            }
+
+            return $user;
         });
 
         Passkeys::authorizeLoginUsing(static function (Request $request, PasskeyUser $user, Passkey $passkey): bool {
