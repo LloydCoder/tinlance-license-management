@@ -697,6 +697,9 @@ final readonly class MembershipInvitationService
         }
     }
 
+    /**
+     * @param array{type: 'vendor'|'customer', membership: VendorMembership|CustomerMembership, invitation: VendorMembershipInvitation|CustomerMembershipInvitation, email: string, tenant_name: string, role_name: string, token: string} $payload
+     */
     private function deliver(array $payload): void
     {
         $invitation = $payload['invitation'];
