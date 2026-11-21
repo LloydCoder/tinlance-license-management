@@ -67,6 +67,46 @@ final class CustomerOrganizationPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($user)->allows('view', $otherVendorOrganization));
     }
 
+    public function test_vendor_support_agent_cannot_view_a_suspended_customer_organization(): void
+    {
+        $user = $this->createUser();
+        $vendor = $this->createVendor();
+        $organization = $this->createOrganization($vendor, 'suspended-for-support', 'suspended');
+        $membership = VendorMembership::create([
+            'vendor_account_id' => $vendor->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'support_agent')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
+    public function test_vendor_support_authorization_uses_persisted_organization_vendor_binding(): void
+    {
+        $user = $this->createUser();
+        $authorizedVendor = $this->createVendor('authorized');
+        $actualVendor = $this->createVendor('actual');
+        $organization = $this->createOrganization($actualVendor, 'tenant-binding');
+        $membership = VendorMembership::create([
+            'vendor_account_id' => $authorizedVendor->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'support_agent')->firstOrFail(),
+        );
+
+        // Simulate a caller holding a mutated/stale model; persisted tenant binding remains unchanged.
+        $organization->vendor_account_id = $authorizedVendor->id;
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
     public function test_customer_organization_view_is_denied_without_membership_or_vendor_support_permission(): void
     {
         $user = $this->createUser();

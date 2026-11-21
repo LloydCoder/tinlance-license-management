@@ -17,11 +17,21 @@ final class CustomerOrganizationPolicy
 
     public function view(User $user, CustomerOrganization $organization): bool
     {
-        if ($this->authorization->customerCan($user, $organization, 'customer.licences.read')) {
+        $currentOrganization = CustomerOrganization::query()
+            ->whereKey($organization->getKey())
+            ->where('status', 'active')
+            ->with('vendorAccount')
+            ->first();
+
+        if (! $currentOrganization instanceof CustomerOrganization) {
+            return false;
+        }
+
+        if ($this->authorization->customerCan($user, $currentOrganization, 'customer.licences.read')) {
             return true;
         }
 
-        $vendor = $organization->vendorAccount;
+        $vendor = $currentOrganization->vendorAccount;
 
         return $vendor instanceof VendorAccount
             && $this->authorization->vendorCan($user, $vendor, 'customers.support.read');
