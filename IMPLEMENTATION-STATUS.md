@@ -78,7 +78,6 @@ The PR #6 exact-head run passed before merge. The merge commit contains the same
 1. Configure and verify a `main` ruleset: the current branch metadata reports `protected=false`, and the rulesets API currently returns no rulesets. Require PRs and CI/Security checks; block force-push and deletion.
 2. Enable and verify GitHub native secret scanning and push protection. Gitleaks CI is not a replacement for push protection.
 3. Verify dependency graph, Dependabot alerts and Dependabot security updates. Dependabot weekly update configuration and OSV-Scanner lockfile scanning are now in source control; native dependency graph and Dependabot alert settings remain unverified.
-4. Enable and verify the GitHub native security settings and required branch ruleset; the repository administration connection is not available to make these changes.
-5. Complete counsel review of source-visible commercial licensing, contributor rights, trademarks, privacy roles and target-market payment compliance.
-6. Qualify a real annual cPanel provider and complete backup/restore and operational recovery exercises.
-7. Do not publish production SLAs or purchase annual hosting based only on provider marketing claims.
+4. Complete counsel review of source-visible commercial licensing, contributor rights, trademarks, privacy roles and target-market payment compliance.
+5. Qualify a real annual cPanel provider and complete backup/restore and operational recovery exercises.
+6. Do not publish production SLAs or purchase annual hosting based only on provider marketing claims.
