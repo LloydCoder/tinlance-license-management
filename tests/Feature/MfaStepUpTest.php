@@ -29,7 +29,7 @@ final class MfaStepUpTest extends TestCase
             ->shouldReceive('verify')
             ->once()
             ->with('JBSWY3DPEHPK3PXP', '123456')
-            ->andReturnTrue();
+            ->andReturn(true);
 
         $this->authenticatedJson($user)
             ->postJson('/api/v1/security/step-up/totp', ['code' => '123456'])
@@ -55,7 +55,7 @@ final class MfaStepUpTest extends TestCase
             ->shouldReceive('verify')
             ->once()
             ->with('JBSWY3DPEHPK3PXP', '000000')
-            ->andReturnFalse();
+            ->andReturn(false);
 
         $this->authenticatedJson($user)
             ->postJson('/api/v1/security/step-up/totp', ['code' => '000000'])
