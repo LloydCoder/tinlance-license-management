@@ -14,7 +14,7 @@ Use a one-time browser setup route protected by a deployment-provided random boo
 
 1. Generate at least 32 random bytes and encode them as unpadded base64url. Configure the resulting 43-character-or-longer token as `TLMS_BOOTSTRAP_TOKEN` in the environment file outside the public document root.
 2. Expose the setup page only while the token is configured in the required format and the singleton platform installation record has not been bootstrapped.
-3. Protect the POST with Laravel's web/CSRF middleware, strict validation and an IP rate limit. Never flash the bootstrap token or password back to the browser.
+3. Serve setup only over HTTPS. Redirect safe HTTP GET/HEAD requests to HTTPS, but reject insecure POST requests with 426 rather than redirecting and replaying a credential-bearing body. Apply HSTS to secure setup responses. Protect the POST with Laravel's web/CSRF middleware, strict validation and an IP rate limit. Never flash the bootstrap token or password back to the browser.
 4. Compare the supplied token using `hash_equals`; never persist it or return it.
 5. In one database transaction, lock the singleton installation row, refuse an already completed bootstrap, create the primary vendor account if absent, initialize the authorization catalogue only when empty, create the initial user and vendor membership, attach the system Super Admin role, and persist the consumed bootstrap state.
 6. Do not automatically create an authenticated session after bootstrap. Authentication, mandatory MFA enrollment, recovery and step-up controls must be implemented before privileged dashboard access is exposed.
