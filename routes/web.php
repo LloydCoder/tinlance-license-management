@@ -53,6 +53,9 @@ Route::middleware([
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/role-approval-requests', [VendorRoleApprovalController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor.role-approvals.store');
+    Route::get('/vendor-accounts/{vendor}/role-approval-requests', [VendorRoleApprovalController::class, 'index'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:30,1'])
+        ->name('api.vendor.role-approvals.index');
     Route::get('/vendor-accounts/{vendor}/role-approval-requests/{approvalRequest}', [VendorRoleApprovalController::class, 'show'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:30,1'])
         ->name('api.vendor.role-approvals.show');
