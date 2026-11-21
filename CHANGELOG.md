@@ -9,6 +9,7 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Product-independent licensing-key, pepper-ring and domain-normalization primitives.
 - ULID-backed vendor, user, customer organization, membership, role and permission schema.
 - Deny-by-default, scope-aware membership authorization and transactional role assignment/revocation.
+- Tenant-scoped maker-checker approvals for high-risk vendor role grants with fresh MFA, idempotency, expiry, beneficiary conflict-of-interest protection and atomic decision/role evidence (PR #47).
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
@@ -23,4 +24,4 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Production artifact publication remains manual; the package is not cryptographically signed.
 
 ### Not yet released
-No production TLMS service or production software package is published. Resource-level ABAC, maker-checker and privileged step-up workflows, customer/vendor portals, product and licence lifecycle, payment processing, cryptographic signing, secure updates, customer SDK, Talyvane integration and live cPanel provider qualification remain in development.
+No production TLMS service or production software package is published. Generalized maker-checker and privileged step-up for operations beyond high-risk vendor role grants, resource-level ABAC, customer/vendor portals, product and licence lifecycle, payment processing, cryptographic signing, secure updates, customer SDK, Talyvane integration and live cPanel provider qualification remain in development.
