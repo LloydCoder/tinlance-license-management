@@ -8,8 +8,8 @@ use App\Listeners\RecordPasskeyStepUp;
 use App\Listeners\RecordSuccessfulLogin;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
-use Laravel\Passkeys\Events\PasskeyVerified;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passkeys\Events\PasskeyVerified;
 
 final class AppServiceProvider extends ServiceProvider
 {
