@@ -179,6 +179,11 @@ final class MembershipInvitationTest extends TestCase
         $this->assertSame('active', $membership->refresh()->status);
         $this->assertNotNull($membership->joined_at);
 
+        $this->post('/login', ['email' => $email, 'password' => $password])
+            ->assertRedirect('/workspace');
+        $this->get('/workspace')
+            ->assertRedirect(route('security.mfa.enroll'));
+
         $this->assertDatabaseHas('vendor_membership_lifecycle_events', [
             'vendor_membership_id' => $membership->getKey(),
             'actor_user_id' => $invitee->getKey(),
