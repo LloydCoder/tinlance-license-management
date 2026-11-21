@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Hosting\HostingPreflight;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('tlms:about', function (): void {
@@ -22,5 +23,5 @@ Artisan::command('tlms:hosting-preflight {--json : Output the report as JSON}', 
         $this->line($report['ready'] ? 'Hosting preflight passed.' : 'Hosting preflight failed.');
     }
 
-    return $report['ready'] ? self::SUCCESS : self::FAILURE;
+    return $report['ready'] ? Command::SUCCESS : Command::FAILURE;
 })->purpose('Verify TLMS shared-hosting runtime, database, security and filesystem prerequisites');
