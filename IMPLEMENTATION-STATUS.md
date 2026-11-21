@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (PR #9 candidate; secret-history and OSV dependency-scanning controls)
+**Last reviewed:** 2026-11-21 (secret-history and OSV dependency-scanning controls)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -39,11 +39,11 @@ No phase is declared 100% complete. Phase 0 and Phase 1 remain partially complet
 - PR #6 — identity and membership authorization: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/6), merge commit `282e526aa4e6395d95621965a732a630022f9505`.
 - PR #7 — Semgrep Community Edition and PHPStan security analysis gates: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/7), merge commit `1bf3f8bad7b8d9ffdf67a9323952482aa9e7bc55`.
 - PR #8 — engineering status reconciliation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/8), merge commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb`.
-- PR #9 — full-history secret scanning, OSV dependency scanning and Dependabot configuration: [candidate PR](https://github.com/LloydCoder/tinlance-license-management/pull/9); exact-head CI and security evidence is recorded below.
+- PR #9 — full-history secret scanning, OSV dependency scanning and Dependabot configuration: [pull request and exact-head workflow evidence](https://github.com/LloydCoder/tinlance-license-management/pull/9).
 
 ## Latest verified engineering evidence
 
-PR #9 candidate head `248fb37b85d27f6c0360efea49464686b83b4aaf` passed exact-head CI [44866375092](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375092) (6/6 jobs) and Security analysis [44866375075](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375075) (4/4 jobs: Semgrep, Gitleaks, OSV-Scanner and PHPStan). Main commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb` also has passing post-merge CI [44865113927](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865113927) and Security analysis [44865114018](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865114018). The merged PR #7 exact-head CI [44864721250](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721250) and security run [44864721221](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721221) also passed on `5fc895ffc0066a3c5d49f6ae5b733f1b08c6e180` before merge. CI passed all six jobs (PHP 8.3/8.4/8.5, MySQL 8.4 integration, documentation governance and OpenAPI validation); Semgrep and PHPStan both passed. The post-merge main CI run was cancelled by GitHub and is not counted as a passing run.
+PR #9 candidate head `248fb37b85d27f6c0360efea49464686b83b4aaf` passed exact-head CI [44866375092](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375092) (6/6 jobs) and Security analysis [44866375075](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375075) (4/4 jobs: Semgrep, Gitleaks, OSV-Scanner and PHPStan). Main commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb` also has passing post-merge CI [44865113927](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865113927) and Security analysis [44865114018](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865114018). The merged PR #7 exact-head CI [44864721250](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721250) and security run [44864721221](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721221) also passed on `5fc895ffc0066a3c5d49f6ae5b733f1b08c6e180` before merge. CI passed all six jobs (PHP 8.3/8.4/8.5, MySQL 8.4 integration, documentation governance and OpenAPI validation); Semgrep and PHPStan both passed. 
 
 The earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
 - PHP 8.3, 8.4 and 8.5 jobs passed.
