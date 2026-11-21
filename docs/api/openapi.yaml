@@ -60,6 +60,198 @@ paths:
                 $ref: '#/components/schemas/CurrentActor'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
+    post:
+      tags: [Identity]
+      operationId: assignVendorMembershipRole
+      summary: Assign an allowlisted role to a vendor member
+      description: Requires a verified browser session, current session version, recent password confirmation, enrolled MFA and the vendor-scoped admins.manage permission. The target membership must belong to the vendor in the path.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipRoleChangeRequest'
+      responses:
+        '201':
+          description: Role assigned and immutable membership-role event recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRoleChangeResult'
+        '200':
+          description: Assignment was already present; no duplicate event was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRoleChangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke:
+    post:
+      tags: [Identity]
+      operationId: revokeVendorMembershipRole
+      summary: Revoke an allowlisted role from a vendor member
+      description: Requires the same verified, current, password-confirmed and MFA-enrolled vendor administrator session as assignment. The target membership must belong to the vendor in the path.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipRoleChangeRequest'
+      responses:
+        '200':
+          description: Role revocation result and immutable membership-role event when changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRoleChangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
+    post:
+      tags: [Identity]
+      operationId: assignCustomerMembershipRole
+      summary: Assign an allowlisted role to a customer organization member
+      description: Requires a verified browser session, current session version, recent password confirmation, enrolled MFA and the customer.members.manage permission. The target membership must belong to the organization in the path.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipRoleChangeRequest'
+      responses:
+        '201':
+          description: Role assigned and immutable membership-role event recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRoleChangeResult'
+        '200':
+          description: Assignment was already present; no duplicate event was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRoleChangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke:
+    post:
+      tags: [Identity]
+      operationId: revokeCustomerMembershipRole
+      summary: Revoke an allowlisted role from a customer organization member
+      description: Requires the same verified, current, password-confirmed and MFA-enrolled customer owner session as assignment. The target membership must belong to the organization in the path.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipRoleChangeRequest'
+      responses:
+        '200':
+          description: Role revocation result and immutable membership-role event when changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipRoleChangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /products:
     get:
       tags: [Products]
@@ -644,6 +836,35 @@ components:
           $ref: '#/components/schemas/Pagination'
         request_id:
           type: string
+    MembershipRoleChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Human-readable business justification stored in immutable role-event evidence.
+    MembershipRoleChangeResult:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [membership_id, role_id, action, changed]
+          properties:
+            membership_id:
+              type: string
+            role_id:
+              type: string
+            action:
+              type: string
+              enum: [assigned, revoked]
+            changed:
+              type: boolean
     Problem:
       type: object
       required: [type, title, status, code, request_id]
