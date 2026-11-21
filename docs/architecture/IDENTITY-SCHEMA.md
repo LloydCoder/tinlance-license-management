@@ -1,6 +1,6 @@
 # Identity and organization persistence baseline
 
-**Status:** Identity and membership persistence, role catalogue and membership-level authorization implemented; verified on PHP 8.3/8.4/8.5, MySQL 8.4.13 and MariaDB 10.11.19. Authentication flows, MFA, resource-level ABAC and portals remain unimplemented.
+**Status:** Identity/membership persistence, role catalogue, membership-level authorization and the first Super Admin authentication foundation are implemented. The exact PR #23 head passed PHP 8.3/8.4/8.5, MySQL 8.4 and MariaDB 10.11 CI. Resource-level ABAC, privileged step-up, maker-checker and full portals remain unimplemented.
 
 ## Deployment and ownership model
 
@@ -51,12 +51,16 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 ## Authentication and security boundary
 
-- Laravel's session guard and Eloquent user provider are configured; login, logout, password reset, email verification and MFA flows are not yet exposed.
-- Browser authentication must regenerate the session ID after authentication and invalidate the session on logout.
-- The one-time browser bootstrap is implemented behind a deployment-configured 256-bit base64url secret, HTTPS enforcement outside local/testing, CSRF protection, no-store security headers, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The initial Super Admin grant is recorded in the vendor membership-role event table as a system-attributed `assigned` event in the same transaction. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment and clear cached Laravel configuration after successful bootstrap.
-- Bootstrap creates the initial vendor account, user, active vendor membership and system Super Admin role transactionally. The initial email remains unverified and the password must be at least 15 characters; long passphrases are accepted without character-composition rules. It does not create a login session or expose admin access. Login must remain unavailable until mandatory MFA enrollment and recovery controls are implemented.
-- Passkeys/WebAuthn are the preferred phishing-resistant factor; TOTP is the fallback. TOTP seeds must be encrypted at rest, replay-protected and rate-limited. Recovery codes must be single-use and stored as verifiers.
-- Sensitive actions require recent authentication and MFA step-up. Authorization is deny-by-default and enforced server-side at service/policy boundaries.
+- Laravel Fortify login/logout, email verification, password reset, TOTP and WebAuthn passkey authentication are implemented. Public registration remains disabled.
+- Super Admin portal access requires an active Super Admin membership, verified email, a current session version and either confirmed TOTP or a registered passkey. Passkey login uses the upstream WebAuthn user-verification requirement.
+- Database-backed sessions are encrypted and use secure cookies. Login records the session version; protected requests compare it against fresh database state. Logout and global revocation invalidate sessions and rotate the remember token.
+- Password reset and global session revocation run in one transaction. Supported bcrypt/Argon2i legacy hashes are verified with their own algorithm and upgraded to the configured stronger driver without downgrading stronger hashes.
+- MFA management and recovery-code retrieval require recent password confirmation. Recovery codes are not embedded in rendered pages; the user explicitly requests reveal/regeneration through the protected Fortify endpoints.
+- Fortify's recovery codes are encrypted at rest. A separate hashed recovery-verifier ledger, TOTP replay-specific controls, privileged step-up, maker-checker and resource-level ABAC remain additional hardening/acceptance work.
+- A one-time browser bootstrap implementation merged in PR #20 is built behind a deployment-configured 256-bit base64url secret, HTTPS enforcement outside local/testing, CSRF protection, no-store security headers, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The initial Super Admin grant is recorded in the vendor membership-role event table as a system-attributed `assigned` event in the same transaction. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment and clear cached Laravel configuration after successful bootstrap.
+- Bootstrap creates the initial vendor account, user, active vendor membership and system Super Admin role transactionally. The initial email remains unverified and the password must be at least 15 characters; long passphrases are accepted without character-composition rules. It does not create a login session. The administrator must verify email and enroll TOTP or a passkey before accessing the Super Admin portal.
+- WebAuthn passkeys and TOTP are supported authentication factors. TOTP seeds and Fortify recovery-code material are encrypted at rest; recovery codes are single-use and accessed only through password-confirmed endpoints. Explicit TOTP replay testing and a separate hashed recovery-verifier ledger remain outstanding.
+- MFA settings require recent password confirmation. Privileged business actions do not yet have a complete step-up or maker-checker layer. Authorization is deny-by-default at the implemented membership boundary; resource-level ABAC remains outstanding.
 - Provider secrets, licence signing roots, passwords, MFA seeds and recovery codes must never be returned in API responses or written to logs.
 
 ## Implemented tables
@@ -75,16 +79,18 @@ The vendor account is identified by a non-user-editable installation key whose i
 - vendor_membership_role_events (user- or system-attributed; append-only at the model boundary)
 - customer_membership_role_events (user- or system-attributed; append-only at the model boundary)
 - platform_installations
+- sessions (encrypted database-backed browser sessions)
+- passkeys (WebAuthn credential records)
 
 ## Verification evidence
 
-Earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`: 25 domain test methods and 47 Laravel feature tests (91 assertions) passed on PHP 8.3/8.4/8.5 and MySQL 8.4.13. The current dual-engine verification is recorded in the PR #15 evidence below. Both database jobs explicitly assert the actual server vendor; the Laravel PDO driver is mysql for both MySQL and MariaDB. Composer audit, Pint (49 PHP files), PHP syntax, OpenAPI and documentation governance all passed, including the final status and decision-record documentation.
+PR #23 exact head `9d742211701501e5d7a2b1b2272d6d7b1ab70d5c` passed [CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44877579451) and [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44877579382). CI passed all eight jobs across PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, cPanel artifact verification, documentation governance and OpenAPI validation. Security passed Larastan/PHPStan, Semgrep, Gitleaks and OSV-Scanner. The framework suite passed 82 tests; 27 framework-independent domain tests also passed. The exact merge commit and post-merge mainline results are recorded in IMPLEMENTATION-STATUS.md.
 
 ## Remaining acceptance work
 
 1. Add resource-level ABAC for product assignment, reseller relationships, customer ownership and vendor scope; membership permission alone is not sufficient for these resources.
-2. Implement login/logout, password reset, email verification, session rotation/revocation, MFA enrollment and recovery.
-3. Implement passkeys/WebAuthn, TOTP replay protection, recovery-code verification, step-up authentication and maker-checker workflows.
-4. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment/revocation.
-5. Integrate global append-only/hash-chained audit anchoring; membership-role events are a local transactional audit precursor only.
-6. Add static analysis and security scanning before identity endpoints are exposed.
+2. Add privileged step-up authentication, maker-checker approvals and security-sensitive factor-change notifications.
+3. Add explicit TOTP replay prevention tests and evaluate a separate hashed recovery-verifier ledger instead of relying only on encrypted Fortify recovery-code storage.
+4. Add full customer/vendor portals and administrative Control Center workflows.
+5. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment/revocation.
+6. Integrate global append-only/hash-chained audit anchoring; membership-role events are a local transactional audit precursor only.
