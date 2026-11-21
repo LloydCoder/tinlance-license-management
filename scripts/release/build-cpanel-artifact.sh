@@ -62,11 +62,11 @@ git -C "$repo_root" archive --format=tar --prefix=tlms/ HEAD | tar -xf - -C "$st
     composer install         --no-dev         --no-interaction         --prefer-dist         --no-progress         --optimize-autoloader         --classmap-authoritative
 )
 
-rm -f "$app_root/auth.json"
-
 rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     "$app_root/tests"     "$app_root/node_modules"     "$app_root/phpstan.neon"     "$app_root/phpunit.xml"     "$app_root/composer.json"     "$app_root/composer.lock"
 
-find "$app_root" -type f -name '.env*' ! -name '.env.example' -delete
+find "$app_root" \( -type f -o -type l \) -name '.env*' ! -path "$app_root/.env.example" -delete
+find "$app_root" -type d -name '.env*' -prune -exec rm -rf {} +
+find "$app_root" -type f \( -name 'auth.json' -o -name '.npmrc' -o -name '.pypirc' -o -name '.netrc' \) -delete
 find "$app_root/storage" -type f -name '*.log' -delete
 find "$app_root/bootstrap/cache" -type f ! -name '.gitignore' -delete
 
