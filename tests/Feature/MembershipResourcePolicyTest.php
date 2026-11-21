@@ -39,6 +39,43 @@ final class MembershipResourcePolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($actor)->allows('view', $otherMembership));
     }
 
+    public function test_vendor_member_can_view_only_their_own_membership_without_admin_permission(): void
+    {
+        $vendor = $this->createVendor('self-view');
+        $user = $this->createUser('self-view-vendor');
+        $ownMembership = $this->createVendorMembership($vendor, $user);
+        $ownMembership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'support_agent')->firstOrFail(),
+        );
+        $otherMembership = $this->createVendorMembership($vendor, $this->createUser('other-vendor-member'));
+
+        $this->assertTrue(Gate::forUser($user)->allows('view', $ownMembership));
+        $this->assertFalse(Gate::forUser($user)->allows('view', $otherMembership));
+        $this->assertFalse(Gate::forUser($user)->allows('viewAny', VendorMembership::class));
+    }
+
+    public function test_vendor_self_membership_view_fails_closed_for_inactive_user_or_suspended_vendor(): void
+    {
+        $inactiveUser = $this->createUser('inactive-self-view');
+        $activeVendor = $this->createVendor('inactive-user-vendor');
+        $inactiveMembership = $this->createVendorMembership($activeVendor, $inactiveUser);
+        $inactiveMembership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'support_agent')->firstOrFail(),
+        );
+        User::query()->whereKey($inactiveUser->getKey())->update(['status' => 'suspended']);
+
+        $suspendedUser = $this->createUser('suspended-vendor-self-view');
+        $suspendedVendor = $this->createVendor('suspended-self-view');
+        $suspendedMembership = $this->createVendorMembership($suspendedVendor, $suspendedUser);
+        $suspendedMembership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'support_agent')->firstOrFail(),
+        );
+        VendorAccount::query()->whereKey($suspendedVendor->getKey())->update(['status' => 'suspended']);
+
+        $this->assertFalse(Gate::forUser($inactiveUser)->allows('view', $inactiveMembership));
+        $this->assertFalse(Gate::forUser($suspendedUser)->allows('view', $suspendedMembership));
+    }
+
     public function test_vendor_membership_view_requires_vendor_admin_permission_and_active_target(): void
     {
         $vendor = $this->createVendor('support');
@@ -77,6 +114,48 @@ final class MembershipResourcePolicyTest extends TestCase
 
         $this->assertTrue(Gate::forUser($owner)->allows('view', $ownMembership));
         $this->assertFalse(Gate::forUser($owner)->allows('view', $otherMembership));
+    }
+
+    public function test_customer_member_can_view_only_their_own_membership_without_members_manage_permission(): void
+    {
+        $vendor = $this->createVendor('customer-self-view');
+        $organization = $this->createOrganization($vendor, 'customer-self-view-org');
+        $user = $this->createUser('customer-self-view');
+        $ownMembership = $this->createCustomerMembership($organization, $user);
+        $ownMembership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+        $otherMembership = $this->createCustomerMembership(
+            $organization,
+            $this->createUser('other-customer-member'),
+        );
+
+        $this->assertTrue(Gate::forUser($user)->allows('view', $ownMembership));
+        $this->assertFalse(Gate::forUser($user)->allows('view', $otherMembership));
+        $this->assertFalse(Gate::forUser($user)->allows('viewAny', CustomerMembership::class));
+    }
+
+    public function test_customer_self_membership_view_fails_closed_for_inactive_user_or_suspended_organization(): void
+    {
+        $vendor = $this->createVendor('customer-self-inactive');
+        $activeOrganization = $this->createOrganization($vendor, 'active-self-org');
+        $inactiveUser = $this->createUser('inactive-customer-self');
+        $inactiveMembership = $this->createCustomerMembership($activeOrganization, $inactiveUser);
+        $inactiveMembership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+        User::query()->whereKey($inactiveUser->getKey())->update(['status' => 'suspended']);
+
+        $suspendedOrganization = $this->createOrganization($vendor, 'suspended-self-org');
+        CustomerOrganization::query()->whereKey($suspendedOrganization->getKey())->update(['status' => 'suspended']);
+        $activeUser = $this->createUser('suspended-org-self');
+        $suspendedMembership = $this->createCustomerMembership($suspendedOrganization, $activeUser);
+        $suspendedMembership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($inactiveUser)->allows('view', $inactiveMembership));
+        $this->assertFalse(Gate::forUser($activeUser)->allows('view', $suspendedMembership));
     }
 
     public function test_customer_membership_view_requires_members_manage_permission_and_active_target(): void
