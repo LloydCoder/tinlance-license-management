@@ -19,6 +19,16 @@ final class EnsureMfaEnrolled
         }
 
         if (! $user->hasEnabledTwoFactorAuthentication() && ! $user->hasPasskeysEnabled()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'type' => 'about:blank',
+                    'title' => 'MFA enrollment required',
+                    'status' => 403,
+                    'code' => 'MFA_REQUIRED',
+                    'request_id' => $request->headers->get('X-Request-ID') ?? (string) \\Illuminate\\Support\\Str::uuid(),
+                ], 403);
+            }
+
             return redirect()->route('security.mfa.enroll');
         }
 
