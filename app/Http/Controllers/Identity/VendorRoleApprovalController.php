@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Identity;
 
+use App\Models\ApprovalDecision;
 use App\Models\ApprovalRequest;
 use App\Models\Role;
 use App\Models\User;
@@ -146,7 +147,7 @@ final class VendorRoleApprovalController
             'decision_reason' => $approval->decision_reason,
             'expires_at' => $approval->expires_at?->toIso8601String(),
             'decided_at' => $approval->decided_at?->toIso8601String(),
-            'decisions' => $approval->decisions->map(static fn ($decision): array => [
+            'decisions' => $approval->decisions->map(static fn (ApprovalDecision $decision): array => [
                 'decision' => $decision->decision,
                 'actor_user_id' => $decision->actor_user_id,
                 'reason' => $decision->reason,
