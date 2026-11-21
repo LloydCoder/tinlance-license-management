@@ -16,7 +16,7 @@ No production-ready application is currently published. Do not use this reposito
 
 - Laravel modular monolith for the central control plane.
 - PHP 8.5 production target, with compatibility testing across supported PHP 8.3–8.5 runtimes.
-- MySQL 8.4 canonical production database; MariaDB compatibility only after a separate test suite.
+- MySQL 8.4 reference database and MariaDB 10.11 shared-hosting compatibility database, both exercised by integration CI; other MySQL/MariaDB versions require separate qualification.
 - Annual prepaid cPanel/shared hosting as the initial central hosting target, subject to a real-provider proof of concept.
 - One self-hosted TLMS deployment per vendor initially; preserve a path to hosted multi-tenancy without making it a launch dependency.
 - Independent PHP customer SDK with no Laravel runtime dependency.
