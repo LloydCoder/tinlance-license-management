@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (main baseline `b81228561c5601891a164a17d7a684fab12c6dbd`; PRs #39–#45 merged; PR #45 exact-head and post-merge CI/Security green)
+**Last reviewed:** 2026-11-21 (main baseline `19dc1f801eba43f30140cc0007795bf4ba224778`; PRs #39–#47 merged; PR #47 exact-head and post-merge CI/Security green)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -212,8 +212,33 @@ PR #45 adds a five-minute, server-side session assurance marker for vendor/custo
 - `mfa_step_up_events` records successful/failed TOTP and successful passkey assertions with user, method, outcome, IP, user agent and request ID. TOTP codes, secrets and passkey credentials are never stored. Eloquent model updates/deletes are rejected.
 - TOTP challenges are rate limited to 5/minute; role mutations remain rate limited and require recent password confirmation, verified session, current session version, enrolled MFA, fresh step-up and tenant-scoped permission.
 
-**Scope limitation:** fresh step-up is currently enforced for the four membership role mutation endpoints only. Refunds, ledger adjustments, signing-key rotation, release publication, backup restore, ownership transfer and other privileged resource operations still require their own policy integration. Maker-checker approvals remain unimplemented.
+**Scope limitation:** fresh step-up is currently enforced for the four membership role mutation endpoints only. Refunds, ledger adjustments, signing-key rotation, release publication, backup restore, ownership transfer and other privileged resource operations still require their own policy integration. PR #47 implements maker-checker for high-risk vendor role grants; generalized approval workflows for financial, licensing, signing-key, release and operational actions remain unimplemented.
 
 **Exact-head verification:** PR #45 head `e26b4961bef874012ce7d0592bd96d0d3b526aeb` passed [CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44887409011) and [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44887409009). PHP 8.3/8.4/8.5 each passed 134 tests / 420 assertions. MySQL 8.4 and MariaDB 10.11 each passed 134 tests / 422 assertions. OpenAPI validation, documentation governance, cPanel artifact verification, Larastan, Semgrep, Gitleaks and OSV-Scanner passed.
 
 **Post-merge verification:** merge commit `b81228561c5601891a164a17d7a684fab12c6dbd` passed [main CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44887614753) with all eight jobs and [main Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44887614783) with all four jobs. Tagged release publication was skipped because no release tag was created.
+
+## PR #46 documentation reconciliation (2026-11-21)
+
+PR #46 reconciles the Phase 4 implementation status and authorization matrix with PR #45's fresh MFA step-up implementation.
+
+- Merge commit: `c8effe9a7b63ca21a5d19302fdd3ff7bf5e27b1a`.
+- Exact-head CI and Security analysis passed; post-merge main CI run `44889764281` and Security analysis run `44889764320` passed.
+
+## PR #47 maker-checker approval evidence (2026-11-21)
+
+**Merged mainline commit:** `19dc1f801eba43f30140cc0007795bf4ba224778`.
+
+PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role grants:
+
+- Protected roles: `finance_admin`, `vendor_product_manager` and `reseller_manager`. Lower-risk role assignment remains direct; privileged revocation remains immediate.
+- Request, list, view, approve and reject endpoints are tenant-scoped and require a verified current browser session, recent password confirmation, enrolled MFA and fresh five-minute TOTP/passkey step-up.
+- Maker and checker must be distinct active users in the same vendor scope. The checker needs `admins.manage` and `approvals.review`; the role beneficiary cannot approve or reject their own request.
+- Requests are bound to the vendor, target membership, role and action; require an idempotency key; reject key reuse with a changed payload; store a payload hash; and expire.
+- Decision evidence is immutable at the Eloquent boundary. The assignment service requires a persisted approved request and matching checker decision record; a pending request cannot be used as direct authority.
+- Approval state, decision evidence and role assignment are committed atomically. A failed role grant rolls back the decision and approval state.
+- The OpenAPI 3.1 contract and authorization matrix document the workflow and its explicit scope limitation: this is not yet a general approval engine for payments, refunds, ledger adjustments, licence operations, releases or signing-key rotation.
+
+**Exact-head verification:** PR #47 head `61ec092b95110bd80871a431e638dd47249b24db` passed [CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890515579), [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890515569) and [cPanel artifact/SBOM build](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890520371). PHP 8.3/8.4/8.5 each passed 151 tests / 490 assertions; MySQL 8.4 and MariaDB 10.11 each passed 151 tests / 492 assertions. The domain unit suite passed 27 tests. OpenAPI, documentation governance, cPanel artifact verification, Larastan, Semgrep, Gitleaks and OSV-Scanner passed.
+
+**Post-merge verification:** merge commit `19dc1f801eba43f30140cc0007795bf4ba224778` passed [main CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890659672) with all eight jobs and [main Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890659694) with all four jobs. Tagged release attestation/publication was skipped because no release tag was created.
