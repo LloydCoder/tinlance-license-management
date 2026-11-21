@@ -8,8 +8,6 @@ use App\Models\User;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
-use Laravel\Passkeys\Events\PasskeyVerified;
-use Laravel\Passkeys\Passkey;
 use Tests\TestCase;
 
 final class MfaStepUpTest extends TestCase
