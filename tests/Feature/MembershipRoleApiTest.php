@@ -309,6 +309,44 @@ final class MembershipRoleApiTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_role_mutation_requires_recent_password_confirmation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor)
+            ->withSession(['auth_session_version' => $actor->session_version])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Require password reauthentication.',
+            ])
+            ->assertStatus(423)
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'PASSWORD_CONFIRMATION_REQUIRED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+    }
+
+    public function test_expired_password_confirmation_cannot_authorize_role_mutation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor)
+            ->withSession([
+                'auth_session_version' => $actor->session_version,
+                'auth.password_confirmed_at' => time() - 36000,
+            ])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Expired password confirmation.',
+            ])
+            ->assertStatus(423)
+            ->assertJsonPath('code', 'PASSWORD_CONFIRMATION_REQUIRED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+    }
+
     private function authenticatedJson(User $user): static
     {
         return $this->actingAs($user)->withSession([
