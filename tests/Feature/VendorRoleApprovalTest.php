@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\ApprovalDecision;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use LogicException;
 use Tests\TestCase;
 
 final class VendorRoleApprovalTest extends TestCase
@@ -221,6 +223,83 @@ final class VendorRoleApprovalTest extends TestCase
             ->assertForbidden();
 
         $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+    }
+
+    public function test_tampered_approval_payload_is_rejected_before_role_mutation(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $checker = $this->createActor($vendor);
+        $target = $this->createMembership($vendor, $this->createUser());
+        $role = $this->role('finance_admin');
+        $requestId = $this->createApprovalRequest($maker, $vendor, $target, $role, 'maker-key-000009')->json('data.id');
+
+        \\Illuminate\\Support\\Facades\\DB::table('approval_requests')
+            ->where('id', $requestId)
+            ->update(['reason' => 'Tampered after maker submission.']);
+
+        $this->authenticatedJson($checker)
+            ->postJson($this->approvalPath($vendor, $requestId, 'approve'), [
+                'reason' => 'Attempt to approve altered payload.',
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'REQUEST_FAILED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertDatabaseHas('approval_requests', ['id' => $requestId, 'status' => 'pending']);
+    }
+
+    public function test_high_risk_role_can_be_revoked_immediately_after_approval(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $checker = $this->createActor($vendor);
+        $target = $this->createMembership($vendor, $this->createUser());
+        $role = $this->role('finance_admin');
+        $requestId = $this->createApprovalRequest($maker, $vendor, $target, $role, 'maker-key-000010')->json('data.id');
+
+        $this->authenticatedJson($checker)
+            ->postJson($this->approvalPath($vendor, $requestId, 'approve'), [
+                'reason' => 'Approved for a time-bound finance assignment.',
+            ])
+            ->assertOk();
+
+        $this->authenticatedJson($maker)
+            ->postJson(
+                '/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$target->getKey().'/roles/'.$role->getKey().'/revoke',
+                ['reason' => 'Immediate privileged access revocation.'],
+            )
+            ->assertOk();
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $target->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => $maker->getKey(),
+            'action' => 'revoked',
+        ]);
+    }
+
+    public function test_approval_decision_evidence_is_immutable(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $checker = $this->createActor($vendor);
+        $target = $this->createMembership($vendor, $this->createUser());
+        $role = $this->role('finance_admin');
+        $requestId = $this->createApprovalRequest($maker, $vendor, $target, $role, 'maker-key-000011')->json('data.id');
+
+        $this->authenticatedJson($checker)
+            ->postJson($this->approvalPath($vendor, $requestId, 'approve'), [
+                'reason' => 'Independent checker decision.',
+            ])
+            ->assertOk();
+
+        $decision = ApprovalDecision::query()->where('approval_request_id', $requestId)->firstOrFail();
+
+        $this->expectException(LogicException::class);
+
+        $decision->update(['reason' => 'Altered decision evidence.']);
     }
 
     private function createApprovalRequest(
