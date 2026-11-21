@@ -4,8 +4,10 @@ use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
+use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
 use App\Http\Middleware\EnsureMfaEnrolled;
+use App\Http\Middleware\EnsureRecentMfaStepUp;
 use App\Http\Middleware\EnsureRecentPasswordConfirmation;
 use App\Http\Middleware\EnsureSessionVersionCurrent;
 use App\Http\Middleware\EnsureSuperAdmin;
@@ -47,18 +49,21 @@ Route::middleware([
     EnsureRecentPasswordConfirmation::class,
     EnsureMfaEnrolled::class,
 ])->prefix('/api/v1')->group(function (): void {
+    Route::post('/security/step-up/totp', [MfaStepUpController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('api.security.step-up.totp');
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/roles/{role}', [MembershipRoleController::class, 'assignVendor'])
-        ->middleware('throttle:10,1')
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor-memberships.roles.assign');
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/roles/{role}/revoke', [MembershipRoleController::class, 'revokeVendor'])
-        ->middleware('throttle:10,1')
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor-memberships.roles.revoke');
 
     Route::post('/customer-organizations/{organization}/memberships/{membership}/roles/{role}', [MembershipRoleController::class, 'assignCustomer'])
-        ->middleware('throttle:10,1')
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.customer-memberships.roles.assign');
     Route::post('/customer-organizations/{organization}/memberships/{membership}/roles/{role}/revoke', [MembershipRoleController::class, 'revokeCustomer'])
-        ->middleware('throttle:10,1')
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.customer-memberships.roles.revoke');
 });
 

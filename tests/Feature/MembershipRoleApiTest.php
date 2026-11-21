@@ -359,6 +359,50 @@ final class MembershipRoleApiTest extends TestCase
         $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
     }
 
+    public function test_role_mutation_requires_fresh_mfa_step_up_after_password_confirmation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor, 'web')
+            ->withSession([
+                'auth_session_version' => (int) User::query()->whereKey($actor->getKey())->value('session_version'),
+                'auth.password_confirmed_at' => time(),
+            ])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Fresh MFA challenge is mandatory.',
+            ])
+            ->assertStatus(423)
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'MFA_STEP_UP_REQUIRED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+    }
+
+    public function test_expired_mfa_step_up_cannot_authorize_role_mutation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor, 'web')
+            ->withSession([
+                'auth_session_version' => (int) User::query()->whereKey($actor->getKey())->value('session_version'),
+                'auth.password_confirmed_at' => time(),
+                'auth.mfa_step_up_at' => time() - 301,
+                'auth.mfa_step_up_method' => 'totp',
+            ])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Expired step-up must be rejected.',
+            ])
+            ->assertStatus(423)
+            ->assertJsonPath('code', 'MFA_STEP_UP_REQUIRED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertNull(session('auth.mfa_step_up_at'));
+    }
+
     private function authenticatedJson(User $user): static
     {
         $sessionVersion = (int) User::query()->whereKey($user->getKey())->value('session_version');
@@ -366,6 +410,8 @@ final class MembershipRoleApiTest extends TestCase
         return $this->actingAs($user, 'web')->withSession([
             'auth_session_version' => $sessionVersion,
             'auth.password_confirmed_at' => time(),
+            'auth.mfa_step_up_at' => time(),
+            'auth.mfa_step_up_method' => 'totp',
         ]);
     }
 

@@ -60,12 +60,43 @@ paths:
                 $ref: '#/components/schemas/CurrentActor'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /security/step-up/totp:
+    post:
+      tags: [Identity]
+      operationId: createTotpStepUp
+      summary: Verify a fresh TOTP factor for privileged session assurance
+      description: Requires an authenticated, email-verified current browser session, recent password confirmation and an enrolled TOTP factor. Fortify verifies codes and caches accepted codes to reject reuse. Passkey users complete the existing /passkeys/confirm WebAuthn ceremony; successful authenticated passkey verification also establishes the step-up session marker.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaTotpStepUpRequest'
+      responses:
+        '200':
+          description: Fresh TOTP assurance recorded for the configured five-minute window
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaStepUpResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
       operationId: assignVendorMembershipRole
       summary: Assign an allowlisted role to a vendor member
-      description: Requires a verified browser session, current session version, recent password confirmation, enrolled MFA and the vendor-scoped admins.manage permission. The target membership must belong to the vendor in the path.
+      description: Requires a verified browser session, current session version, recent password confirmation, fresh MFA step-up within five minutes and the vendor-scoped admins.manage permission. The target membership must belong to the vendor in the path.
       security:
         - AdminSession: []
       parameters:
@@ -113,12 +144,14 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
       operationId: revokeVendorMembershipRole
       summary: Revoke an allowlisted role from a vendor member
-      description: Requires the same verified, current, password-confirmed and MFA-enrolled vendor administrator session as assignment. The target membership must belong to the vendor in the path.
+      description: Requires the same verified, current, password-confirmed vendor administrator session and fresh MFA step-up as assignment. The target membership must belong to the vendor in the path.
       security:
         - AdminSession: []
       parameters:
@@ -160,12 +193,14 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
       operationId: assignCustomerMembershipRole
       summary: Assign an allowlisted role to a customer organization member
-      description: Requires a verified browser session, current session version, recent password confirmation, enrolled MFA and the customer.members.manage permission. The target membership must belong to the organization in the path.
+      description: Requires a verified browser session, current session version, recent password confirmation, fresh MFA step-up within five minutes and the customer.members.manage permission. The target membership must belong to the organization in the path.
       security:
         - AdminSession: []
       parameters:
@@ -213,12 +248,14 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
       operationId: revokeCustomerMembershipRole
       summary: Revoke an allowlisted role from a customer organization member
-      description: Requires the same verified, current, password-confirmed and MFA-enrolled customer owner session as assignment. The target membership must belong to the organization in the path.
+      description: Requires the same verified, current, password-confirmed customer owner session and fresh MFA step-up as assignment. The target membership must belong to the organization in the path.
       security:
         - AdminSession: []
       parameters:
@@ -260,6 +297,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /products:
     get:
       tags: [Products]
@@ -356,8 +395,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /activations/verify:
     post:
       tags: [Licences]
@@ -381,8 +418,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /admin/integrations/{provider}/credentials:
     get:
       tags: [Integrations]
@@ -844,6 +879,39 @@ components:
           $ref: '#/components/schemas/Pagination'
         request_id:
           type: string
+    MfaTotpStepUpRequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Current six-digit TOTP code. Recovery codes are not accepted for step-up.
+    MfaStepUpResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [method, stepped_up_at, expires_at, expires_in]
+          properties:
+            method:
+              type: string
+              enum: [totp]
+            stepped_up_at:
+              type: integer
+              format: int64
+            expires_at:
+              type: integer
+              format: int64
+            expires_in:
+              type: integer
+              minimum: 1
+        request_id:
+          type: string
     MembershipRoleChangeRequest:
       type: object
       additionalProperties: false
@@ -933,6 +1001,12 @@ components:
             $ref: '#/components/schemas/Problem'
     ValidationError:
       description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Locked:
+      description: Recent password confirmation or fresh MFA step-up is missing or expired
       content:
         application/problem+json:
           schema:
