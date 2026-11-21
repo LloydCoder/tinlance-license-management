@@ -59,9 +59,9 @@ if printf '%s\n' "${entries[@]}" | grep -E '^tlms/(tests|docs|scripts|\.github)/
     exit 1
 fi
 
-unexpected_env_files="$(printf '%s\\n' "${entries[@]}" | grep -E '^tlms/\\.env($|\\.)' | grep -Fxv 'tlms/.env.example' || true)"
+unexpected_env_files="$(printf '%s\n' "${entries[@]}" | grep -E '^tlms/\.env($|\.)' | grep -Fxv 'tlms/.env.example' || true)"
 if [[ -n "$unexpected_env_files" ]]; then
-    printf 'Unexpected environment file found in the production artifact: %s\\n' "$unexpected_env_files" >&2
+    printf 'Unexpected environment file found in the production artifact: %s\n' "$unexpected_env_files" >&2
     exit 1
 fi
 
