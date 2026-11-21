@@ -129,7 +129,7 @@ final class VendorRoleApprovalController
      */
     private function data(ApprovalRequest $approval): array
     {
-        $approval->loadMissing(['role', 'targetMembership.user']);
+        $approval->loadMissing(['role', 'targetMembership.user', 'decisions.actor']);
 
         return [
             'id' => $approval->getKey(),
@@ -146,6 +146,12 @@ final class VendorRoleApprovalController
             'decision_reason' => $approval->decision_reason,
             'expires_at' => $approval->expires_at?->toIso8601String(),
             'decided_at' => $approval->decided_at?->toIso8601String(),
+            'decisions' => $approval->decisions->map(static fn ($decision): array => [
+                'decision' => $decision->decision,
+                'actor_user_id' => $decision->actor_user_id,
+                'reason' => $decision->reason,
+                'created_at' => $decision->created_at?->toIso8601String(),
+            ])->values()->all(),
         ];
     }
 
