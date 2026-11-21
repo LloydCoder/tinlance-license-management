@@ -234,7 +234,7 @@ final class VendorRoleApprovalTest extends TestCase
         $role = $this->role('finance_admin');
         $requestId = $this->createApprovalRequest($maker, $vendor, $target, $role, 'maker-key-000009')->json('data.id');
 
-        \\Illuminate\\Support\\Facades\\DB::table('approval_requests')
+        \Illuminate\Support\Facades\DB::table('approval_requests')
             ->where('id', $requestId)
             ->update(['reason' => 'Tampered after maker submission.']);
 
