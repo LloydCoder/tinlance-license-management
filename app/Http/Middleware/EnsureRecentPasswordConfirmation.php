@@ -15,8 +15,9 @@ final class EnsureRecentPasswordConfirmation
         $confirmedAt = $request->session()->get('auth.password_confirmed_at');
         $timeout = max(1, (int) config('auth.password_timeout', 10800));
         $confirmedAtTimestamp = is_numeric($confirmedAt) ? (int) $confirmedAt : null;
+        $nowTimestamp = (int) now()->getTimestamp();
         $isFresh = $confirmedAtTimestamp !== null
-            && $confirmedAtTimestamp >= now()->timestamp - $timeout;
+            && $confirmedAtTimestamp >= ($nowTimestamp - $timeout);
 
         if (! $isFresh) {
             $candidateRequestId = $request->headers->get('X-Request-ID');
