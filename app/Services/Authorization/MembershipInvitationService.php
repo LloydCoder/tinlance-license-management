@@ -751,7 +751,7 @@ final readonly class MembershipInvitationService
         return $baseUrl.'/membership-invitations/accept#token='.rawurlencode($token);
     }
 
-    private function invitationExpiry(): \Illuminate\Support\Carbon
+    private function invitationExpiry(): Carbon
     {
         return now()->addHours(max(1, min(168, (int) config('tlms.memberships.invitation_ttl_hours', 72))));
     }
