@@ -55,6 +55,25 @@ The artifact is validated twice in CI and the ZIPs must be byte-for-byte identic
 
 After downloading and verifying the checksum, upload/extract the ZIP to a private directory outside the domain's document root (for example, the account home directory). Set the domain document root to the package's `tlms/public/` directory. Do not extract the package inside `public_html` or copy the project root into the web document root.
 
+
+### Initial schema installation without SSH
+
+The release ZIP includes the production Composer vendor tree, so Composer is not required on the cPanel account. After uploading the package outside the document root and configuring \` .env \`, use cPanel's Cron Jobs interface for a one-time migration command if the provider does not offer Terminal/SSH:
+
+\`\`\`sh
+/path/to/provider/php /home/CPANEL_USER/tlms/artisan migrate --force
+\`\`\`
+
+Replace both paths with values confirmed by the provider. Schedule it once, capture its output, verify the migration status, and immediately remove the temporary cron entry. Never expose Artisan through a public HTTP route. The first-run bootstrap service initializes the authorization catalogue only when the catalogue is empty, so no separate database seeding command is required for the initial identity baseline.
+
+Generate \`APP_KEY\` and the 256-bit unpadded base64url \`TLMS_BOOTSTRAP_TOKEN\` locally, then place them in the private \`.env\` file. After migrations, open the HTTPS setup route once and create the initial administrator. Remove \`TLMS_BOOTSTRAP_TOKEN\` from \`.env\` and clear Laravel's cached configuration with a one-time cPanel cron command:
+
+\`\`\`sh
+/path/to/provider/php /home/CPANEL_USER/tlms/artisan config:clear
+\`\`\`
+
+If the provider cannot execute a PHP CLI cron command, use cPanel File Manager to remove \`bootstrap/cache/config.php\` after clearing the token from \`.env\`. Run the hosting preflight through a temporary cron job or Terminal, capture the JSON result, and remove the job. A provider that cannot run migrations or preflight without SSH remains unqualified until a separately reviewed web installer exists.
+
 ## 5. Automated runtime preflight
 
 After deploying the prebuilt artifact to a disposable cPanel account and configuring its environment, run:
