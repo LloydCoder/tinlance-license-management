@@ -39,6 +39,29 @@ final class SuperAdminBootstrapTest extends TestCase
         $this->get('/setup/super-admin')->assertNotFound();
     }
 
+
+    public function test_completion_page_is_not_available_before_bootstrap(): void
+    {
+        $this->get('/setup/super-admin/complete')->assertNotFound();
+    }
+
+    public function test_bootstrap_secret_is_never_flashed_back_to_the_browser(): void
+    {
+        $this->from('/setup/super-admin')->post('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'A',
+            'email' => 'not-an-email',
+            'password' => 'Correct-Horse-Battery-2026!',
+            'password_confirmation' => 'Correct-Horse-Battery-2026!',
+        ])->assertRedirect('/setup/super-admin');
+
+        $this->assertSessionHas('_old_input', static function (array $oldInput): bool {
+            return ! array_key_exists('bootstrap_token', $oldInput)
+                && ! array_key_exists('password', $oldInput)
+                && ! array_key_exists('password_confirmation', $oldInput);
+        });
+    }
+
     public function test_invalid_bootstrap_secret_cannot_create_an_administrator(): void
     {
         $this->postJson('/setup/super-admin', [
@@ -47,7 +70,7 @@ final class SuperAdminBootstrapTest extends TestCase
             'email' => 'admin@example.test',
             'password' => 'Correct-Horse-Battery-2026!',
             'password_confirmation' => 'Correct-Horse-Battery-2026!',
-        ])->assertUnprocessable();
+        ])->assertNotFound();
 
         $this->assertDatabaseCount('users', 0);
         $this->assertDatabaseCount('vendor_accounts', 0);
