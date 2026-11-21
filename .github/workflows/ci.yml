@@ -115,6 +115,7 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: root
       TLMS_EXPECTED_DB_CONNECTION: mysql
+      TLMS_EXPECTED_DB_VENDOR: mysql
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -136,4 +137,57 @@ jobs:
       - name: Enforce Laravel Pint formatting
         run: composer format:check
       - name: Run migrations and identity feature tests against MySQL 8.4
+        run: composer test:framework
+
+  mariadb-1011-integration:
+    name: MariaDB 10.11 integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mariadb:
+        image: mariadb:10.11@sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_ROOT_HOST: "%"
+          MARIADB_DATABASE: tlms_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: tlms_test
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      TLMS_EXPECTED_DB_CONNECTION: mysql
+      TLMS_EXPECTED_DB_VENDOR: mariadb
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.5"
+          extensions: intl, pdo_mysql
+          coverage: none
+          tools: composer:v2
+      - name: Validate Composer manifest and lock
+        run: composer validate --strict
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Audit locked dependencies
+        run: composer audit --locked --no-interaction
+      - name: Enforce Laravel Pint formatting
+        run: composer format:check
+      - name: Run migrations and identity feature tests against MariaDB 10.11
         run: composer test:framework

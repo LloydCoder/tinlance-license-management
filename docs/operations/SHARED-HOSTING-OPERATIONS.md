@@ -1,6 +1,6 @@
 # TLMS shared-hosting operations and recovery baseline
 
-**Status:** Phase 1 architecture baseline; provider-specific settings and recovery objectives remain unvalidated.
+**Status:** Phase 2 provider-qualification requirements documented; database compatibility CI covers MySQL 8.4 and MariaDB 10.11. No real provider account or recovery objective has been validated.
 
 ## 1. Deployment contract
 
@@ -9,7 +9,7 @@ The central TLMS application must be deployable to an annual prepaid cPanel/shar
 Proposed runtime:
 - Laravel modular monolith.
 - PHP 8.3 minimum; PHP 8.4/8.5 tested and preferred where provider and dependencies support them.
-- MySQL 8.4 LTS is canonical; MariaDB 11.8 LTS is optional only after the full compatibility suite passes. Do not claim all MariaDB/MySQL variants are interchangeable.
+- MySQL 8.4 is the primary reference engine; MariaDB 10.11 is an accepted shared-hosting engine and is covered by a dedicated integration job. cPanel v122+ installs MariaDB 10.11 by default on new installations. MariaDB 11.4/11.8 and all other variants remain unqualified until their own compatibility jobs pass.
 - PHP extensions: Sodium, OpenSSL, cURL, PDO MySQL, JSON, Mbstring, tokenizer, XML, intl, Ctype, fileinfo, filter, hash, session and required Laravel extensions.
 - HTTPS ingress and outbound HTTPS.
 - Public document root points only to Laravel public directory; application source, environment, storage, backups and private keys remain outside webroot.
@@ -40,7 +40,7 @@ Obtain written provider confirmation and verify on a real test account:
 - Annual billing, renewal price, refund and suspension policy.
 - PHP versions and selectable CLI/web runtime.
 - Required extensions and ability to configure PHP limits.
-- MySQL/MariaDB version, DB size, connection and user limits.
+- Exact MySQL 8.4 or MariaDB 10.11 server version (and cPanel/OS support matrix), DB size, connection and user limits.
 - HTTPS inbound, outbound HTTPS and webhook delivery.
 - Cron minimum interval and execution timeout.
 - CPU, RAM, entry process, I/O, inode and storage quotas.

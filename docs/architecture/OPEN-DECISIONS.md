@@ -7,7 +7,7 @@ This register prevents unresolved design choices from being silently converted i
 | DEC-001 | Initial deployment topology | One self-hosted installation per software vendor; customer organizations are records inside that installation | Accepted in ADR 0004 |
 | DEC-002 | Future hosted multi-tenancy | Explicitly deferred; vendor_account_id is a migration seam, not proof of tenant isolation | Separate ADR + isolation architecture before SaaS implementation |
 | DEC-003 | Exact cPanel provider and plan | Annual prepaid shared hosting is mandatory target; provider not selected | Written capability confirmation + real-account PoC / Operations |
-| DEC-004 | Database engine/version | **Selected:** MySQL 8.4 LTS canonical; MariaDB 11.8 LTS optional only after independent compatibility tests | ADR 0005; provider PoC and DB matrix remain open |
+| DEC-004 | Database engine/version | **Selected:** MySQL 8.4 primary reference; MariaDB 10.11 supported cPanel/shared-hosting compatibility engine; other versions unqualified | ADR 0006; MySQL 8.4.13 and MariaDB 10.11.19 CI integration passed; provider PoC remains open |
 | DEC-005 | PHP runtime matrix | **Selected:** Laravel 13; PHP 8.3 minimum, CI 8.3/8.4/8.5, PHP 8.5 preferred production runtime | ADR 0005; provider PoC remains open |
 | DEC-006 | Identifier strategy | **Selected:** ULID identifiers; never treated as authorization secrets | ADR 0005; schema and portability tests remain open |
 | DEC-007 | Licence key format and entropy | **Selected:** 256-bit CSPRNG secret, one-time display, keyed HMAC-SHA-256 verifier at rest | ADR 0005; format/vector and entropy tests remain open |

@@ -1,5 +1,7 @@
 # ADR 0005: Initial implementation technical baseline
 
+> **Supersession note (2026-11-21):** The database compatibility candidate in this initial baseline is superseded by [ADR 0006](0006-mariadb-10-11-cpanel-compatibility.md). MySQL 8.4 remains the primary reference; MariaDB 10.11 is now the tested cPanel/shared-hosting compatibility engine. The earlier MariaDB 11.8 candidate is not a supported target.
+
 - **Status:** Accepted implementation baseline; provider-dependent and legal decisions remain open
 - **Date:** 2026-11-20
 - **Decision owners:** Tinlance Limited

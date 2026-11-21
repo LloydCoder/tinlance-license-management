@@ -16,7 +16,7 @@ No production-ready application is currently published. Do not use this reposito
 
 - Laravel modular monolith for the central control plane.
 - PHP 8.5 production target, with compatibility testing across supported PHP 8.3–8.5 runtimes.
-- MySQL 8.4 canonical production database; MariaDB compatibility only after a separate test suite.
+- MySQL 8.4 reference database and MariaDB 10.11 shared-hosting compatibility database, both exercised by integration CI; other MySQL/MariaDB versions require separate qualification.
 - Annual prepaid cPanel/shared hosting as the initial central hosting target, subject to a real-provider proof of concept.
 - One self-hosted TLMS deployment per vendor initially; preserve a path to hosted multi-tenancy without making it a launch dependency.
 - Independent PHP customer SDK with no Laravel runtime dependency.
@@ -46,10 +46,10 @@ composer analyse
 ~~~
 
 - `composer test` runs the dependency-free domain suite (25 test methods).
-- `composer test:framework` runs the Laravel PHPUnit feature suite (47 test methods).
+- `composer test:framework` runs the Laravel PHPUnit feature suite (48 test methods).
 - `composer format:check` enforces Laravel Pint formatting.
 - `composer analyse` runs Larastan/PHPStan level 8 across app, domain, database, routes, bootstrap, config and tests; no baseline or ignored-error file is used.
-- CI exercises PHP 8.3, 8.4 and 8.5, plus the same feature suite against MySQL 8.4.13. Local SQLite is a fast secondary test driver, not a substitute for MySQL integration.
+- CI exercises PHP 8.3, 8.4 and 8.5, plus the feature suite against MySQL 8.4.13 and MariaDB 10.11. Local SQLite is a fast secondary test driver, not a substitute for either production database integration.
 
 ## Hosting and security boundaries
 
