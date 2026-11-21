@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (main baseline `4464d7de09b578b8069e8f6d09c70b12f521c714`; PRs #39–#63 merged; PR #64 adds existing-customer invitation acceptance coverage and is under review)
+**Last reviewed:** 2026-11-21 (main baseline `6e07a8286c7684e712dbff2892516c7e9f161697`; PRs #39–#64 merged; post-merge Security analysis passed; post-merge CI is running)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
