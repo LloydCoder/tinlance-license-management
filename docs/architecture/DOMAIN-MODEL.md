@@ -71,7 +71,7 @@ The diagram is conceptual; exact cardinalities, join entities, and deletion rule
 
 ### Membership role assignment events
 - Separate vendor/customer membership-role event tables record target membership, role, `actor_type` (`user` or `system`), nullable human actor ID for system events, action, reason and creation time in the same transaction as role assignment/revocation.
-- Generic assignment is allowlisted; self-assignment and privileged role grants are blocked until dedicated bootstrap/approval workflows exist.
+- Generic assignment is allowlisted; self-assignment and privileged role grants are blocked. The initial Super Admin grant is available only through the one-time bootstrap; subsequent privileged grants require separate approval workflows.
 - Eloquent model instance updates/deletes are rejected. These events are not a substitute for the global hash-chained AuditEvent ledger or database-level tamper evidence.
 
 ### Product / PlanVersion / EntitlementDefinition
