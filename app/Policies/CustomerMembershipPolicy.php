@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\\Policies;
+namespace App\Policies;
 
-use App\\Models\\CustomerMembership;
-use App\\Models\\CustomerOrganization;
-use App\\Models\\User;
-use App\\Services\\Authorization\\MembershipAuthorization;
+use App\Models\CustomerMembership;
+use App\Models\CustomerOrganization;
+use App\Models\User;
+use App\Services\Authorization\MembershipAuthorization;
 
 final readonly class CustomerMembershipPolicy
 {
