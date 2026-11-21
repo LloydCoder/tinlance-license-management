@@ -370,7 +370,18 @@ final readonly class MembershipInvitationService
             throw new GoneHttpException('This invitation is invalid or no longer available.');
         }
 
-        $hash = hash('sha256', $token);
+        return $this->prepareHash(hash('sha256', $token), $authenticatedUser);
+    }
+
+    /**
+     * @return array{membership_type: string, membership_id: string, email: string, tenant_name: string, role_name: string, requires_account_setup: bool, expires_at: string}
+     */
+    public function prepareHash(string $hash, ?User $authenticatedUser = null): array
+    {
+        if (preg_match('/\A[a-f0-9]{64}\z/D', $hash) !== 1) {
+            throw new GoneHttpException('This invitation is invalid or no longer available.');
+        }
+
         $vendorInvitation = VendorMembershipInvitation::query()->where('token_hash', $hash)->first();
 
         if ($vendorInvitation instanceof VendorMembershipInvitation) {
