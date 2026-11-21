@@ -26,7 +26,7 @@ final class SuperAdminBootstrapService
             || $appKey === ''
             || config('session.secure') !== true
             || config('session.encrypt') !== true
-            || (config('app.env') === 'production' && config('app.debug') !== false)
+            || (! in_array(config('app.env'), ['local', 'testing'], true) && config('app.debug') !== false)
         ) {
             return false;
         }
@@ -68,7 +68,8 @@ final class SuperAdminBootstrapService
         $configuredToken = config('tlms.bootstrap_token');
 
         if (
-            ! is_string($configuredToken)
+            ! $this->isAvailable()
+            || ! is_string($configuredToken)
             || preg_match('/\\A[A-Za-z0-9_-]{43,128}\\z/', $configuredToken) !== 1
             || ! hash_equals($configuredToken, $providedToken)
         ) {
