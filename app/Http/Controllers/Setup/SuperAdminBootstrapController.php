@@ -68,7 +68,7 @@ final class SuperAdminBootstrapController
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'The initial Super Admin account was created. Remove TLMS_BOOTSTRAP_TOKEN from the environment before continuing.',
+                'message' => 'The initial Super Admin account was created. Remove TLMS_BOOTSTRAP_TOKEN from the environment and clear the cached configuration before continuing.',
             ], 201);
         }
 
