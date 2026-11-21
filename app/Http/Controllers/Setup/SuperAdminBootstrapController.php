@@ -35,7 +35,7 @@ final class SuperAdminBootstrapController
         ]);
 
         $validator = Validator::make($request->all(), [
-            'bootstrap_token' => ['required', 'string', 'min:43', 'max:128'],
+            'bootstrap_token' => ['required', 'string', 'regex:/\\A[A-Za-z0-9_-]{43,128}\\z/'],
             'name' => ['required', 'string', 'min:2', 'max:160'],
             'email' => ['required', 'string', 'email:rfc', 'max:254', Rule::unique('users', 'email')],
             'password' => ['required', 'string', Password::min(16)->mixedCase()->numbers()->symbols(), 'confirmed'],
