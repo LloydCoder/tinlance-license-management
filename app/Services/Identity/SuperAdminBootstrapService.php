@@ -54,10 +54,10 @@ final class SuperAdminBootstrapService
     {
         $installation = PlatformInstallation::query()
             ->where('installation_key', 'primary')
-            ->first();
+            ->firstOrFail();
 
-        return $installation?->bootstrapped_at !== null
-            && $installation?->bootstrapped_user_id !== null;
+        return $installation->bootstrapped_at !== null
+            && $installation->bootstrapped_user_id !== null;
     }
 
     /**
