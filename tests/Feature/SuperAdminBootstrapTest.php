@@ -41,7 +41,24 @@ final class SuperAdminBootstrapTest extends TestCase
             ->assertOk()
             ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
             ->assertHeader('Referrer-Policy', 'no-referrer')
-            ->assertHeader('X-Frame-Options', 'DENY');
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('Strict-Transport-Security', 'max-age=31536000');
+    }
+
+    public function test_insecure_bootstrap_post_is_rejected_without_processing_the_credentials(): void
+    {
+        config(['app.env' => 'production']);
+
+        $this->post('http://localhost/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'admin@example.test',
+            'password' => 'Correct-Horse-Battery-2026!',
+            'password_confirmation' => 'Correct-Horse-Battery-2026!',
+        ])->assertStatus(426);
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('vendor_accounts', 0);
     }
 
     public function test_bootstrap_page_is_not_available_without_a_configured_secret(): void
