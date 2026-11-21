@@ -13,6 +13,7 @@ use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Contracts\PasskeyUser as FortifyPasskeyUser;
 use Laravel\Fortify\Features;
 use Laravel\Passkeys\Passkeys;
@@ -20,6 +21,8 @@ use Tests\TestCase;
 
 final class AuthenticationFoundationTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_public_registration_is_disabled_and_required_authentication_routes_exist(): void
     {
         $this->assertFalse(Route::has('register'));
