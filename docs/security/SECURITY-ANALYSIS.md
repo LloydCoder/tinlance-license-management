@@ -17,7 +17,7 @@
 
 - Third-party GitHub Actions are pinned to full commit SHAs.
 - Checkout credentials are not persisted.
-- Workflow permissions default to read-only; the dependency review job receives only `contents: read` and `pull-requests: read`.
+- Workflow permissions default to read-only; OSV-Scanner receives only `contents: read` and does not require GitHub dependency-graph or security-event write access.
 - OSV-Scanner runs against the repository's resolved dependency lockfile and fails when known vulnerabilities are found.
 - Gitleaks scans the complete available Git history and does not upload a SARIF artifact or post PR comments.
 - Semgrep and PHPStan fail the workflow on findings.
