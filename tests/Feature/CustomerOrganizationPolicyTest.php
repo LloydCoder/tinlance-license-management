@@ -94,13 +94,67 @@ final class CustomerOrganizationPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
     }
 
-    private function createUser(): User
+    public function test_customer_access_is_denied_when_user_is_inactive(): void
+    {
+        $user = $this->createUser('suspended');
+        $vendor = $this->createVendor();
+        $organization = $this->createOrganization($vendor, 'inactive-user');
+        $membership = CustomerMembership::create([
+            'customer_organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
+    public function test_customer_access_is_denied_when_organization_is_suspended(): void
+    {
+        $user = $this->createUser();
+        $vendor = $this->createVendor();
+        $organization = $this->createOrganization($vendor, 'suspended-org', 'suspended');
+        $membership = CustomerMembership::create([
+            'customer_organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
+    public function test_customer_access_is_denied_when_vendor_is_suspended_even_for_an_active_customer_membership(): void
+    {
+        $user = $this->createUser();
+        $vendor = $this->createVendor('suspended');
+        $organization = $this->createOrganization($vendor, 'suspended-vendor-customer');
+        $membership = CustomerMembership::create([
+            'customer_organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
+    private function createUser(string $status = 'active'): User
     {
         return User::create([
             'name' => 'Policy Test',
             'email' => 'policy-'.str()->random(12).'@example.com',
             'password' => 'policy-test-password-value',
-            'status' => 'active',
+            'status' => $status,
         ]);
     }
 
@@ -116,14 +170,18 @@ final class CustomerOrganizationPolicyTest extends TestCase
         ]);
     }
 
-    private function createOrganization(VendorAccount $vendor, string $reference): CustomerOrganization
+    private function createOrganization(
+        VendorAccount $vendor,
+        string $reference,
+        string $status = 'active',
+    ): CustomerOrganization
     {
         return CustomerOrganization::create([
             'vendor_account_id' => $vendor->id,
             'external_reference' => $reference,
             'legal_name' => 'Customer '.$reference,
             'display_name' => 'Customer '.$reference,
-            'status' => 'active',
+            'status' => $status,
             'billing_email' => $reference.'@example.com',
         ]);
     }
