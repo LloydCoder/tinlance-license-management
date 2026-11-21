@@ -19,6 +19,7 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Tenant-admin vendor/customer membership revocation with fresh MFA step-up, immutable lifecycle evidence, idempotent retries, self-revocation denial and retained role history (PR #55).
 - Expanded membership lifecycle regression coverage for invited-member cancellation, self-revocation denial, cross-organization isolation, suspended-vendor denial and immutable lifecycle-event evidence (PR #57).
 - Serialized customer-membership revocation against concurrent parent-vendor suspension by locking and revalidating the persisted vendor row (PR #58).
+- Vendor/customer membership invitations with hashed single-use tokens, HTTPS-only email links, expiry, resend, acceptance, verification and revocation invalidation; fresh MFA-gated inviter actions and session-confusion protection for account setup (PR #63).
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
@@ -26,6 +27,7 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Semgrep, Larastan/PHPStan, Gitleaks and OSV-Scanner security gates; weekly Composer and GitHub Actions Dependabot update configuration.
 
 ### Security
+- Invitation tokens are stored only as SHA-256 hashes; acceptance is single-use, expiry-checked and bound to the invited identity. Account setup rejects a different authenticated account, while verified existing users require same-account authentication and recent password confirmation.
 - Bootstrap credentials are never persisted or flashed to browser input; successful setup requires removal of the environment secret and clearing cached configuration.
 - MFA management and recovery-code retrieval require recent password confirmation; recovery codes are returned only after an explicit user action and are not embedded in rendered pages by default.
 - Password resets and global session revocation execute in one database transaction; successful login upgrades supported weaker legacy password hashes to the configured stronger driver without downgrading stronger hashes.
