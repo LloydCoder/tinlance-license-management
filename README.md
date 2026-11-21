@@ -46,7 +46,7 @@ composer analyse
 ~~~
 
 - `composer test` runs the dependency-free domain suite (25 test methods).
-- `composer test:framework` runs the Laravel PHPUnit feature suite (48 test methods).
+- `composer test:framework` runs the Laravel PHPUnit feature suite (52 test methods).
 - `composer format:check` enforces Laravel Pint formatting.
 - `composer analyse` runs Larastan/PHPStan level 8 across app, domain, database, routes, bootstrap, config and tests; no baseline or ignored-error file is used.
 - CI exercises PHP 8.3, 8.4 and 8.5, plus the feature suite against MySQL 8.4.13 and MariaDB 10.11. Local SQLite is a fast secondary test driver, not a substitute for either production database integration.

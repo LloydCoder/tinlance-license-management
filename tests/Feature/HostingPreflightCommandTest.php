@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Services\Hosting\HostingPreflight;
+use Illuminate\Support\Facades\Artisan;
+use Tests\TestCase;
+
+final class HostingPreflightCommandTest extends TestCase
+{
+    public function test_preflight_emits_a_machine_readable_report_without_secrets(): void
+    {
+        $databasePasswordSentinel = 'TLMS_TEST_DB_PASSWORD_SENTINEL';
+        config(['database.connections.mysql.password' => $databasePasswordSentinel]);
+
+        $exitCode = Artisan::call('tlms:hosting-preflight', ['--json' => true]);
+        $output = Artisan::output();
+        /** @var array{ready: bool, checks: array<string, array{passed: bool, required: bool, message: string}>} $report */
+        $report = json_decode($output, true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertSame(1, $exitCode, 'The test runtime must not be qualified as a production hosting environment.');
+        $this->assertFalse($report['ready']);
+        $this->assertArrayHasKey('checks', $report);
+        $this->assertArrayHasKey('database.vendor', $report['checks']);
+        $this->assertArrayHasKey('runtime.argon2id', $report['checks']);
+        $this->assertArrayHasKey('runtime.required_extensions', $report['checks']);
+        $this->assertArrayHasKey('security.debug_disabled', $report['checks']);
+        $this->assertArrayHasKey('security.secure_session_cookie', $report['checks']);
+        $this->assertArrayHasKey('filesystem.storage_writable', $report['checks']);
+        $this->assertArrayHasKey('filesystem.bootstrap_cache_writable', $report['checks']);
+        $this->assertArrayHasKey('filesystem.document_root_isolated', $report['checks']);
+        $this->assertStringNotContainsString((string) config('app.key'), $output);
+
+        $this->assertStringNotContainsString($databasePasswordSentinel, $output);
+    }
+
+    public function test_preflight_json_report_has_stable_check_shape(): void
+    {
+        Artisan::call('tlms:hosting-preflight', ['--json' => true]);
+        /** @var array{ready: bool, checks: array<string, array{passed: bool, required: bool, message: string}>} $report */
+        $report = json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR);
+
+        foreach ($report['checks'] as $check) {
+            $this->assertSame(['passed', 'required', 'message'], array_keys($check));
+            $this->assertNotSame('', $check['message']);
+        }
+    }
+
+    public function test_database_vendor_check_requires_a_qualified_live_database_server(): void
+    {
+        $report = app(HostingPreflight::class)->report();
+
+        if (config('database.default') !== 'mysql') {
+            $this->assertFalse($report['checks']['database.vendor']['passed']);
+
+            return;
+        }
+
+        $this->assertTrue($report['checks']['database.vendor']['passed']);
+    }
+
+    public function test_document_root_must_resolve_exactly_to_laravel_public_directory(): void
+    {
+        $previousDocumentRoot = $_SERVER['DOCUMENT_ROOT'] ?? null;
+        $_SERVER['DOCUMENT_ROOT'] = public_path();
+
+        try {
+            $report = app(HostingPreflight::class)->report();
+
+            $this->assertTrue($report['checks']['filesystem.document_root_isolated']['passed']);
+
+            $_SERVER['DOCUMENT_ROOT'] = base_path();
+            $report = app(HostingPreflight::class)->report();
+
+            $this->assertFalse($report['checks']['filesystem.document_root_isolated']['passed']);
+        } finally {
+            if ($previousDocumentRoot === null) {
+                unset($_SERVER['DOCUMENT_ROOT']);
+            } else {
+                $_SERVER['DOCUMENT_ROOT'] = $previousDocumentRoot;
+            }
+        }
+    }
+}
