@@ -25,11 +25,11 @@
             @error('email') <p role="alert">{{ $message }}</p> @enderror
 
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" required minlength="15" autocomplete="new-password">
+            <input id="password" name="password" type="password" required minlength="15" maxlength="1024" autocomplete="new-password">
             @error('password') <p role="alert">{{ $message }}</p> @enderror
 
             <label for="password_confirmation">Confirm password</label>
-            <input id="password_confirmation" name="password_confirmation" type="password" required minlength="15" autocomplete="new-password">
+            <input id="password_confirmation" name="password_confirmation" type="password" required minlength="15" maxlength="1024" autocomplete="new-password">
 
             <button type="submit">Create Super Admin</button>
         </form>
