@@ -6,7 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use RuntimeException;
 
 return new class extends Migration
 {
@@ -31,7 +30,7 @@ return new class extends Migration
     {
         foreach (self::TABLES as $tableName) {
             if (DB::table($tableName)->whereNull('actor_user_id')->exists()) {
-                throw new RuntimeException('Cannot roll back system-attributed membership role events without losing their actor semantics.');
+                throw new \RuntimeException('Cannot roll back system-attributed membership role events without losing their actor semantics.');
             }
         }
 
