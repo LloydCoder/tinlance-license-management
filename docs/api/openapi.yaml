@@ -478,6 +478,12 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Invitation record was created but email delivery failed; retry with the resend operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -721,6 +727,12 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Invitation record was created but email delivery failed; retry with the resend operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -1576,7 +1588,7 @@ components:
               type: string
               enum: [invited]
             invitation_expires_at:
-              type: [string, 'null']
+              type: string
               format: date-time
     MembershipLifecycleChangeRequest:
       type: object
