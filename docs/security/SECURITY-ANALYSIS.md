@@ -29,6 +29,7 @@ The initial bootstrap is a setup-only capability, not an authentication endpoint
 
 - The setup routes are available only while the primary installation row is unbootstrapped and a configured token matches the required base64url shape (43–128 characters; deployment instructions require at least 32 CSPRNG bytes).
 - The submitted token is compared with `hash_equals`; it is never persisted, echoed in JSON, or flashed back as old form input.
+- Setup responses use `no-store`, restrictive CSP, `no-referrer`, `nosniff` and frame-denial headers. HTTPS is mandatory outside local/testing; safe HTTP GET/HEAD requests redirect, insecure credential-bearing POSTs return 426 without redirect/replay, and secure responses set HSTS.
 - POST requests are rate-limited and remain under Laravel's web middleware, including CSRF protection.
 - A database transaction locks the single primary installation row before creating the initial vendor, administrator, membership and Super Admin role assignment. A second successful bootstrap must fail.
 - The authorization catalogue is initialized by the bootstrap service only when the catalogue is empty; a partial or inconsistent catalogue fails closed rather than silently rewriting existing roles.
