@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
+use App\Http\Controllers\Identity\WorkspaceController;
 use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Identity\VendorRoleApprovalController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
@@ -52,6 +53,17 @@ Route::middleware(RequireSecureSetupTransport::class)->group(function (): void {
         ->name('membership-invitations.accept.authenticated');
     Route::get('/membership-invitations/accepted', [MembershipInvitationController::class, 'accepted'])
         ->name('membership-invitations.accepted');
+});
+
+Route::middleware([
+    RequireSecureSetupTransport::class,
+    'auth',
+    'verified',
+    EnsureSessionVersionCurrent::class,
+    EnsureMfaEnrolled::class,
+])->group(function (): void {
+    Route::get('/workspace', WorkspaceController::class)
+        ->name('workspace.home');
 });
 
 Route::middleware([
