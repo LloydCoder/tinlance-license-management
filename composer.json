@@ -9,9 +9,11 @@
     "laravel/framework": "^13.17"
   },
   "require-dev": {
+    "larastan/larastan": "3.15.0",
     "laravel/pint": "^1.27",
-    "phpunit/phpunit": "^12.5.12",
-    "mockery/mockery": "^1.6.12"
+    "mockery/mockery": "^1.6.12",
+    "phpstan/phpstan": "2.3.7",
+    "phpunit/phpunit": "^12.5.12"
   },
   "autoload": {
     "psr-4": {
