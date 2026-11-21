@@ -41,14 +41,14 @@ required_entries=(
 )
 
 for required in "${required_entries[@]}"; do
-    if ! printf '%s\n' "${entries[@]}" | grep -Fxq "$required"; then
+    if ! printf '%s\n' "${entries[@]}" | grep -Fx "$required" >/dev/null; then
         printf 'Required release entry is missing: %s\n' "$required" >&2
         exit 1
     fi
 done
 
 for forbidden in "tlms/.env" "tlms/composer.json" "tlms/composer.lock" "tlms/phpunit.xml" "tlms/phpstan.neon"; do
-    if printf '%s\n' "${entries[@]}" | grep -Fxq "$forbidden"; then
+    if printf '%s\n' "${entries[@]}" | grep -Fx "$forbidden" >/dev/null; then
         printf 'Forbidden release entry found: %s\n' "$forbidden" >&2
         exit 1
     fi
