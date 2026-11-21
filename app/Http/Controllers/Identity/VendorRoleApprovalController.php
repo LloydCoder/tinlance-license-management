@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Identity;
 
-use App\Models\ApprovalDecision;
 use App\Models\ApprovalRequest;
 use App\Models\Role;
 use App\Models\User;
@@ -13,6 +12,7 @@ use App\Models\VendorMembership;
 use App\Services\Authorization\VendorRoleApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 final class VendorRoleApprovalController
@@ -130,7 +130,7 @@ final class VendorRoleApprovalController
      */
     private function data(ApprovalRequest $approval): array
     {
-        $approval->loadMissing(['role', 'targetMembership.user', 'decisions.actor']);
+        $approval->loadMissing(['role', 'targetMembership.user']);
 
         return [
             'id' => $approval->getKey(),
@@ -145,14 +145,8 @@ final class VendorRoleApprovalController
             'decided_by_user_id' => $approval->decided_by_user_id,
             'reason' => $approval->reason,
             'decision_reason' => $approval->decision_reason,
-            'expires_at' => $approval->expires_at?->toIso8601String(),
-            'decided_at' => $approval->decided_at?->toIso8601String(),
-            'decisions' => $approval->decisions->map(static fn (ApprovalDecision $decision): array => [
-                'decision' => $decision->decision,
-                'actor_user_id' => $decision->actor_user_id,
-                'reason' => $decision->reason,
-                'created_at' => $decision->created_at?->toIso8601String(),
-            ])->values()->all(),
+            'expires_at' => Carbon::parse($approval->expires_at)->toIso8601String(),
+            'decided_at' => $approval->decided_at !== null ? Carbon::parse($approval->decided_at)->toIso8601String() : null,
         ];
     }
 
