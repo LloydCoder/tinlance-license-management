@@ -80,6 +80,7 @@ final class AuthorizationCatalogSeeder extends Seeder
             'releases.nonproduction.publish' => 'Publish non-production releases only.',
             'signing.operational.rotate' => 'Request operational signing-key rotation through approval workflow.',
             'resellers.manage' => 'Manage reseller relationships and attribution within assigned scope.',
+            'approvals.review' => 'Review and decide maker-checker approval requests within the vendor account.',
             'audit.read' => 'Read permitted audit evidence with sensitive values redacted.',
             'backups.restore' => 'Initiate controlled backup restoration with step-up and recorded approval.',
             'system.maintenance.manage' => 'Manage installation maintenance operations with step-up.',
