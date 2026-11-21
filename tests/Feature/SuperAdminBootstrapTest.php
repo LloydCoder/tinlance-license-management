@@ -28,8 +28,6 @@ final class SuperAdminBootstrapTest extends TestCase
             'tlms.vendor_legal_name' => 'Tinlance Limited',
             'tlms.vendor_display_name' => 'Tinlance',
         ]);
-
-        $this->seed(AuthorizationCatalogSeeder::class);
     }
 
     public function test_bootstrap_page_is_not_available_without_a_configured_secret(): void
