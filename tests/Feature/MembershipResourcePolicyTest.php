@@ -146,7 +146,8 @@ final class MembershipResourcePolicyTest extends TestCase
         );
         User::query()->whereKey($inactiveUser->getKey())->update(['status' => 'suspended']);
 
-        $suspendedOrganization = $this->createOrganization($vendor, 'suspended-self-org', 'suspended');
+        $suspendedOrganization = $this->createOrganization($vendor, 'suspended-self-org');
+        CustomerOrganization::query()->whereKey($suspendedOrganization->getKey())->update(['status' => 'suspended']);
         $activeUser = $this->createUser('suspended-org-self');
         $suspendedMembership = $this->createCustomerMembership($suspendedOrganization, $activeUser);
         $suspendedMembership->roles()->attach(
