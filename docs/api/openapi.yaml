@@ -1185,7 +1185,7 @@ components:
     ApprovalRequest:
       type: object
       additionalProperties: false
-      required: [id, status, action, membership_id, target_user_id, target_user_name, role_id, role_slug, requested_by_user_id, reason, expires_at, decisions]
+      required: [id, status, action, membership_id, target_user_id, target_user_name, role_id, role_slug, requested_by_user_id, reason, expires_at]
       properties:
         id:
           type: string
