@@ -111,6 +111,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
@@ -156,6 +158,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -207,6 +211,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
@@ -252,6 +258,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /products:
     get:
       tags: [Products]
@@ -302,6 +310,8 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /licences/{licenceId}:
     get:
       tags: [Licences]
@@ -348,6 +358,8 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
   /activations/verify:
@@ -416,6 +428,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /admin/integrations/{provider}/credentials/{credentialId}/test:
     post:
       tags: [Integrations]
@@ -925,6 +939,12 @@ components:
             $ref: '#/components/schemas/Problem'
     ValidationError:
       description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Locked:
+      description: Recent password confirmation is missing or expired
       content:
         application/problem+json:
           schema:
