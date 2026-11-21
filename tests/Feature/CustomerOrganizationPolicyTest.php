@@ -174,8 +174,7 @@ final class CustomerOrganizationPolicyTest extends TestCase
         VendorAccount $vendor,
         string $reference,
         string $status = 'active',
-    ): CustomerOrganization
-    {
+    ): CustomerOrganization {
         return CustomerOrganization::create([
             'vendor_account_id' => $vendor->id,
             'external_reference' => $reference,
