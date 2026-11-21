@@ -12,6 +12,8 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 final class VendorRoleApprovalTest extends TestCase
@@ -301,14 +303,14 @@ final class VendorRoleApprovalTest extends TestCase
         $decision->update(['reason' => 'Altered decision evidence.']);
     }
 
-    /** @return \\Illuminate\\Testing\\TestResponse<\\Illuminate\\Http\\JsonResponse> */
+    /** @return TestResponse<JsonResponse> */
     private function createApprovalRequest(
         User $maker,
         VendorAccount $vendor,
         VendorMembership $target,
         Role $role,
         string $idempotencyKey,
-    ): \\Illuminate\\Testing\\TestResponse {
+    ): TestResponse {
         return $this->authenticatedJson($maker)
             ->withHeaders(['Idempotency-Key' => $idempotencyKey])
             ->postJson(
