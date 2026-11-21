@@ -146,6 +146,7 @@ final class SuperAdminBootstrapTest extends TestCase
         $superAdmin = Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail();
 
         $this->assertSame('active', $user->status);
+        $this->assertNull($user->email_verified_at);
         $this->assertTrue(Hash::check('Correct-Horse-Battery-2026!', $user->password));
         $this->assertSame('active', $membership->status);
         $this->assertTrue($membership->roles()->whereKey($superAdmin->getKey())->exists());
@@ -175,5 +176,7 @@ final class SuperAdminBootstrapTest extends TestCase
 
         $this->assertDatabaseCount('users', 1);
         $this->get('/setup/super-admin')->assertNotFound();
+        $this->get('/setup/super-admin/complete')->assertOk();
+        $this->assertGuest();
     }
 }
