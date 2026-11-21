@@ -98,7 +98,8 @@ final class AuthenticationFoundationTest extends TestCase
             ])
             ->get('/security/mfa')
             ->assertOk()
-            ->assertSee('Secure your account');
+            ->assertSee('Secure your account')
+            ->assertSee('protected TLMS features');
     }
 
     public function test_active_super_admin_without_a_confirmed_factor_is_redirected_to_mfa_enrollment(): void
