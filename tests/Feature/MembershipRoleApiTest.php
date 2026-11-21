@@ -286,6 +286,28 @@ final class MembershipRoleApiTest extends TestCase
         $this->assertSame(1, $target->refresh()->roleEvents()->count());
     }
 
+    public function test_stale_session_version_is_rejected_as_json_before_role_mutation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $actor->forceFill(['session_version' => 2])->save();
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor)
+            ->withSession([
+                'auth_session_version' => 1,
+                'auth.password_confirmed_at' => time(),
+            ])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Expired session must not mutate roles.',
+            ])
+            ->assertUnauthorized()
+            ->assertJsonPath('code', 'SESSION_EXPIRED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertGuest();
+    }
+
     private function authenticatedJson(User $user): static
     {
         return $this->actingAs($user)->withSession([
