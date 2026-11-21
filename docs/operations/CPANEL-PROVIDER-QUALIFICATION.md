@@ -13,7 +13,7 @@ The selected plan must prove all of the following in an actual account:
 - Password hashing requirement: `password_algos()` must include `argon2id`; verify the selected 19 MiB / 2-pass / 1-lane parameters under realistic concurrent login load and confirm PHP memory limits. Do not silently fall back to bcrypt.
 
 Required Laravel extensions: Ctype, cURL, DOM, Fileinfo, Filter, Hash, Mbstring, OpenSSL, PCRE, PDO, Session, Tokenizer, XML and intl; also verify PDO MySQL and Sodium for the selected cryptographic libraries.
-- MySQL 8.4 LTS is the canonical target. MariaDB 11.8 LTS is acceptable only after the full application compatibility suite passes. Do not assume the provider's advertised “MySQL databases” feature identifies its engine/version.
+- MySQL 8.4 is the primary reference target; MariaDB 10.11 is the supported cPanel/shared-hosting compatibility target. Both engines are exercised by dedicated CI integration jobs. Do not assume the provider's advertised “MySQL databases” feature identifies its engine/version. MariaDB 11.4/11.8 and MySQL 8.0 remain unqualified until their own compatibility jobs pass.
 - Database size, connection, query and CPU limits adequate for transactional licensing, ledger, webhook inbox and outbox workloads.
 - cPanel Cron Jobs can invoke PHP CLI or a protected HTTP scheduler endpoint at five-minute cadence, with documented execution limits and reliable catch-up behavior.
 - Outbound HTTPS to approved payment, email and update providers; inbound HTTPS webhooks; no provider firewall restriction that breaks required integrations.
@@ -45,7 +45,7 @@ Prices are advertised prices and may change, exclude taxes where stated, and may
 
 Do not choose or pay for an annual plan yet. First request written answers from MokoHost, Webixhost and Hi-Tech Hosting for the unknowns above, then purchase the lowest-cost refundable/short-cycle plan that allows a real PoC (if available). KanoHost remains a secondary candidate until an annual prepaid option is confirmed.
 
-A provider that cannot support MySQL 8.4 may be considered only if it offers MariaDB 11.8 and the complete compatibility matrix passes. Do not silently downgrade the canonical database version based on a sales response.
+A provider that cannot support MySQL 8.4 may be considered if it offers MariaDB 10.11 and the complete compatibility matrix passes. cPanel v122+ uses MariaDB 10.11 by default on new installations, so this is now a first-class compatibility target rather than an untested fallback. Do not silently accept older/newer engine versions based on a sales response.
 
 ## 4. Qualification proof-of-concept
 
@@ -54,7 +54,7 @@ Run these checks against a disposable test account before production selection:
 1. Record cPanel version, PHP CLI/FPM versions, extensions, PHP limits and web-server configuration.
 2. Install a minimal Laravel 13 artifact without root, Docker, persistent workers or mandatory SSH.
 3. Verify document-root isolation: request the public URL for .env, source, storage, logs, private keys and backup paths; all must be inaccessible.
-4. Create MySQL 8.4 or MariaDB 11.8 database; run migrations, unique constraints, transactions, row-lock/concurrency tests and backup restore.
+4. Create MySQL 8.4 or MariaDB 10.11 database; run migrations, unique constraints, transactions, row-lock/concurrency tests and backup restore.
 5. Test scheduler/cron at five-minute cadence over at least 24 hours; record missed runs, duration, process limits and catch-up behavior.
 6. Send outbound HTTPS to controlled endpoints; receive signed test webhooks over HTTPS; test DNS failures, timeouts and provider egress restrictions.
 7. Verify encrypted off-host backup, integrity checks and a timed restore; record measured RPO/RTO rather than adopting targets from documentation.
@@ -62,6 +62,18 @@ Run these checks against a disposable test account before production selection:
 9. Confirm provider terms allow TLMS as a commercial software licensing service and allow the intended customer/vendor integrations.
 10. Archive sanitized evidence: provider/plan, date, versions, command outputs, screenshots, test logs, resource limits, support ticket answers and restore duration.
 
-## 5. Acceptance decision
+## 5. cPanel platform facts and compatibility boundary
+
+- cPanel v122 and later uses MariaDB 10.11 by default on new installations unless the server administrator customizes the database engine.
+- Current cPanel documentation lists MySQL 8.4 on supported AlmaLinux/CloudLinux 8, 9 and 10 systems; MariaDB 10.11 is supported on the documented AlmaLinux/CloudLinux versions.
+- EasyApache 4 supports PHP 8.5 on supported AlmaLinux/CloudLinux 8, 9 and 10 systems. This is not a guarantee that every shared-hosting provider enables PHP 8.5 for every plan.
+- Confirm the actual account's OS, cPanel version, PHP CLI/web runtime, extensions and SQL server version; never infer these from the cPanel brand alone.
+
+Official references:
+- https://docs.cpanel.net/knowledge-base/general-systems-administration/supported-mysql-mariadb-versions/
+- https://support.cpanel.net/hc/en-us/articles/4412144152855-What-versions-of-PHP-does-cPanel-support
+- https://docs.cpanel.net/cpanel/software/multiphp-manager-for-cpanel/
+
+## 6. Acceptance decision
 
 A provider is qualified only when every mandatory item is evidenced and the application deployment, database, scheduler, webhook, backup/restore and isolation tests pass. If no shared-hosting plan meets these requirements, revisit the architecture explicitly; do not smuggle in a VPS or persistent worker as an undocumented dependency.
