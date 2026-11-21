@@ -33,13 +33,11 @@ final class SuperAdminBootstrapTest extends TestCase
     {
         config(['app.env' => 'production']);
 
-        $this->withServerVariables(['HTTPS' => 'off'])
-            ->get('/setup/super-admin')
+        $this->get('http://localhost/setup/super-admin')
             ->assertStatus(308)
             ->assertRedirect('https://localhost/setup/super-admin');
 
-        $this->withServerVariables(['HTTPS' => 'on'])
-            ->get('/setup/super-admin')
+        $this->get('https://localhost/setup/super-admin')
             ->assertOk()
             ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
             ->assertHeader('Referrer-Policy', 'no-referrer')
