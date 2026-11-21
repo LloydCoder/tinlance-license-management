@@ -79,9 +79,7 @@ final class VendorRoleApprovalController
         $data = [];
 
         foreach ($paginator->items() as $approval) {
-            if ($approval instanceof ApprovalRequest) {
-                $data[] = $this->data($approval);
-            }
+            $data[] = $this->data($approval);
         }
 
         return response()->json([
