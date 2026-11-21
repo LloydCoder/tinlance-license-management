@@ -9,6 +9,7 @@ use App\\Models\\Role;
 use App\\Models\\User;
 use App\\Models\\VendorAccount;
 use App\\Models\\VendorMembership;
+use Database\\Seeders\\AuthorizationCatalogSeeder;
 use Illuminate\\Support\\Facades\\DB;
 
 final class SuperAdminBootstrapService
@@ -101,7 +102,17 @@ final class SuperAdminBootstrapService
                 ->first();
 
             if ($role === null) {
-                abort(503, 'The authorization catalogue must be seeded before bootstrap.');
+                app(AuthorizationCatalogSeeder::class)->run();
+
+                $role = Role::query()
+                    ->where('scope', 'vendor')
+                    ->where('slug', 'super_admin')
+                    ->where('is_system', true)
+                    ->first();
+            }
+
+            if ($role === null) {
+                abort(503, 'The authorization catalogue could not be initialized.');
             }
 
             $existingSuperAdmin = VendorMembership::query()
