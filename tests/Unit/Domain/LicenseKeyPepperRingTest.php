@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tlms\Tests\Unit\Domain;
 
 use InvalidArgumentException;
+use RuntimeException;
 use Tlms\Domain\Licensing\LicenseKey;
 use Tlms\Domain\Licensing\LicenseKeyPepperRing;
 
