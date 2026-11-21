@@ -1218,9 +1218,8 @@ components:
           type: string
           format: date-time
         decided_at:
-          type: string
+          type: [string, 'null']
           format: date-time
-          nullable: true
     ApprovalRequestResult:
       type: object
       additionalProperties: false
