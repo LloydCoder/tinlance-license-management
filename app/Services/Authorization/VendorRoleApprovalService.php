@@ -271,7 +271,7 @@ final readonly class VendorRoleApprovalService
                 throw new ConflictHttpException('This approval request is no longer pending.');
             }
 
-            if ($request->expires_at->isPast()) {
+            if (Carbon::parse($request->expires_at)->isPast()) {
                 return $this->expire($request);
             }
 
@@ -284,7 +284,8 @@ final readonly class VendorRoleApprovalService
                 'created_at' => now(),
             ]);
 
-            return $request->fresh();
+            $request->refresh();
+        return $request;
         }, 3);
     }
 
@@ -296,7 +297,7 @@ final readonly class VendorRoleApprovalService
         return DB::transaction(function () use ($viewer, $vendor, $approvalRequest): ApprovalRequest {
             $request = $this->lockedRequest($vendor, $approvalRequest);
 
-            if ($request->status === 'pending' && $request->expires_at->isPast()) {
+            if ($request->status === 'pending' && Carbon::parse($request->expires_at)->isPast()) {
                 $request = $this->expire($request);
             }
 
@@ -384,7 +385,8 @@ final readonly class VendorRoleApprovalService
             'created_at' => now(),
         ]);
 
-        return $request->fresh();
+        $request->refresh();
+        return $request;
     }
 
     private function payloadHash(
