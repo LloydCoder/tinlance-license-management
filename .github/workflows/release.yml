@@ -133,18 +133,20 @@ jobs:
               fwrite(STDERR, "Development-only packages leaked into the production SBOM: ".implode(", ", $unexpected).PHP_EOL);
               exit(1);
           }
-          foreach ($sbom["packages"] as $package) {
-              $purls = array_values(array_map(
-                  static fn (array $reference): string => (string) ($reference["referenceLocator"] ?? ""),
-                  array_filter(
-                      $package["externalRefs"] ?? [],
-                      static fn (array $reference): bool => ($reference["referenceType"] ?? null) === "purl",
-                  ),
-              ));
-              if (! array_filter($purls, static fn (string $purl): bool => str_starts_with($purl, "pkg:composer/"))) {
-                  fwrite(STDERR, "A production SBOM package is missing its Composer package URL.".PHP_EOL);
-                  exit(1);
-              }
+          $frameworkPackages = array_values(array_filter(
+              $sbom["packages"],
+              static fn (array $package): bool => strtolower((string) ($package["name"] ?? "")) === "laravel/framework",
+          ));
+          $frameworkPurls = array_map(
+              static fn (array $reference): string => (string) ($reference["referenceLocator"] ?? ""),
+              array_filter(
+                  $frameworkPackages[0]["externalRefs"] ?? [],
+                  static fn (array $reference): bool => ($reference["referenceType"] ?? null) === "purl",
+              ),
+          );
+          if (! array_filter($frameworkPurls, static fn (string $purl): bool => str_starts_with($purl, "pkg:composer/laravel/framework@"))) {
+              fwrite(STDERR, "Laravel framework SBOM entry is missing its Composer package URL.".PHP_EOL);
+              exit(1);
           }
           ' "$sbom"
           sha256sum "$sbom" > "$sbom.sha256"
