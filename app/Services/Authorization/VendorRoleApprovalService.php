@@ -12,6 +12,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -286,6 +287,49 @@ final readonly class VendorRoleApprovalService
 
             $request->refresh();
         return $request;
+        }, 3);
+    }
+
+    public function listVendorRoleGrants(
+        User $viewer,
+        VendorAccount $vendor,
+        string $status = 'pending',
+    ): LengthAwarePaginator {
+        $canReview = $this->authorization->vendorCan($viewer, $vendor, 'approvals.review');
+        $canManage = $this->authorization->vendorCan($viewer, $vendor, 'admins.manage');
+
+        if (! $canReview && ! $canManage) {
+            throw new AuthorizationException('The actor cannot view vendor role approval requests.');
+        }
+
+        return DB::transaction(function () use ($viewer, $vendor, $status, $canReview): LengthAwarePaginator {
+            $expiredRequests = ApprovalRequest::query()
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('status', 'pending')
+                ->where('expires_at', '<=', now())
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($expiredRequests as $expiredRequest) {
+                $this->expire($expiredRequest);
+            }
+
+            $query = ApprovalRequest::query()
+                ->with(['role', 'targetMembership.user', 'requester', 'decider'])
+                ->where('vendor_account_id', $vendor->getKey());
+
+            if (! $canReview) {
+                $query->where('requested_by_user_id', $viewer->getKey());
+            }
+
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+
+            return $query
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->paginate(25);
         }, 3);
     }
 
