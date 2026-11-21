@@ -82,6 +82,43 @@ final class VendorRoleApprovalTest extends TestCase
         ]);
     }
 
+    public function test_checker_can_list_pending_requests_within_their_vendor_scope(): void
+    {
+        $vendorA = $this->createVendor();
+        $vendorB = $this->createVendor();
+        $makerA = $this->createActor($vendorA);
+        $checkerA = $this->createActor($vendorA);
+        $makerB = $this->createActor($vendorB);
+        $targetA = $this->createMembership($vendorA, $this->createUser());
+        $targetB = $this->createMembership($vendorB, $this->createUser());
+
+        $requestA = $this->createApprovalRequest($makerA, $vendorA, $targetA, $this->role('finance_admin'), 'maker-key-000012')->json('data.id');
+        $this->createApprovalRequest($makerB, $vendorB, $targetB, $this->role('finance_admin'), 'maker-key-000013');
+
+        $this->authenticatedJson($checkerA)
+            ->getJson('/api/v1/vendor-accounts/'.$vendorA->getKey().'/role-approval-requests?status=pending')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.id', $requestA)
+            ->assertJsonPath('data.0.status', 'pending');
+    }
+
+    public function test_admin_without_approval_review_sees_only_their_own_requests(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $limitedAdmin = $this->createActorWithPermission($vendor, 'admins.manage');
+        $target = $this->createMembership($vendor, $this->createUser());
+
+        $this->createApprovalRequest($maker, $vendor, $target, $this->role('finance_admin'), 'maker-key-000014');
+
+        $this->authenticatedJson($limitedAdmin)
+            ->getJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/role-approval-requests?status=pending')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 0)
+            ->assertJsonCount(0, 'data');
+    }
+
     public function test_maker_cannot_approve_own_role_grant_request(): void
     {
         $vendor = $this->createVendor();
