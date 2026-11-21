@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\View\View;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 
 final class MembershipInvitationController
@@ -192,9 +193,9 @@ final class MembershipInvitationController
         $preview = $invitations->prepareHash($tokenHash, $request->user());
 
         if (! $preview['requires_account_setup'] && $request->user() === null) {
-            $request->session()->put('url.intended', route('membership-invitations.accept.form'));
+            $request->session()->put('url.intended', '/membership-invitations/accept');
 
-            return redirect()->guest(route('login'));
+            return redirect()->guest('/login');
         }
 
         return response()->view('identity.membership-invitation-accept', [
@@ -220,7 +221,7 @@ final class MembershipInvitationController
         $invitations->acceptNewAccount($tokenHash, $validated['name'], $validated['password']);
         $request->session()->forget('pending_membership_invitation_hash');
 
-        return redirect()->route('login')->with('status', 'Your email is verified and your membership is active. Sign in to enroll MFA and continue.');
+        return redirect('/login')->with('status', 'Your email is verified and your membership is active. Sign in to enroll MFA and continue.');
     }
 
     public function acceptAuthenticated(Request $request, MembershipInvitationService $invitations): RedirectResponse
@@ -237,7 +238,7 @@ final class MembershipInvitationController
         $invitations->acceptAuthenticated($tokenHash, $actor);
         $request->session()->forget('pending_membership_invitation_hash');
 
-        return redirect()->route('membership-invitations.accepted');
+        return redirect('/membership-invitations/accepted');
     }
 
     public function accepted(): View
