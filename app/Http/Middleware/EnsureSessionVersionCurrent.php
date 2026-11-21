@@ -28,6 +28,16 @@ final class EnsureSessionVersionCurrent
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
+            if ($request->is('api/*') && $request->expectsJson()) {
+                return response()->json([
+                    'type' => 'about:blank',
+                    'title' => 'Session is no longer valid',
+                    'status' => 401,
+                    'code' => 'SESSION_EXPIRED',
+                    'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
+                ], 401);
+            }
+
             return redirect()
                 ->route('login')
                 ->withErrors(['email' => 'Your session is no longer valid. Sign in again.']);
