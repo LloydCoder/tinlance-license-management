@@ -133,7 +133,9 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->vendorRolePath($vendor, $target, $role), [
                 'reason' => 'Cross-vendor attempt.',
             ])
-            ->assertNotFound()\n            ->assertHeader('Content-Type', 'application/problem+json')\n            ->assertJsonPath('code', 'NOT_FOUND');
+            ->assertNotFound()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'NOT_FOUND');
     }
 
     public function test_customer_route_cannot_be_used_with_a_membership_from_another_organization(): void
@@ -147,7 +149,9 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->customerRolePath($organization, $target, $role), [
                 'reason' => 'Cross-organization attempt.',
             ])
-            ->assertNotFound();
+            ->assertNotFound()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'NOT_FOUND');
     }
 
     public function test_vendor_without_admin_permission_cannot_assign_roles(): void
@@ -160,7 +164,9 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->vendorRolePath($vendor, $target, $role), [
                 'reason' => 'Unauthorized attempt.',
             ])
-            ->assertForbidden()\n            ->assertHeader('Content-Type', 'application/problem+json')\n            ->assertJsonPath('code', 'FORBIDDEN');
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'FORBIDDEN');
     }
 
     public function test_customer_member_cannot_assign_roles(): void
@@ -173,7 +179,9 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->customerRolePath($organization, $target, $role), [
                 'reason' => 'Unauthorized attempt.',
             ])
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'FORBIDDEN');
     }
 
     public function test_wrong_scope_role_is_rejected_without_mutation(): void
@@ -186,7 +194,9 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->vendorRolePath($vendor, $target, $customerRole), [
                 'reason' => 'Wrong scope role.',
             ])
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'FORBIDDEN');
 
         $this->assertFalse($target->refresh()->roles()->whereKey($customerRole->getKey())->exists());
     }
@@ -211,7 +221,9 @@ final class MembershipRoleApiTest extends TestCase
 
         $this->postJson($this->vendorRolePath($vendor, $target, $role), [
             'reason' => 'No actor session.',
-        ])->assertUnauthorized();
+        ])->assertUnauthorized()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'UNAUTHENTICATED');
     }
 
     public function test_actor_without_an_enrolled_mfa_factor_is_denied_json_access(): void
