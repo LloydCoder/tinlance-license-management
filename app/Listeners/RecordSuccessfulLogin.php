@@ -11,16 +11,22 @@ final class RecordSuccessfulLogin
 {
     public function handle(Login $event): void
     {
-        if (! $event->user instanceof User) {
+        $user = $event->user;
+
+        if (! $user instanceof User) {
             return;
         }
 
         $request = request();
 
         if ($request->hasSession()) {
-            $request->session()->put('auth_session_version', (int) $event->user->session_version);
+            $sessionVersion = $user->getAttribute('session_version');
+
+            if (is_numeric($sessionVersion)) {
+                $request->session()->put('auth_session_version', (int) $sessionVersion);
+            }
         }
 
-        $event->user->forceFill(['last_login_at' => now()])->save();
+        $user->forceFill(['last_login_at' => now()])->save();
     }
 }
