@@ -9,8 +9,8 @@ use App\Services\Identity\MfaStepUpAuditService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 
 final class MfaStepUpController
 {
@@ -50,7 +50,7 @@ final class MfaStepUpController
             ], 403, ['Content-Type' => 'application/problem+json']);
         }
 
-        if (! $provider->verify($secret, $validated['code'])) {
+        if (! $provider->verify((string) $secret, (string) $validated['code'])) {
             $audit->record($user, 'totp', 'failed', $request);
 
             throw ValidationException::withMessages([
