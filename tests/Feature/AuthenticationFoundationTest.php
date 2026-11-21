@@ -11,9 +11,10 @@ use App\Models\VendorMembership;
 use App\Services\Identity\SessionRevocationService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
+use Laravel\Fortify\Contracts\PasskeyUser as FortifyPasskeyUser;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 use Laravel\Passkeys\Passkeys;
 use Tests\TestCase;
@@ -28,6 +29,13 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertTrue(Route::has('password.request'));
         $this->assertTrue(Route::has('verification.notice'));
         $this->assertTrue(Route::has('two-factor.login'));
+    }
+
+    public function test_fortify_guest_authentication_views_are_renderable(): void
+    {
+        $this->get('/login')->assertOk();
+        $this->get('/forgot-password')->assertOk();
+        $this->get('/reset-password/test-reset-token')->assertOk();
     }
 
     public function test_authentication_features_and_database_session_storage_are_configured(): void
@@ -49,6 +57,7 @@ final class AuthenticationFoundationTest extends TestCase
 
         $this->assertInstanceOf(MustVerifyEmail::class, $user);
         $this->assertInstanceOf(PasskeyUser::class, $user);
+        $this->assertInstanceOf(FortifyPasskeyUser::class, $user);
         $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $user->getPasskeyUserHandle());
         $this->assertNotSame($user->email, $user->getPasskeyUserHandle());
     }
