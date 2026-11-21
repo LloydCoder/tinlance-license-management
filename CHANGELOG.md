@@ -14,13 +14,15 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
 - Pinned Gitleaks 8.30.1 scanning all reachable Git history and removed high-entropy synthetic password literals from authentication tests (PR #27).
 - Semgrep, Larastan/PHPStan, Gitleaks and OSV-Scanner security gates; weekly Composer and GitHub Actions Dependabot update configuration.
+- Vendor-account read policy with a dedicated vendor-scoped permission, upgrade migration for existing system roles, and cross-vendor/stale-membership/role-revocation regression coverage (PR #38).
+- Tag-triggered release workflow that builds an SPDX 2.3 SBOM and creates/verifies GitHub/Sigstore SLSA provenance and SBOM attestations before publishing a version-tagged cPanel artifact (PR #36).
 
 ### Security
 - Bootstrap credentials are never persisted or flashed to browser input; successful setup requires removal of the environment secret and clearing cached configuration.
 - MFA management and recovery-code retrieval require recent password confirmation; recovery codes are returned only after an explicit user action and are not embedded in rendered pages by default.
 - Password resets and global session revocation execute in one database transaction; successful login upgrades supported weaker legacy password hashes to the configured stronger driver without downgrading stronger hashes.
 - Production artifact verification rejects environment files, package-authentication files and private-key material.
-- Production artifact publication remains manual; the package is not cryptographically signed.
+- Pull-request CI artifacts are not cryptographically signed or published as releases. The tag-only signed release workflow has not yet been exercised with a real protected version tag; independent consumer verification remains outstanding.
 
 ### Not yet released
 No production TLMS service or production software package is published. Resource-level ABAC, maker-checker and privileged step-up workflows, customer/vendor portals, product and licence lifecycle, payment processing, cryptographic signing, secure updates, customer SDK, Talyvane integration and live cPanel provider qualification remain in development.
