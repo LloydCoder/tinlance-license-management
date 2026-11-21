@@ -40,7 +40,7 @@
 
 ## Verification evidence
 
-CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`. It passed Composer manifest/lock validation, locked dependency installation, Composer audit (no advisories), PHP syntax checks, Laravel Pint, 25 domain tests, 47 Laravel feature tests (91 assertions), Artisan bootstrap, documentation governance and OpenAPI validation across PHP 8.3/8.4/8.5, plus the same feature suite against MySQL 8.4.13 and MariaDB 10.11.
+Earlier CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`: Composer validation/audit, PHP syntax, Pint, 25 domain tests, 47 Laravel feature tests (91 assertions), Artisan bootstrap, documentation governance and OpenAPI validation across PHP 8.3/8.4/8.5, plus MySQL 8.4.13 integration. The later dual-engine qualification is recorded in [PR #15 CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44868884337) and [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44868884325) on exact head `6cac99608ad08768f5e51f0bf62984fade7827c3`: MySQL 8.4.13 and MariaDB 10.11 integration each passed 48 Laravel feature tests (94 assertions); PHP 8.3/8.4/8.5, Larastan/PHPStan level 8, Semgrep, Gitleaks, OSV-Scanner, documentation governance and OpenAPI validation passed.
 
 The bootstrap is still not a complete licensing service; identity/business APIs, authentication and production deployment remain separate implementation work.
 
