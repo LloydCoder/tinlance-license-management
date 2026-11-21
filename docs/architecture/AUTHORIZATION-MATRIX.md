@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue and membership-level authorization service implemented and tested. Resource-level ABAC, endpoint policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service and a narrowly scoped customer-organization `view` policy are implemented and tested. Complete resource-level ABAC, mutation policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
@@ -73,7 +73,8 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 - `MembershipRoleAssignmentService` performs transactional, row-locked assignment/revocation, checks actor permission and target scope, blocks self-assignment and privileged roles, requires a reason, and records immutable vendor/customer membership-role events.
 - Generic grants are allowlisted; Super Admin, platform admin, finance admin, vendor product manager and customer owner grants require separate bootstrap/approval workflows.
 - Membership-role events are an application-level append-only precursor, not the future global hash-chained audit ledger.
-- Resource-level ABAC for products, resellers and nested customer resources remains pending.
+- PR #29 adds `CustomerOrganizationPolicy::view`: a customer principal may read only its own organization with `customer.licences.read`; a vendor support principal may read organizations only under its active vendor with `customers.support.read`. Both branches delegate to `MembershipAuthorization`, which reloads current actor, membership and resource/vendor state from the database.
+- The policy deliberately defines no `viewAny`, create, update, delete or mutation abilities. Product, reseller, licence, payment and nested-resource policies remain pending; this is not complete ABAC.
 
 ## 4. Super Admin authority
 
