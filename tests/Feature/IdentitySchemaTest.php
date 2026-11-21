@@ -13,6 +13,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -28,6 +29,23 @@ final class IdentitySchemaTest extends TestCase
             config('tlms.expected_db_connection'),
             config('database.default'),
         );
+    }
+
+    public function test_database_server_vendor_matches_the_explicit_ci_expectation(): void
+    {
+        if (config('database.default') !== 'mysql') {
+            $this->markTestSkipped('Database server vendor assertion runs only for MySQL-compatible integration jobs.');
+        }
+
+        $version = DB::scalar('SELECT VERSION()');
+        $this->assertIsString($version);
+
+        $expectedVendor = (string) config('tlms.expected_db_vendor', 'mysql');
+        $this->assertContains($expectedVendor, ['mysql', 'mariadb']);
+
+        $isMariaDb = str_contains(strtolower($version), 'mariadb');
+
+        $this->assertSame($expectedVendor === 'mariadb', $isMariaDb);
     }
 
     public function test_users_have_ulid_identity_canonical_email_and_hashed_passwords(): void
