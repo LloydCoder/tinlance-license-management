@@ -367,6 +367,7 @@ final class MembershipRoleAssignmentTest extends TestCase
             ->count());
     }
 
+    /** @return array{User, VendorAccount, VendorMembership} */
     private function vendorActor(string $roleSlug): array
     {
         $actor = $this->createUser('vendor-actor');
@@ -377,6 +378,7 @@ final class MembershipRoleAssignmentTest extends TestCase
         return [$actor, $vendor, $membership];
     }
 
+    /** @return array{User, CustomerOrganization, CustomerMembership} */
     private function customerActor(string $roleSlug): array
     {
         $actor = $this->createUser('customer-actor');

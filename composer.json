@@ -9,9 +9,11 @@
     "laravel/framework": "^13.17"
   },
   "require-dev": {
+    "larastan/larastan": "3.15.0",
     "laravel/pint": "^1.27",
-    "phpunit/phpunit": "^12.5.12",
-    "mockery/mockery": "^1.6.12"
+    "mockery/mockery": "^1.6.12",
+    "phpstan/phpstan": "2.3.7",
+    "phpunit/phpunit": "^12.5.12"
   },
   "autoload": {
     "psr-4": {
@@ -28,6 +30,7 @@
     }
   },
   "scripts": {
+    "analyse": "@php vendor/bin/phpstan analyse --no-progress --error-format=github",
     "test": "@php tests/run.php",
     "test:framework": "@php vendor/bin/phpunit",
     "format:check": "@php vendor/bin/pint --test -v"
@@ -39,6 +42,9 @@
     "allow-plugins": {
       "pestphp/pest-plugin": false,
       "php-http/discovery": false
+    },
+    "platform": {
+      "php": "8.3.0"
     }
   },
   "minimum-stability": "stable",

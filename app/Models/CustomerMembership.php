@@ -23,21 +23,25 @@ final class CustomerMembership extends BaseModel
         return ['joined_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<CustomerOrganization, $this> */
     public function customerOrganization(): BelongsTo
     {
         return $this->belongsTo(CustomerOrganization::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<CustomerMembershipRoleEvent, $this> */
     public function roleEvents(): HasMany
     {
         return $this->hasMany(CustomerMembershipRoleEvent::class);
     }
 
+    /** @return BelongsToMany<Role, $this> */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'customer_membership_roles');

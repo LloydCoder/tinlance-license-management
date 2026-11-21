@@ -77,13 +77,13 @@ jobs:
           scan-args: |-
             scan source -r ./
 
-  phpstan:
-    name: PHPStan domain static analysis
+  larastan:
+    name: Larastan application analysis
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
       - name: Set up PHP
@@ -95,16 +95,5 @@ jobs:
           tools: composer:v2
       - name: Install locked project dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Download pinned PHPStan PHAR
-        run: |
-          curl --fail --location --retry 3 \
-            --output phpstan.phar \
-            https://github.com/phpstan/phpstan/releases/download/2.3.7/phpstan.phar
-          echo "87fa9aa451bb9b61d7c65d40ec7d14d5bab67e3ad74ce75a09b3140d6f22631a  phpstan.phar" | sha256sum --check
-      - name: Analyze framework-independent licensing domain
-        run: |
-          php phpstan.phar analyse src \
-            --level=6 \
-            --autoload-file=vendor/autoload.php \
-            --no-progress \
-            --error-format=github
+      - name: Analyze Laravel application, domain, database and tests
+        run: composer analyse
