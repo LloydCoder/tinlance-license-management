@@ -6,11 +6,13 @@ namespace App\Services\Authorization;
 
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipLifecycleEvent;
+use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerOrganization;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipLifecycleEvent;
+use App\Models\VendorMembershipInvitation;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -77,6 +79,12 @@ final readonly class MembershipLifecycleService
 
             $fromStatus = $target->status;
             $target->forceFill(['status' => 'revoked'])->save();
+
+            VendorMembershipInvitation::query()
+                ->where('vendor_membership_id', $target->getKey())
+                ->whereNull('accepted_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
 
             VendorMembershipLifecycleEvent::query()->create([
                 'vendor_membership_id' => $target->getKey(),
@@ -162,6 +170,12 @@ final readonly class MembershipLifecycleService
 
             $fromStatus = $target->status;
             $target->forceFill(['status' => 'revoked'])->save();
+
+            CustomerMembershipInvitation::query()
+                ->where('customer_membership_id', $target->getKey())
+                ->whereNull('accepted_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
 
             CustomerMembershipLifecycleEvent::query()->create([
                 'customer_membership_id' => $target->getKey(),
