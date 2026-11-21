@@ -207,7 +207,10 @@ final class MembershipInvitationController
         if (! is_string($tokenHash)) {
             return response()->view('identity.membership-invitation-accept', ['mode' => 'prepare'])
                 ->header('Referrer-Policy', 'no-referrer')
-                ->header('Cache-Control', 'no-store, max-age=0');
+                ->header('Cache-Control', 'no-store, max-age=0')
+                ->header('X-Content-Type-Options', 'nosniff')
+                ->header('X-Frame-Options', 'DENY')
+                ->header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
         }
 
         $authenticatedUser = $request->user();
@@ -230,7 +233,10 @@ final class MembershipInvitationController
             'mode' => $preview['requires_account_setup'] ? 'account_setup' : 'authenticated',
             'preview' => $preview,
         ])->header('Referrer-Policy', 'no-referrer')
-            ->header('Cache-Control', 'no-store, max-age=0');
+            ->header('Cache-Control', 'no-store, max-age=0')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Frame-Options', 'DENY')
+            ->header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
     }
 
     public function acceptNewAccount(Request $request, MembershipInvitationService $invitations): RedirectResponse
