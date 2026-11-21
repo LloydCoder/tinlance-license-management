@@ -69,11 +69,12 @@ final class SuperAdminBootstrapTest extends TestCase
             'password_confirmation' => 'Correct-Horse-Battery-2026!',
         ])->assertRedirect('/setup/super-admin');
 
-        $this->assertSessionHas('_old_input', static function (array $oldInput): bool {
-            return ! array_key_exists('bootstrap_token', $oldInput)
-                && ! array_key_exists('password', $oldInput)
-                && ! array_key_exists('password_confirmation', $oldInput);
-        });
+        $oldInput = $this->app['session.store']->get('_old_input');
+
+        $this->assertIsArray($oldInput);
+        $this->assertArrayNotHasKey('bootstrap_token', $oldInput);
+        $this->assertArrayNotHasKey('password', $oldInput);
+        $this->assertArrayNotHasKey('password_confirmation', $oldInput);
     }
 
     public function test_invalid_bootstrap_secret_cannot_create_an_administrator(): void
@@ -150,7 +151,7 @@ final class SuperAdminBootstrapTest extends TestCase
         $this->assertTrue(Hash::check('Correct-Horse-Battery-2026!', $user->password));
         $this->assertSame('active', $membership->status);
         $this->assertTrue($membership->roles()->whereKey($superAdmin->getKey())->exists());
-        $this->assertNotNull($vendor->legal_name);
+        $this->assertSame('Tinlance Limited', $vendor->legal_name);
         $this->assertDatabaseHas('platform_installations', [
             'installation_key' => 'primary',
             'bootstrapped_user_id' => $user->getKey(),
