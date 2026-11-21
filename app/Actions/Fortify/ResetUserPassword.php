@@ -6,6 +6,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\Identity\SessionRevocationService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Contracts\ResetsUserPasswords;
@@ -25,10 +26,12 @@ final class ResetUserPassword implements ResetsUserPasswords
             'password' => ['required', 'string', Password::min(15)->max(1024), 'confirmed'],
         ])->validate();
 
-        $user->forceFill([
-            'password' => (string) $input['password'],
-        ])->save();
+        DB::transaction(function () use ($user, $input): void {
+            $user->forceFill([
+                'password' => (string) $input['password'],
+            ])->save();
 
-        $this->sessionRevocationService->revokeAll($user);
+            $this->sessionRevocationService->revokeAll($user);
+        }, 3);
     }
 }
