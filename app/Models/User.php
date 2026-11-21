@@ -12,8 +12,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Passkeys\Contracts\PasskeyUser;
-use Laravel\Passkeys\PasskeyAuthenticatable;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
 
 final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
