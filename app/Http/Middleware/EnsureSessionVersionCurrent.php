@@ -21,7 +21,7 @@ final class EnsureSessionVersionCurrent
         }
 
         $sessionVersion = $request->session()->get('auth_session_version');
-        $storedSessionVersion = $user->getAttribute('session_version');
+        $storedSessionVersion = User::query()->whereKey($user->getKey())->value('session_version');
 
         if (! is_int($sessionVersion) || ! is_numeric($storedSessionVersion) || $sessionVersion !== (int) $storedSessionVersion) {
             Auth::guard('web')->logout();
