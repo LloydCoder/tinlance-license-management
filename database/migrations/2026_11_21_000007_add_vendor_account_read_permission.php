@@ -48,12 +48,14 @@ return new class extends Migration
                 ->whereIn('slug', self::VENDOR_ROLES)
                 ->pluck('id');
 
-            $assignments = $roleIds->map(
-                static fn (string $roleId): array => [
-                    'role_id' => $roleId,
+            $assignments = [];
+
+            foreach ($roleIds as $roleId) {
+                $assignments[] = [
+                    'role_id' => (string) $roleId,
                     'permission_id' => $permissionId,
-                ],
-            )->all();
+                ];
+            }
 
             if ($assignments !== []) {
                 DB::table('role_permissions')->insertOrIgnore($assignments);
