@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\Security\SessionController;
-use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
+use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
 use App\Http\Middleware\EnsureMfaEnrolled;
