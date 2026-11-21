@@ -48,4 +48,17 @@ final class HostingPreflightCommandTest extends TestCase
             $this->assertNotSame('', $check['message']);
         }
     }
+    public function test_database_vendor_check_requires_a_qualified_live_database_server(): void
+    {
+        $report = app(\\App\\Services\\Hosting\\HostingPreflight::class)->report();
+
+        if (config('database.default') !== 'mysql') {
+            $this->assertFalse($report['checks']['database.vendor']['passed']);
+
+            return;
+        }
+
+        $this->assertTrue($report['checks']['database.vendor']['passed']);
+    }
+
 }
