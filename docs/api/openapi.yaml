@@ -310,9 +310,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '423':
-          $ref: '#/components/responses/Locked'
-  /licences/{licenceId}:
     get:
       tags: [Licences]
       operationId: getLicence
@@ -358,9 +355,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
           $ref: '#/components/responses/RateLimited'
   /activations/verify:
     post:
@@ -428,9 +422,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '423':
-          $ref: '#/components/responses/Locked'
-  /admin/integrations/{provider}/credentials/{credentialId}/test:
     post:
       tags: [Integrations]
       operationId: testProviderCredential
