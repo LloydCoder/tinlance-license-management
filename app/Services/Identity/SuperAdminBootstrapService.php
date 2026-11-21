@@ -2,23 +2,32 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Identity;
+namespace App\\Services\\Identity;
 
-use App\Models\PlatformInstallation;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\VendorAccount;
-use App\Models\VendorMembership;
-use Database\Seeders\AuthorizationCatalogSeeder;
-use Illuminate\Support\Facades\DB;
+use App\\Models\\PlatformInstallation;
+use App\\Models\\Role;
+use App\\Models\\User;
+use App\\Models\\VendorAccount;
+use App\\Models\\VendorMembership;
+use Database\\Seeders\\AuthorizationCatalogSeeder;
+use Illuminate\\Support\\Facades\\DB;
 
 final class SuperAdminBootstrapService
 {
     public function isAvailable(): bool
     {
         $token = config('tlms.bootstrap_token');
+        $appKey = config('app.key');
 
-        if (! is_string($token) || preg_match('/\\A[A-Za-z0-9_-]{43,128}\\z/', $token) !== 1) {
+        if (
+            ! is_string($token)
+            || preg_match('/\\\\A[A-Za-z0-9_-]{43,128}\\\\z/', $token) !== 1
+            || ! is_string($appKey)
+            || $appKey === ''
+            || config('session.secure') !== true
+            || config('session.encrypt') !== true
+            || (config('app.env') === 'production' && config('app.debug') !== false)
+        ) {
             return false;
         }
 
@@ -60,7 +69,7 @@ final class SuperAdminBootstrapService
 
         if (
             ! is_string($configuredToken)
-            || preg_match('/\\A[A-Za-z0-9_-]{43,128}\\z/', $configuredToken) !== 1
+            || preg_match('/\\\\A[A-Za-z0-9_-]{43,128}\\\\z/', $configuredToken) !== 1
             || ! hash_equals($configuredToken, $providedToken)
         ) {
             abort(404);
@@ -80,11 +89,18 @@ final class SuperAdminBootstrapService
                 abort(404);
             }
 
+            $legalName = trim((string) config('tlms.vendor_legal_name', 'Tinlance Limited'));
+            $displayName = trim((string) config('tlms.vendor_display_name', 'Tinlance'));
+
+            if ($legalName === '' || mb_strlen($legalName) > 255 || $displayName === '' || mb_strlen($displayName) > 160) {
+                abort(503, 'The primary vendor identity is not configured correctly.');
+            }
+
             $vendor = VendorAccount::query()->firstOrCreate(
                 ['installation_key' => 'primary'],
                 [
-                    'legal_name' => (string) config('tlms.vendor_legal_name', 'Tinlance Limited'),
-                    'display_name' => (string) config('tlms.vendor_display_name', 'Tinlance'),
+                    'legal_name' => $legalName,
+                    'display_name' => $displayName,
                     'status' => 'active',
                     'default_currency' => 'USD',
                     'timezone' => 'UTC',
