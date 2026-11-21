@@ -137,6 +137,7 @@ final class SuperAdminBootstrapService
                 ->where('scope', 'vendor')
                 ->count();
 
+            $assignedPermissionCount = $role->permissions()->count();
             $assignedVendorPermissionCount = $role->permissions()
                 ->where('permissions.scope', 'vendor')
                 ->count();
@@ -144,6 +145,7 @@ final class SuperAdminBootstrapService
             if (
                 $vendorPermissionCount === 0
                 || $assignedVendorPermissionCount !== $vendorPermissionCount
+                || $assignedPermissionCount !== $vendorPermissionCount
             ) {
                 abort(503, 'The authorization catalogue is incomplete.');
             }
