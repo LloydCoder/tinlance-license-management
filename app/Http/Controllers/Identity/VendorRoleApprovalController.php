@@ -58,6 +58,44 @@ final class VendorRoleApprovalController
         ], $approval->wasRecentlyCreated ? 202 : 200);
     }
 
+    public function index(
+        Request $request,
+        VendorAccount $vendor,
+        VendorRoleApprovalService $approvals,
+    ): JsonResponse {
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        $validated = $request->validate([
+            'status' => ['sometimes', 'string', 'in:pending,approved,rejected,expired,all'],
+        ]);
+
+        $paginator = $approvals->listVendorRoleGrants(
+            $actor,
+            $vendor,
+            (string) ($validated['status'] ?? 'pending'),
+        );
+
+        $data = [];
+
+        foreach ($paginator->items() as $approval) {
+            if ($approval instanceof ApprovalRequest) {
+                $data[] = $this->data($approval);
+            }
+        }
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+            'request_id' => $this->requestId($request),
+        ]);
+    }
+
     public function show(
         Request $request,
         VendorAccount $vendor,
