@@ -12,7 +12,6 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -284,7 +283,10 @@ final readonly class VendorRoleApprovalService
         VendorAccount $vendor,
         ApprovalRequest $approvalRequest,
     ): ApprovalRequest {
-        $request = $this->lockedRequest($vendor, $approvalRequest);
+        $request = ApprovalRequest::query()
+            ->whereKey($approvalRequest->getKey())
+            ->where('vendor_account_id', $vendor->getKey())
+            ->firstOrFail();
 
         if (
             $request->requested_by_user_id !== $viewer->getKey()
