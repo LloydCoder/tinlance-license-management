@@ -142,6 +142,29 @@ final class MembershipLifecycleTest extends TestCase
         $this->assertSame('active', $foreignMembership->refresh()->status);
     }
 
+    public function test_customer_membership_revocation_fails_when_parent_vendor_is_suspended(): void
+    {
+        [$actor, $organization] = $this->customerActor();
+        $target = $this->customerMembership($organization, $this->createUser());
+
+        VendorAccount::query()
+            ->whereKey($organization->vendor_account_id)
+            ->update(['status' => 'suspended']);
+
+        $this->authenticatedJson($actor)
+            ->postJson(
+                '/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$target->getKey().'/revoke',
+                ['reason' => 'Suspended vendor must not authorize tenant administration.'],
+            )
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json');
+
+        $this->assertSame('active', $target->refresh()->status);
+        $this->assertDatabaseMissing('customer_membership_lifecycle_events', [
+            'customer_membership_id' => $target->getKey(),
+        ]);
+    }
+
     public function test_vendor_membership_revocation_fails_when_parent_vendor_is_suspended(): void
     {
         [$actor, $vendor] = $this->vendorActor();

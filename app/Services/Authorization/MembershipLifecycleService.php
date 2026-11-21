@@ -113,9 +113,19 @@ final readonly class MembershipLifecycleService
             $activeOrganization = CustomerOrganization::query()
                 ->whereKey($organization->getKey())
                 ->where('status', 'active')
-                ->whereHas('vendorAccount', static fn ($query) => $query->where('status', 'active'))
                 ->lockForUpdate()
                 ->first();
+
+            // Lock the persisted parent vendor as well as the organization. The
+            // relationship predicate alone does not serialize a concurrent
+            // vendor suspension against this membership mutation.
+            $activeVendor = $activeOrganization instanceof CustomerOrganization
+                ? VendorAccount::query()
+                    ->whereKey($activeOrganization->vendor_account_id)
+                    ->where('status', 'active')
+                    ->lockForUpdate()
+                    ->first()
+                : null;
 
             $actorMembership = CustomerMembership::query()
                 ->where('customer_organization_id', $organization->getKey())
@@ -132,7 +142,8 @@ final readonly class MembershipLifecycleService
 
             if (
                 $activeActor === null
-                || $activeOrganization === null
+                || ! $activeOrganization instanceof CustomerOrganization
+                || ! $activeVendor instanceof VendorAccount
                 || $actorMembership === null
                 || ! $target instanceof CustomerMembership
                 || $target->user_id === $actor->getKey()
