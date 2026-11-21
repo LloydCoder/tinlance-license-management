@@ -236,6 +236,56 @@ final class MembershipRoleApiTest extends TestCase
             ->assertJsonPath('code', 'MFA_REQUIRED');
     }
 
+    public function test_vendor_admin_can_assign_a_role_to_an_invited_member(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser(), 'invited');
+        $role = $this->role('vendor', 'support_agent');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Pre-provision approved invite permissions.',
+            ])
+            ->assertCreated();
+
+        $this->assertTrue($target->refresh()->roles()->whereKey($role->getKey())->exists());
+    }
+
+    public function test_customer_owner_can_assign_a_role_to_an_invited_member(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_owner');
+        $target = $this->customerMembership($organization, $this->createUser(), 'invited');
+        $role = $this->role('customer', 'customer_member');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->customerRolePath($organization, $target, $role), [
+                'reason' => 'Pre-provision approved customer invite permissions.',
+            ])
+            ->assertCreated();
+
+        $this->assertTrue($target->refresh()->roles()->whereKey($role->getKey())->exists());
+    }
+
+    public function test_repeated_assignment_is_idempotent_and_does_not_duplicate_audit_events(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+        $path = $this->vendorRolePath($vendor, $target, $role);
+
+        $this->authenticatedJson($actor)
+            ->postJson($path, ['reason' => 'Initial approved role assignment.'])
+            ->assertCreated()
+            ->assertJsonPath('data.changed', true);
+
+        $this->authenticatedJson($actor)
+            ->postJson($path, ['reason' => 'Retry of the same role assignment.'])
+            ->assertOk()
+            ->assertJsonPath('data.changed', false);
+
+        $this->assertSame(1, $target->refresh()->roleEvents()->count());
+    }
+
     private function authenticatedJson(User $user): static
     {
         return $this->actingAs($user)->withSession([
