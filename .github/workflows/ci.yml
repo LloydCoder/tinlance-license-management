@@ -220,7 +220,7 @@ jobs:
           php-version: "8.5"
           extensions: intl, pdo_mysql, pdo_sqlite
           coverage: none
-          tools: composer:v2
+          tools: composer:2.11.2
       - name: Verify production package contents and dependency exclusion
         run: bash scripts/ci/verify-cpanel-release-artifact.sh
       - name: Build package for explicit manual retrieval
