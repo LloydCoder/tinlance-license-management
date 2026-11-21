@@ -1,6 +1,4 @@
-# Syft cataloger selection for the TLMS cPanel runtime artifact.
-# The release artifact is a PHP application; Composer installed.json is the
-# authoritative inventory after --no-dev installation. Do not include npm
-# development dependencies or unrelated repository metadata in this runtime SBOM.
-select-catalogers:
-  - php
+# Restrict the runtime SBOM to packages actually installed by Composer
+# in the production-only cPanel artifact. The artifact is built with --no-dev.
+default-catalogers:
+  - php-composer-installed-cataloger
