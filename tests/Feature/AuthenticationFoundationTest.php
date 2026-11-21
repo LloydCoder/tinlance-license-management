@@ -127,6 +127,47 @@ final class AuthenticationFoundationTest extends TestCase
             ->assertOk();
     }
 
+    public function test_suspended_user_session_is_invalidated_before_web_admin_access(): void
+    {
+        $user = $this->createSuperAdmin();
+        $user->forceFill([
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-one'], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)->withSession(['auth_session_version' => 0]);
+        User::query()->whereKey($user->getKey())->update(['status' => 'suspended']);
+
+        $this->get('/admin')
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
+    public function test_suspended_user_session_is_invalidated_before_api_authorization(): void
+    {
+        $user = $this->createSuperAdmin();
+        $user->forceFill([
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-one'], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)->withSession([
+            'auth_session_version' => 0,
+            'auth.password_confirmed_at' => now()->timestamp,
+        ]);
+        User::query()->whereKey($user->getKey())->update(['status' => 'suspended']);
+
+        $this->postJson('/api/v1/security/step-up/totp', ['code' => '123456'])
+            ->assertUnauthorized()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'SESSION_EXPIRED');
+
+        $this->assertGuest();
+    }
+
     public function test_stale_session_version_is_invalidated_before_admin_access(): void
     {
         $user = $this->createSuperAdmin();
