@@ -12,7 +12,6 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use LogicException;
 use Tests\TestCase;
 
 final class VendorRoleApprovalTest extends TestCase
@@ -297,7 +296,7 @@ final class VendorRoleApprovalTest extends TestCase
 
         $decision = ApprovalDecision::query()->where('approval_request_id', $requestId)->firstOrFail();
 
-        $this->expectException(LogicException::class);
+        $this->expectException(\\LogicException::class);
 
         $decision->update(['reason' => 'Altered decision evidence.']);
     }
