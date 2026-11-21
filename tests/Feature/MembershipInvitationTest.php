@@ -34,7 +34,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $vendor] = $this->vendorActor();
-        $email = 'new-vendor-member-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('new-vendor-member-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
@@ -75,7 +75,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $organization] = $this->customerActor();
-        $email = 'new-customer-member-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('new-customer-member-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations', [
@@ -99,7 +99,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $organization] = $this->customerActor();
-        $email = 'accept-new-customer-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('accept-new-customer-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations', [
@@ -141,7 +141,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $vendor] = $this->vendorActor();
-        $email = 'accept-new-member-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('accept-new-member-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
@@ -216,6 +216,8 @@ final class MembershipInvitationTest extends TestCase
         $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($invitee->email)[0];
 
+        $this->app['auth']->guard('web')->logout();
+
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertOk()
             ->assertJsonPath('next', 'login');
@@ -245,7 +247,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $vendor] = $this->vendorActor();
-        $email = 'expired-invitee-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('expired-invitee-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
@@ -271,7 +273,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $vendor] = $this->vendorActor();
-        $email = 'resend-invitee-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('resend-invitee-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
@@ -308,7 +310,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $vendor] = $this->vendorActor();
-        $email = 'revoke-invitee-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('revoke-invitee-'.str()->random(8).'@example.test');
 
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
@@ -340,7 +342,7 @@ final class MembershipInvitationTest extends TestCase
     {
         Mail::fake();
         [$actor, $vendor] = $this->vendorActor();
-        $email = 'privileged-invitee-'.str()->random(8).'@example.test';
+        $email = mb_strtolower('privileged-invitee-'.str()->random(8).'@example.test');
 
         $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
