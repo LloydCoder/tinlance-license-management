@@ -11,6 +11,17 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      publish_cpanel_artifact:
+        description: "Upload the verified cPanel package as a temporary Actions artifact; this does not create a public release."
+        required: false
+        type: boolean
+        default: false
+      release_version:
+        description: "Release version string used only when publish_cpanel_artifact is enabled."
+        required: false
+        type: string
+        default: "0.0.0-dev"
 
 permissions:
   contents: read
@@ -191,3 +202,37 @@ jobs:
         run: composer format:check
       - name: Run migrations and identity feature tests against MariaDB 10.11
         run: composer test:framework
+
+  cpanel-release-artifact:
+    name: cPanel production artifact verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up PHP and Composer
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.5"
+          extensions: intl, pdo_mysql, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+      - name: Verify production package contents and dependency exclusion
+        run: bash scripts/ci/verify-cpanel-release-artifact.sh
+      - name: Build package for explicit manual retrieval
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_cpanel_artifact == true
+        env:
+          TLMS_RELEASE_VERSION: ${{ inputs.release_version }}
+        run: bash scripts/release/build-cpanel-artifact.sh
+      - name: Upload temporary cPanel package artifact
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_cpanel_artifact == true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tlms-cpanel-${{ inputs.release_version }}-${{ github.sha }}
+          path: dist/*.zip*
+          if-no-files-found: error
+          retention-days: 7
