@@ -34,6 +34,7 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 
 | Permission | Super Admin | Platform Admin | Finance | Support | Auditor | Product Manager | Developer | Reseller Manager | Customer roles |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| vendor.account.read | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | No |
 | platform.settings.manage | Yes | Scoped | No | No | Read-only | No | No | No | No |
 | admins.manage | Yes | Scoped | No | No | Read-only | No | No | No | No |
 | customers.manage | Yes | Scoped | No | Scoped support | Read-only | Assigned products only | No | Assigned accounts | Own org roles |
@@ -74,6 +75,7 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 - Generic grants are allowlisted; Super Admin, platform admin, finance admin, vendor product manager and customer owner grants require separate bootstrap/approval workflows.
 - Membership-role events are an application-level append-only precursor, not the future global hash-chained audit ledger.
 - PR #29 adds `CustomerOrganizationPolicy::view`: a customer principal may read only its own organization with `customer.licences.read`; a vendor support principal may read organizations only under its active vendor with `customers.support.read`. Both branches delegate to `MembershipAuthorization`, which reloads current actor, membership and resource/vendor state from the database.
+- PR #38 adds `VendorAccountPolicy::view`, backed by the dedicated vendor-scoped `vendor.account.read` permission. The permission is granted to the defined vendor staff roles, never customer roles; authorization reloads current user, vendor and membership state. The policy exposes no collection listing or mutation abilities.
 - The policy deliberately defines no `viewAny`, create, update, delete or mutation abilities. Product, reseller, licence, payment and nested-resource policies remain pending; this is not complete ABAC.
 
 ## 4. Super Admin authority
