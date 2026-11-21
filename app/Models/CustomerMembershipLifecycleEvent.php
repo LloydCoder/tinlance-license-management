@@ -28,9 +28,13 @@ final class CustomerMembershipLifecycleEvent extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $event): void {
+            $fromStatus = $event->getAttribute('from_status');
+            $toStatus = $event->getAttribute('to_status');
+            $validTransition = ($fromStatus === 'invited' && in_array($toStatus, ['active', 'revoked'], true))
+                || ($fromStatus === 'active' && $toStatus === 'revoked');
+
             if (
-                ! in_array($event->getAttribute('from_status'), ['invited', 'active'], true)
-                || $event->getAttribute('to_status') !== 'revoked'
+                ! $validTransition
                 || ! is_string($event->getAttribute('reason'))
                 || trim($event->getAttribute('reason')) === ''
                 || mb_strlen($event->getAttribute('reason')) > 500

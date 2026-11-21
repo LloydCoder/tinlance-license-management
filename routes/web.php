@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
+use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
 use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Identity\VendorRoleApprovalController;
+use App\Http\Controllers\Identity\WorkspaceController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
@@ -29,6 +31,39 @@ Route::middleware(RequireSecureSetupTransport::class)->group(function (): void {
 
     Route::get('/setup/super-admin/complete', [SuperAdminBootstrapController::class, 'complete'])
         ->name('setup.super-admin.complete');
+});
+
+Route::middleware(RequireSecureSetupTransport::class)->group(function (): void {
+    Route::get('/membership-invitations/accept', [MembershipInvitationController::class, 'show'])
+        ->middleware('throttle:20,1')
+        ->name('membership-invitations.accept.form');
+    Route::post('/membership-invitations/prepare', [MembershipInvitationController::class, 'prepare'])
+        ->middleware('throttle:10,1')
+        ->name('membership-invitations.prepare');
+    Route::post('/membership-invitations/accept', [MembershipInvitationController::class, 'acceptNewAccount'])
+        ->middleware('throttle:5,1')
+        ->name('membership-invitations.accept.new');
+    Route::post('/membership-invitations/accept/authenticated', [MembershipInvitationController::class, 'acceptAuthenticated'])
+        ->middleware([
+            'auth',
+            'verified',
+            EnsureSessionVersionCurrent::class,
+            'throttle:5,1',
+        ])
+        ->name('membership-invitations.accept.authenticated');
+    Route::get('/membership-invitations/accepted', [MembershipInvitationController::class, 'accepted'])
+        ->name('membership-invitations.accepted');
+});
+
+Route::middleware([
+    RequireSecureSetupTransport::class,
+    'auth',
+    'verified',
+    EnsureSessionVersionCurrent::class,
+    EnsureMfaEnrolled::class,
+])->group(function (): void {
+    Route::get('/workspace', WorkspaceController::class)
+        ->name('workspace.home');
 });
 
 Route::middleware([
@@ -71,6 +106,20 @@ Route::middleware([
     Route::post('/security/step-up/totp', [MfaStepUpController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('api.security.step-up.totp');
+    Route::post('/vendor-accounts/{vendor}/memberships/invitations', [MembershipInvitationController::class, 'storeVendor'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.vendor-memberships.invitations.store');
+    Route::post('/vendor-accounts/{vendor}/memberships/{membership}/invitation/resend', [MembershipInvitationController::class, 'resendVendor'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.vendor-memberships.invitations.resend');
+
+    Route::post('/customer-organizations/{organization}/memberships/invitations', [MembershipInvitationController::class, 'storeCustomer'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.customer-memberships.invitations.store');
+    Route::post('/customer-organizations/{organization}/memberships/{membership}/invitation/resend', [MembershipInvitationController::class, 'resendCustomer'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.customer-memberships.invitations.resend');
+
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/revoke', [MembershipLifecycleController::class, 'revokeVendor'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor-memberships.revoke');
