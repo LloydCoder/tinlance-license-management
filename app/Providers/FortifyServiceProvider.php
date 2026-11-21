@@ -31,11 +31,30 @@ final class FortifyServiceProvider extends ServiceProvider
                 return null;
             }
 
-            if (! Hash::check($password, $user->password)) {
+            $storedDriver = match (password_get_info($user->password)['algoName'] ?? null) {
+                'bcrypt' => 'bcrypt',
+                'argon2i' => 'argon2i',
+                'argon2id' => 'argon2id',
+                default => null,
+            };
+
+            if ($storedDriver === null || ! Hash::driver($storedDriver)->check($password, $user->password)) {
                 return null;
             }
 
-            if (Hash::needsRehash($user->password)) {
+            $driverStrength = [
+                'bcrypt' => 1,
+                'argon2i' => 2,
+                'argon2id' => 3,
+            ];
+            $activeDriver = (string) config('hash.driver');
+            $storedStrength = $driverStrength[$storedDriver];
+            $activeStrength = $driverStrength[$activeDriver] ?? 0;
+
+            if (
+                $storedStrength < $activeStrength
+                || ($storedDriver === $activeDriver && Hash::driver($storedDriver)->needsRehash($user->password))
+            ) {
                 $user->forceFill(['password' => Hash::make($password)])->save();
             }
 
