@@ -310,6 +310,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /licences/{licenceId}:
     get:
       tags: [Licences]
       operationId: getLicence
@@ -423,6 +424,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /admin/integrations/{provider}/credentials/{credentialId}/test:
     post:
       tags: [Integrations]
       operationId: testProviderCredential
@@ -931,12 +933,6 @@ components:
             $ref: '#/components/schemas/Problem'
     ValidationError:
       description: Request validation failed
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Locked:
-      description: Recent password confirmation is missing or expired
       content:
         application/problem+json:
           schema:
