@@ -104,6 +104,10 @@ if (! preg_match("/^[a-f0-9]{64}$/", (string) ($manifest["composer_lock_sha256"]
     fwrite(STDERR, "Manifest lockfile digest is invalid.".PHP_EOL);
     exit(1);
 }
+if (($manifest["composer_version"] ?? null) !== "2.11.2") {
+    fwrite(STDERR, "Unexpected Composer version in build manifest.".PHP_EOL);
+    exit(1);
+}
 if (($manifest["artifact_format"] ?? null) !== 1) {
     fwrite(STDERR, "Unsupported artifact manifest format.".PHP_EOL);
     exit(1);
