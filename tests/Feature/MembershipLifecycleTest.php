@@ -13,6 +13,7 @@ use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 use Tests\TestCase;
 
 final class MembershipLifecycleTest extends TestCase
@@ -76,6 +77,118 @@ final class MembershipLifecycleTest extends TestCase
             'to_status' => 'revoked',
             'reason' => 'Customer staff access removed.',
         ]);
+    }
+
+    public function test_vendor_admin_can_cancel_an_invited_membership(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $invitee = $this->createUser();
+        $target = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'invited',
+            'joined_at' => null,
+        ]);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$target->getKey().'/revoke', [
+                'reason' => 'Invitation withdrawn before acceptance.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.changed', true);
+
+        $this->assertSame('revoked', $target->refresh()->status);
+        $this->assertDatabaseHas('vendor_membership_lifecycle_events', [
+            'vendor_membership_id' => $target->getKey(),
+            'from_status' => 'invited',
+            'to_status' => 'revoked',
+        ]);
+    }
+
+    public function test_customer_owner_cannot_revoke_their_own_membership(): void
+    {
+        [$actor, $organization] = $this->customerActor();
+        $membership = $actor->customerMemberships()
+            ->where('customer_organization_id', $organization->getKey())
+            ->firstOrFail();
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$membership->getKey().'/revoke', [
+                'reason' => 'Self revocation must use a separate offboarding flow.',
+            ])
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'FORBIDDEN');
+
+        $this->assertSame('active', $membership->refresh()->status);
+        $this->assertDatabaseMissing('customer_membership_lifecycle_events', [
+            'customer_membership_id' => $membership->getKey(),
+        ]);
+    }
+
+    public function test_customer_membership_revoke_rejects_a_membership_from_another_organization(): void
+    {
+        [$actor, $organization] = $this->customerActor();
+        $otherVendor = $this->createVendor();
+        $otherOrganization = $this->createOrganization($otherVendor);
+        $foreignMembership = $this->customerMembership($otherOrganization, $this->createUser());
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$foreignMembership->getKey().'/revoke', [
+                'reason' => 'Cross-tenant request must fail.',
+            ])
+            ->assertNotFound();
+
+        $this->assertSame('active', $foreignMembership->refresh()->status);
+    }
+
+    public function test_vendor_membership_revocation_fails_when_parent_vendor_is_suspended(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        VendorAccount::query()->whereKey($vendor->getKey())->update(['status' => 'suspended']);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$target->getKey().'/revoke', [
+                'reason' => 'Suspended vendor must not authorize membership mutation.',
+            ])
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json');
+
+        $this->assertSame('active', $target->refresh()->status);
+        $this->assertDatabaseMissing('vendor_membership_lifecycle_events', [
+            'vendor_membership_id' => $target->getKey(),
+        ]);
+    }
+
+    public function test_membership_lifecycle_events_cannot_be_updated_or_deleted(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $target = $this->vendorMembership($vendor, $this->createUser());
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$target->getKey().'/revoke', [
+                'reason' => 'Preserve immutable lifecycle evidence.',
+            ])
+            ->assertOk();
+
+        $event = $target->lifecycleEvents()->firstOrFail();
+
+        try {
+            $event->update(['reason' => 'tampered']);
+            $this->fail('Lifecycle event updates must be rejected.');
+        } catch (LogicException) {
+            $this->assertSame('Preserve immutable lifecycle evidence.', $target->lifecycleEvents()->firstOrFail()->reason);
+        }
+
+        try {
+            $event->delete();
+            $this->fail('Lifecycle event deletion must be rejected.');
+        } catch (LogicException) {
+            $this->assertDatabaseHas('vendor_membership_lifecycle_events', [
+                'id' => $event->getKey(),
+            ]);
+        }
     }
 
     public function test_actor_cannot_revoke_their_own_vendor_membership(): void
