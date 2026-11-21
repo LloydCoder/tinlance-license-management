@@ -96,9 +96,10 @@ Route::middleware([
         ->name('admin.dashboard');
 
     Route::get('/admin/security/sessions', [SessionController::class, 'index'])
+        ->middleware('password.confirm')
         ->name('admin.security.sessions');
 
     Route::post('/admin/security/sessions/revoke-all', [SessionController::class, 'revokeAll'])
-        ->middleware('throttle:3,1')
+        ->middleware(['password.confirm', 'throttle:3,1'])
         ->name('admin.security.sessions.revoke-all');
 });
