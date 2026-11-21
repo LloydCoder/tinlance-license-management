@@ -385,7 +385,7 @@ final class MembershipRoleApiTest extends TestCase
             'two_factor_confirmed_at' => now(),
         ])->save();
 
-        return $user;
+        return $user->refresh();
     }
 
     /** @return array{User, VendorAccount} */
