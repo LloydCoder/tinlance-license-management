@@ -47,7 +47,34 @@ Do not choose or pay for an annual plan yet. First request written answers from 
 
 A provider that cannot support MySQL 8.4 may be considered if it offers MariaDB 10.11 and the complete compatibility matrix passes. cPanel v122+ uses MariaDB 10.11 by default on new installations, so this is now a first-class compatibility target rather than an untested fallback. Do not silently accept older/newer engine versions based on a sales response.
 
-## 4. Automated runtime preflight
+## 4. Prebuilt cPanel artifact
+
+The CI workflow builds a deterministic ZIP with a production-only Composer vendor tree. It contains the Laravel project under `tlms/`, including `tlms/public/` as the web document root, but excludes the Composer manifests/lockfile, tests, internal docs, CI scripts, static-analysis configuration, `.env` files other than `.env.example`, and development dependencies. `BUILD-MANIFEST.json` records the source commit and Composer lockfile SHA-256; a separate `.sha256` file verifies the package bytes.
+
+The artifact is validated twice in CI and the ZIPs must be byte-for-byte identical. The artifact job pins Composer 2.11.2; repeatability is verified inside the same CI toolchain environment. Normal push and pull-request runs only build and verify it. A temporary seven-day GitHub Actions artifact can be uploaded only through an explicit manual workflow dispatch on `main`; this does not create a GitHub Release or grant commercial deployment, white-label or redistribution rights. Review the LICENSE and executed customer agreement before distribution.
+
+After downloading and verifying the checksum, upload/extract the ZIP to a private directory outside the domain's document root (for example, the account home directory). Set the domain document root to the package's `tlms/public/` directory. Do not extract the package inside `public_html` or copy the project root into the web document root.
+
+
+### Initial schema installation without SSH
+
+The release ZIP includes the production Composer vendor tree, so Composer is not required on the cPanel account. After uploading the package outside the document root and configuring \` .env \`, use cPanel's Cron Jobs interface for a one-time migration command if the provider does not offer Terminal/SSH:
+
+\`\`\`sh
+/path/to/provider/php /home/CPANEL_USER/tlms/artisan migrate --force
+\`\`\`
+
+Replace both paths with values confirmed by the provider. Schedule it once, capture its output, verify the migration status, and immediately remove the temporary cron entry. Never expose Artisan through a public HTTP route. The first-run bootstrap service initializes the authorization catalogue only when the catalogue is empty, so no separate database seeding command is required for the initial identity baseline.
+
+Generate \`APP_KEY\` and the 256-bit unpadded base64url \`TLMS_BOOTSTRAP_TOKEN\` locally, then place them in the private \`.env\` file. After migrations, open the HTTPS setup route once and create the initial administrator. Remove \`TLMS_BOOTSTRAP_TOKEN\` from \`.env\` and clear Laravel's cached configuration with a one-time cPanel cron command:
+
+\`\`\`sh
+/path/to/provider/php /home/CPANEL_USER/tlms/artisan config:clear
+\`\`\`
+
+If the provider cannot execute a PHP CLI cron command, use cPanel File Manager to remove \`bootstrap/cache/config.php\` after clearing the token from \`.env\`. Run the hosting preflight through a temporary cron job or Terminal, capture the JSON result, and remove the job. A provider that cannot run migrations or preflight without SSH remains unqualified until a separately reviewed web installer exists.
+
+## 5. Automated runtime preflight
 
 After deploying the prebuilt artifact to a disposable cPanel account and configuring its environment, run:
 
@@ -59,7 +86,7 @@ For a CLI/cron invocation, set `TLMS_EXPECTED_DOCUMENT_ROOT` to the exact absolu
 
 The command checks PHP 8.3–8.5, required extensions, Argon2id availability/parameters, the actual SQL server version, production/debug configuration, APP_KEY length, session-cookie controls, Laravel writable directories, and exact public document-root isolation. It does **not** prove outbound HTTPS reachability, cron reliability, webhook delivery, backup integrity, restore time, concurrency capacity, commercial terms or provider support quality; those remain live PoC checks below.
 
-## 5. Qualification proof-of-concept
+## 6. Qualification proof-of-concept
 
 Run these checks against a disposable test account before production selection:
 
@@ -74,7 +101,7 @@ Run these checks against a disposable test account before production selection:
 9. Confirm provider terms allow TLMS as a commercial software licensing service and allow the intended customer/vendor integrations.
 10. Archive sanitized evidence: provider/plan, date, versions, command outputs, screenshots, test logs, resource limits, support ticket answers and restore duration.
 
-## 6. cPanel platform facts and compatibility boundary
+## 7. cPanel platform facts and compatibility boundary
 
 - cPanel v122 and later uses MariaDB 10.11 by default on new installations unless the server administrator customizes the database engine.
 - Current cPanel documentation lists MySQL 8.4 on supported AlmaLinux/CloudLinux 8, 9 and 10 systems; MariaDB 10.11 is supported on the documented AlmaLinux/CloudLinux versions.
@@ -86,6 +113,6 @@ Official references:
 - https://support.cpanel.net/hc/en-us/articles/4412144152855-What-versions-of-PHP-does-cPanel-support
 - https://docs.cpanel.net/cpanel/software/multiphp-manager-for-cpanel/
 
-## 7. Acceptance decision
+## 8. Acceptance decision
 
 A provider is qualified only when every mandatory item is evidenced and the application deployment, database, scheduler, webhook, backup/restore and isolation tests pass. If no shared-hosting plan meets these requirements, revisit the architecture explicitly; do not smuggle in a VPS or persistent worker as an undocumented dependency.
