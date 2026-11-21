@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Models\VendorMembershipRoleEvent;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Support\Facades\DB;
 
@@ -173,6 +174,16 @@ final class SuperAdminBootstrapService
             ]);
 
             $membership->roles()->attach($role->getKey());
+
+            VendorMembershipRoleEvent::query()->create([
+                'vendor_membership_id' => $membership->getKey(),
+                'role_id' => $role->getKey(),
+                'actor_user_id' => null,
+                'actor_type' => 'system',
+                'action' => 'assigned',
+                'reason' => 'Initial installation bootstrap',
+                'created_at' => now(),
+            ]);
 
             $installation->forceFill([
                 'bootstrapped_user_id' => $user->getKey(),
