@@ -34,7 +34,7 @@ The initial bootstrap is a setup-only capability, not an authentication endpoint
 - A database transaction locks the single primary installation row before creating the initial vendor, administrator, membership and Super Admin role assignment. A second successful bootstrap must fail.
 - The authorization catalogue is initialized by the bootstrap service only when the catalogue is empty; a partial or inconsistent catalogue fails closed rather than silently rewriting existing roles.
 - The initial administrator email is not marked verified. Authentication, email verification, mandatory MFA enrollment, recovery and session controls are separate Phase 4 deliverables.
-- The password policy uses a 15-character minimum without character-composition requirements and accepts long passphrases. Breached-password screening remains an explicit authentication-phase requirement.
+- The password policy accepts 15–1024 characters without character-composition requirements and accepts long passphrases. Breached-password screening remains an explicit authentication-phase requirement.
 
 The design follows Laravel's request-forgery and rate-limiting middleware guidance and OWASP ASVS 5.0 authentication requirements. In particular, ASVS 6.2.5 advises against composition rules, and 6.2.1 strongly recommends a 15-character minimum.
 
