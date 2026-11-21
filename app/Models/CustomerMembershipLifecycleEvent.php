@@ -12,7 +12,7 @@ final class CustomerMembershipLifecycleEvent extends BaseModel
     public $timestamps = false;
 
     protected $fillable = [
-        'vendor_membership_id',
+        'customer_membership_id',
         'actor_user_id',
         'from_status',
         'to_status',
@@ -36,7 +36,7 @@ final class CustomerMembershipLifecycleEvent extends BaseModel
                 || mb_strlen($event->getAttribute('reason')) > 500
                 || ! is_string($event->getAttribute('actor_user_id'))
             ) {
-                throw new LogicException('Vendor membership lifecycle event is invalid.');
+                throw new LogicException('Customer membership lifecycle event is invalid.');
             }
         });
 
