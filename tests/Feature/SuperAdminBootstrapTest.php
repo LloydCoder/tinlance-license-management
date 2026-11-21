@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -189,26 +190,18 @@ final class SuperAdminBootstrapTest extends TestCase
 
     public function test_bootstrap_rejects_cross_scope_permissions_on_the_super_admin_role(): void
     {
-        $vendorPermission = Permission::query()->create([
-            'scope' => 'vendor',
-            'name' => 'platform.settings.manage',
-            'description' => 'Manage installation-wide platform settings.',
-        ]);
+        app(AuthorizationCatalogSeeder::class)->run();
+
+        $role = Role::query()
+            ->where('scope', 'vendor')
+            ->where('slug', 'super_admin')
+            ->firstOrFail();
         $customerPermission = Permission::query()->create([
             'scope' => 'customer',
-            'name' => 'customer.billing.read',
+            'name' => 'customer.billing.read.extra',
             'description' => 'Read customer billing information.',
         ]);
-        $role = Role::query()->create([
-            'scope' => 'vendor',
-            'slug' => 'super_admin',
-            'name' => 'Super Admin',
-            'is_system' => true,
-        ]);
-        $role->permissions()->attach([
-            $vendorPermission->getKey(),
-            $customerPermission->getKey(),
-        ]);
+        $role->permissions()->attach($customerPermission->getKey());
 
         $this->postJson('/setup/super-admin', [
             'bootstrap_token' => self::BOOTSTRAP_TOKEN,
