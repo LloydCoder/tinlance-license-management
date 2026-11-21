@@ -365,6 +365,41 @@ final class VendorRoleApprovalTest extends TestCase
         return '/api/v1/vendor-accounts/'.$vendor->getKey().'/role-approval-requests/'.$requestId.'/'.$action;
     }
 
+    public function test_role_beneficiary_cannot_reject_their_own_privileged_grant_request(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $beneficiary = $this->createActor($vendor);
+        $target = VendorMembership::query()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('user_id', $beneficiary->getKey())
+            ->firstOrFail();
+        $role = $this->role('finance_admin');
+        $requestId = $this->createApprovalRequest(
+            $maker,
+            $vendor,
+            $target,
+            $role,
+            'maker-key-beneficiary-01',
+        )->json('data.id');
+
+        $this->authenticatedJson($beneficiary)
+            ->postJson($this->approvalPath($vendor, $requestId, 'reject'), [
+                'reason' => 'The beneficiary must not decide their own grant.',
+            ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'FORBIDDEN');
+
+        $this->assertDatabaseHas('approval_requests', [
+            'id' => $requestId,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseMissing('approval_decisions', [
+            'approval_request_id' => $requestId,
+            'actor_user_id' => $beneficiary->getKey(),
+        ]);
+    }
+
     private function authenticatedJson(User $user): static
     {
         return $this->actingAs($user, 'web')->withSession([
