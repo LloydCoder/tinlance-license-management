@@ -46,7 +46,7 @@ final class MembershipInvitationTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.status', 'invited');
 
-        $membership = VendorMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $invitee = User::query()->where('email', $email)->firstOrFail();
 
         $this->assertNull($invitee->email_verified_at);
@@ -87,12 +87,12 @@ final class MembershipInvitationTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.status', 'invited');
 
-        $membership = CustomerMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = CustomerMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
 
         $this->assertSame('invited', $membership->status);
-        $this->assertNull($membership->user->email_verified_at);
+        $this->assertNull(User::query()->whereKey($membership->user_id)->value('email_verified_at'));
         $this->assertTrue($membership->roles()->where('slug', 'customer_technical_admin')->exists());
-        $this->assertCount(1, $this->sentInvitationTokens($membership->user->email));
+        $this->assertCount(1, $this->sentInvitationTokens($email));
     }
 
     public function test_new_customer_invitee_can_set_password_verify_email_and_accept_membership(): void
@@ -110,7 +110,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertCreated();
 
-        $membership = CustomerMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = CustomerMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
@@ -152,7 +152,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertCreated();
 
-        $membership = VendorMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
@@ -213,7 +213,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertCreated();
 
-        $membership = VendorMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($invitee->email)[0];
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
@@ -255,7 +255,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertCreated();
 
-        $membership = VendorMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
         DB::table('vendor_membership_invitations')
@@ -281,7 +281,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertCreated();
 
-        $membership = VendorMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $tokens = $this->sentInvitationTokens($email);
         $this->assertCount(1, $tokens);
         $oldToken = $tokens[0];
@@ -318,7 +318,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertCreated();
 
-        $membership = VendorMembership::query()->findOrFail($response->json('data.membership_id'));
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
         $this->authenticatedJson($actor)
