@@ -1,0 +1,63 @@
+name: Security analysis
+
+on:
+  push:
+    branches:
+      - main
+      - "chore/**"
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "17 23 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: Semgrep community SAST
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Scan PHP and repository configuration
+        run: |
+          docker run --rm \
+            --volume "${GITHUB_WORKSPACE}:/src" \
+            --workdir /src \
+            semgrep/semgrep:1.186.0 \
+            semgrep scan --config auto --error --metrics=off .
+
+  codeql:
+    name: CodeQL PHP analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4
+        with:
+          languages: php
+          build-mode: none
+      - name: Analyze PHP
+        uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4
+        with:
+          category: "/language:php"
