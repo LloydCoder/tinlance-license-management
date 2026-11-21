@@ -15,4 +15,7 @@ return [
     'approvals' => [
         'ttl_seconds' => max(300, (int) env('TLMS_APPROVAL_TTL_SECONDS', 86400)),
     ],
+    'memberships' => [
+        'invitation_ttl_hours' => max(1, min(168, (int) env('TLMS_MEMBERSHIP_INVITATION_TTL_HOURS', 72))),
+    ],
 ];
