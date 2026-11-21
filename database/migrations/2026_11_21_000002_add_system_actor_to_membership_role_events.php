@@ -33,7 +33,9 @@ return new class extends Migration
             if (DB::table($tableName)->whereNull('actor_user_id')->exists()) {
                 throw new RuntimeException('Cannot roll back system-attributed membership role events without losing their actor semantics.');
             }
+        }
 
+        foreach (self::TABLES as $tableName) {
             Schema::table($tableName, function (Blueprint $table): void {
                 $table->dropForeign(['actor_user_id']);
                 $table->dropColumn('actor_type');
