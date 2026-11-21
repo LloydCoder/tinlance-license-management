@@ -7,6 +7,7 @@ namespace App\Listeners;
 use App\Models\User;
 use App\Services\Identity\MfaStepUpAuditService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Laravel\Passkeys\Events\PasskeyVerified;
 
 final class RecordPasskeyStepUp
