@@ -50,6 +50,7 @@ final class MembershipRoleAssignmentTest extends TestCase
             'vendor_membership_id' => $target->id,
             'role_id' => $role->id,
             'actor_user_id' => $actor->id,
+            'actor_type' => 'user',
             'action' => 'assigned',
         ]);
     }
@@ -193,6 +194,7 @@ final class MembershipRoleAssignmentTest extends TestCase
             'customer_membership_id' => $target->id,
             'role_id' => $role->id,
             'actor_user_id' => $actor->id,
+            'actor_type' => 'user',
             'action' => 'assigned',
         ]);
     }
@@ -321,6 +323,7 @@ final class MembershipRoleAssignmentTest extends TestCase
             'vendor_membership_id' => $target->id,
             'role_id' => $role->id,
             'actor_user_id' => $actor->id,
+            'actor_type' => 'user',
             'action' => 'revoked',
         ]);
     }
@@ -345,6 +348,7 @@ final class MembershipRoleAssignmentTest extends TestCase
             'customer_membership_id' => $target->id,
             'role_id' => $role->id,
             'actor_user_id' => $actor->id,
+            'actor_type' => 'user',
             'action' => 'revoked',
         ]);
     }
