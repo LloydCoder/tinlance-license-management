@@ -12,12 +12,15 @@ final class HostingPreflightCommandTest extends TestCase
 {
     public function test_preflight_emits_a_machine_readable_report_without_secrets(): void
     {
+        $databasePasswordSentinel = 'TLMS_TEST_DB_PASSWORD_SENTINEL';
+        config(['database.connections.mysql.password' => $databasePasswordSentinel]);
+
         $exitCode = Artisan::call('tlms:hosting-preflight', ['--json' => true]);
         $output = Artisan::output();
         /** @var array{ready: bool, checks: array<string, array{passed: bool, required: bool, message: string}>} $report */
         $report = json_decode($output, true, flags: JSON_THROW_ON_ERROR);
 
-        $this->assertSame(1, $exitCode, 'The SQLite-only test runtime must not be qualified as a production hosting environment.');
+        $this->assertSame(1, $exitCode, 'The test runtime must not be qualified as a production hosting environment.');
         $this->assertFalse($report['ready']);
         $this->assertArrayHasKey('checks', $report);
         $this->assertArrayHasKey('database.vendor', $report['checks']);
@@ -30,11 +33,7 @@ final class HostingPreflightCommandTest extends TestCase
         $this->assertArrayHasKey('filesystem.document_root_isolated', $report['checks']);
         $this->assertStringNotContainsString((string) config('app.key'), $output);
 
-        $databasePassword = (string) config('database.connections.mysql.password', '');
-
-        if ($databasePassword !== '') {
-            $this->assertStringNotContainsString($databasePassword, $output);
-        }
+        $this->assertStringNotContainsString($databasePasswordSentinel, $output);
     }
 
     public function test_preflight_json_report_has_stable_check_shape(): void
