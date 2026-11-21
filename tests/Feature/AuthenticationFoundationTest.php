@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\CustomerAccount;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Identity\SessionRevocationService;
 use Database\Seeders\AuthorizationCatalogSeeder;
-use Illuminate\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Features;
@@ -41,7 +40,7 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertSame('database', config('session.driver'));
         $this->assertTrue(config('session.encrypt'));
         $this->assertTrue(config('session.secure'));
-        $this->assertSame('database', config('queue.default') === 'database' ? 'database' : 'sync');
+        $this->assertSame('sync', config('queue.default'));
     }
 
     public function test_user_supports_email_verification_totp_and_passkeys(): void
@@ -196,7 +195,7 @@ final class AuthenticationFoundationTest extends TestCase
             'legal_name' => 'TLMS Test Vendor Limited',
             'display_name' => 'TLMS Test Vendor',
             'status' => 'active',
-            'currency' => 'USD',
+            'default_currency' => 'USD',
             'timezone' => 'UTC',
         ]);
         $membership = VendorMembership::query()->create([
