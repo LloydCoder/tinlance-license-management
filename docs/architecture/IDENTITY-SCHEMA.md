@@ -1,6 +1,6 @@
 # Identity and organization persistence baseline
 
-**Status:** Identity/membership persistence, role catalogue, membership-level authorization and the first Super Admin authentication foundation are implemented. The exact PR #23 head passed PHP 8.3/8.4/8.5, MySQL 8.4 and MariaDB 10.11 CI. Resource-level ABAC, privileged step-up, maker-checker and full portals remain unimplemented.
+**Status:** Identity/membership persistence, role catalogue, membership-level authorization, Super Admin authentication, fresh MFA step-up for membership role changes, maker-checker for high-risk vendor role grants and tenant-admin membership revocation are implemented. PR #55 adds transactional `invited|active -> revoked` transitions and immutable lifecycle evidence. Complete resource-level ABAC, invitation creation/acceptance/expiry, generalized privileged step-up/approval and full portals remain unimplemented.
 
 ## Deployment and ownership model
 
@@ -37,7 +37,8 @@ The vendor account is identified by a non-user-editable installation key whose i
 - MembershipAuthorization re-reads the actor and resource status from the database for each decision, then requires an active membership, matching role scope, matching permission scope and explicit permission. Stale in-memory models, unknown permissions and missing memberships deny by default.
 - Super Admin receives the catalogued administrative permissions but the catalogue deliberately omits integrations.credentials.read_secret, signing.root.manage and audit.delete_or_edit.
 - Customer roles are separate from vendor roles; attaching a customer-scoped role to a vendor membership does not authorize vendor actions. A permission from the opposite scope is also rejected even if an invalid pivot assignment is present.
-- MembershipRoleAssignmentService is the only implemented write boundary for vendor/customer membership role assignment and revocation. It locks actor, resource and membership rows in a transaction, revalidates scope and permission, blocks self-assignment and privileged roles, requires a reason, and writes an immutable membership-role event in the same transaction.
+- `MembershipRoleAssignmentService` is the write boundary for vendor/customer membership role assignment/revocation. It locks actor, resource and membership rows in a transaction, revalidates scope and permission, blocks self-assignment and privileged roles, requires a reason, and writes an immutable membership-role event in the same transaction.
+- `MembershipLifecycleService` is the write boundary for tenant membership status transitions. The initial implemented transition is `invited|active -> revoked`; it locks the actor, parent tenant and target membership, revalidates current scoped permission, blocks self-revocation, requires a reason, and appends an immutable lifecycle event in the same transaction. Repeated revocation is idempotent; role pivots and event history are retained.
 - Vendor generic grants are allowlisted to support_agent, security_auditor and vendor_developer. Customer generic grants are allowlisted to customer_billing_admin, customer_technical_admin and customer_member. The initial Super Admin grant is available only through the one-time bootstrap; subsequent Super Admin grants and platform admin, finance admin, vendor product manager and customer owner grants require separate future approval workflows.
 - Membership-role event models reject Eloquent update/delete operations. This is application-level append-only evidence, not a replacement for the future global hash-chained audit ledger or database-level tamper controls.
 
@@ -56,11 +57,11 @@ The vendor account is identified by a non-user-editable installation key whose i
 - Database-backed sessions are encrypted and use secure cookies. Login records the session version; protected requests compare it against fresh database state. Logout and global revocation invalidate sessions and rotate the remember token.
 - Password reset and global session revocation run in one transaction. Supported bcrypt/Argon2i legacy hashes are verified with their own algorithm and upgraded to the configured stronger driver without downgrading stronger hashes.
 - MFA management and recovery-code retrieval require recent password confirmation. Recovery codes are not embedded in rendered pages; the user explicitly requests reveal/regeneration through the protected Fortify endpoints.
-- Fortify's recovery codes are encrypted at rest. A separate hashed recovery-verifier ledger, TOTP replay-specific controls, privileged step-up, maker-checker and resource-level ABAC remain additional hardening/acceptance work.
+- Fortify's recovery codes are encrypted at rest. Fresh TOTP/passkey step-up is implemented for membership role mutations, tenant-admin membership revocation and the high-risk vendor role approval workflow; maker-checker is implemented for those high-risk vendor role grants only. A separate hashed recovery-verifier ledger, additional TOTP replay-specific controls, generalized privileged step-up/approval and resource-level ABAC remain acceptance work.
 - A one-time browser bootstrap implementation merged in PR #20 is built behind a deployment-configured 256-bit base64url secret, HTTPS enforcement outside local/testing, CSRF protection, no-store security headers, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The initial Super Admin grant is recorded in the vendor membership-role event table as a system-attributed `assigned` event in the same transaction. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment and clear cached Laravel configuration after successful bootstrap.
 - Bootstrap creates the initial vendor account, user, active vendor membership and system Super Admin role transactionally. The initial email remains unverified and the password must be at least 15 characters; long passphrases are accepted without character-composition rules. It does not create a login session. The administrator must verify email and enroll TOTP or a passkey before accessing the Super Admin portal.
 - WebAuthn passkeys and TOTP are supported authentication factors. TOTP seeds and Fortify recovery-code material are encrypted at rest; recovery codes are single-use and accessed only through password-confirmed endpoints. Explicit TOTP replay testing and a separate hashed recovery-verifier ledger remain outstanding.
-- MFA settings require recent password confirmation. Privileged business actions do not yet have a complete step-up or maker-checker layer. Authorization is deny-by-default at the implemented membership boundary; resource-level ABAC remains outstanding.
+- MFA settings require recent password confirmation. Fresh step-up and maker-checker are narrow controls, not a complete privileged-action framework: refunds, ledger adjustments, licence transfers, release publication, signing-key rotation and operational actions remain to be covered. Authorization is deny-by-default at the implemented membership boundary; resource-level ABAC remains outstanding.
 - Provider secrets, licence signing roots, passwords, MFA seeds and recovery codes must never be returned in API responses or written to logs.
 
 ## Implemented tables
@@ -78,6 +79,8 @@ The vendor account is identified by a non-user-editable installation key whose i
 - customer_membership_roles
 - vendor_membership_role_events (user- or system-attributed; append-only at the model boundary)
 - customer_membership_role_events (user- or system-attributed; append-only at the model boundary)
+- vendor_membership_lifecycle_events (actor-attributed; immutable lifecycle transitions)
+- customer_membership_lifecycle_events (actor-attributed; immutable lifecycle transitions)
 - platform_installations
 - sessions (encrypted database-backed browser sessions)
 - passkeys (WebAuthn credential records)
@@ -89,8 +92,8 @@ PR #23 exact head `9d742211701501e5d7a2b1b2272d6d7b1ab70d5c` passed [CI](https:/
 ## Remaining acceptance work
 
 1. Add resource-level ABAC for product assignment, reseller relationships, customer ownership and vendor scope; membership permission alone is not sufficient for these resources.
-2. Add privileged step-up authentication, maker-checker approvals and security-sensitive factor-change notifications.
+2. Extend fresh step-up and typed maker-checker policies to financial, licensing, release, signing-key and operational actions; maker-checker currently covers high-risk vendor role grants only.
 3. Add explicit TOTP replay prevention tests and evaluate a separate hashed recovery-verifier ledger instead of relying only on encrypted Fortify recovery-code storage.
-4. Add full customer/vendor portals and administrative Control Center workflows.
-5. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment/revocation.
+4. Implement invitation creation, email delivery, account-bound acceptance, expiry/resend and reinstatement; then add full customer/vendor portals and administrative Control Center workflows.
+5. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment, role revocation and membership lifecycle transitions.
 6. Integrate global append-only/hash-chained audit anchoring; membership-role events are a local transactional audit precursor only.

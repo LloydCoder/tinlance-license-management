@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, fresh TOTP/passkey step-up for those role mutations, and maker-checker for high-risk vendor role grants are implemented and tested. Self-only membership reads and persisted tenant-binding checks are covered. Complete resource-level ABAC, membership lifecycle/invitations, non-membership mutation policies, generalized step-up/approval and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, fresh TOTP/passkey step-up for those role mutations, and maker-checker for high-risk vendor role grants are implemented and tested. Self-only membership reads and persisted tenant-binding checks are covered. Tenant-admin membership revocation is implemented with fresh step-up and immutable lifecycle evidence. Invitation creation/delivery/acceptance/expiry/resend/reinstatement, complete resource-level ABAC, non-membership mutation policies, generalized step-up/approval and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
@@ -140,3 +140,13 @@ Any future dual-control workflow must prohibit both maker/checker identity confl
 - Session-version middleware reloads persisted account status on every protected request and fails closed for missing or non-active users, so account suspension invalidates existing web/API sessions.
 - Active users may view their own active/invited vendor or customer membership without administrator permissions. Viewing another member remains subject to the relevant tenant-scoped administrator permission; no `viewAny`, update or delete ability is granted.
 - Customer organization reads reload the persisted active organization and parent vendor before evaluating customer-member or vendor-support access. In-memory relationship state is not an authorization source; suspended organizations and stale/tampered tenant foreign keys are denied.
+
+
+## 3C. Membership lifecycle revocation (PR #55)
+
+- `MembershipLifecycleService` is the write boundary for vendor/customer membership status changes; the initial implemented transition is `invited|active -> revoked`.
+- Vendor revocation requires an active same-vendor actor with `admins.manage`; customer revocation requires an active same-organization actor with `customer.members.manage`.
+- Both operations require a verified current session, recent password confirmation, enrolled MFA, fresh five-minute TOTP/passkey step-up, a reason and throttling. Cross-tenant parent/target mismatches return 404; self-revocation is denied.
+- Status transition and immutable lifecycle evidence commit in one transaction. Repeated revocation is idempotent and creates no duplicate event. Role pivots are retained; a revoked membership cannot authorize tenant operations.
+- Revocation is tenant-scoped and does not invalidate all of the user's sessions, because the same user may hold other tenant memberships. Each protected operation must re-evaluate the relevant persisted membership.
+- Invitation creation/delivery/acceptance/expiry/resend and reinstatement remain separate unimplemented workflows.

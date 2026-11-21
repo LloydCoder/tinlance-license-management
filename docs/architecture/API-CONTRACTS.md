@@ -1,6 +1,6 @@
 # TLMS API contracts — v1 baseline
 
-**Status:** Phase 1 contract baseline with the first implemented identity-management operations. Membership role assignment/revocation endpoints are implemented under `routes/web.php` and specified in `docs/api/openapi.yaml`; remaining endpoint groups are contracts only until each receives policy, service and test coverage.
+**Status:** Contract baseline with implemented identity-management operations. Membership role assignment/revocation and tenant-admin vendor/customer membership revocation endpoints are implemented under `routes/web.php` and specified in `docs/api/openapi.yaml`; remaining endpoint groups are contracts only until each receives policy, service and test coverage.
 
 ## 1. API principles
 
@@ -36,8 +36,10 @@
 | POST | /auth/mfa/challenge | Complete MFA challenge | Pending authenticated session |
 | GET | /me | Current actor and permission summary | Admin session/token |
 | POST | /security/step-up/totp | Verify a fresh TOTP factor and establish a five-minute session step-up marker; recovery codes are not accepted | Verified current session + recent password confirmation + enrolled TOTP + rate limit |
+| POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/revoke | Revoke invited/active vendor membership; append immutable lifecycle evidence | Verified vendor session + current session + password confirmation + enrolled MFA + fresh step-up + admins.manage |
 | POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId} | Assign allowlisted vendor membership role with immutable reason event | Verified vendor session + current session + password confirmation + MFA + admins.manage |
 | POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke | Revoke vendor membership role with immutable reason event | Same as assignment |
+| POST | /customer-organizations/{organizationId}/memberships/{membershipId}/revoke | Revoke invited/active customer membership; append immutable lifecycle evidence | Verified customer session + current session + password confirmation + enrolled MFA + fresh step-up + customer.members.manage |
 | POST | /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId} | Assign allowlisted customer membership role with immutable reason event | Verified customer session + current session + password confirmation + MFA + customer.members.manage |
 | POST | /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke | Revoke customer membership role with immutable reason event | Same as assignment |
 | GET/POST | /admin/integrations/{provider}/credentials | Read metadata / stage credential version | Super Admin |
@@ -61,7 +63,7 @@
 | GET | /health/live | Process liveness | Public/minimal |
 | GET | /health/ready | Dependency readiness | Restricted/monitor token |
 
-This is an initial resource map. The four membership-role operations above are implemented; all other operations remain contract-only until their concrete schema, policy, service and tests are implemented.
+This is an initial resource map. The four membership-role operations and two tenant-admin membership revocation operations above are implemented; all other operations remain contract-only until their concrete schema, policy, service and tests are implemented.
 
 ## 4. Common request/response conventions
 
