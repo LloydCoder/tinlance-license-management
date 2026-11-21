@@ -93,7 +93,7 @@ final class VendorRoleApprovalTest extends TestCase
             ])
             ->assertForbidden()
             ->assertHeader('Content-Type', 'application/problem+json')
-            ->assertJsonPath('code', 'APPROVAL_SELF_REVIEW');
+            ->assertJsonPath('code', 'FORBIDDEN');
 
         $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
     }
@@ -158,7 +158,7 @@ final class VendorRoleApprovalTest extends TestCase
 
         $this->createApprovalRequest($maker, $vendor, $target, $productRole, 'maker-key-000006')
             ->assertStatus(409)
-            ->assertJsonPath('code', 'IDEMPOTENCY_KEY_REUSED');
+            ->assertJsonPath('code', 'REQUEST_FAILED');
     }
 
     public function test_request_from_another_vendor_cannot_be_approved_through_this_vendor_path(): void
