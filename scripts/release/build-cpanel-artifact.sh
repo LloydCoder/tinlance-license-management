@@ -25,6 +25,11 @@ fi
 source_commit="$(git -C "$repo_root" rev-parse HEAD)"
 source_date_epoch="$(git -C "$repo_root" show -s --format=%ct HEAD)"
 composer_lock_sha256="$(sha256sum "$repo_root/composer.lock" | cut -d ' ' -f 1)"
+composer_version="$(composer --version --no-ansi | awk '{ print $3 }')"
+if [[ "$composer_version" != "2.11.2" ]]; then
+    printf 'Composer 2.11.2 is required for the reproducible build; found %s\n' "$composer_version" >&2
+    exit 2
+fi
 
 if [[ ! "$source_commit" =~ ^[a-f0-9]{40}$ || ! "$source_date_epoch" =~ ^[0-9]+$ || ! "$composer_lock_sha256" =~ ^[a-f0-9]{64}$ ]]; then
     echo "Source revision or lockfile digest could not be verified." >&2
@@ -72,6 +77,7 @@ cat > "$app_root/BUILD-MANIFEST.json" <<MANIFEST
   "release_version": "$release_version",
   "source_commit": "$source_commit",
   "composer_lock_sha256": "$composer_lock_sha256",
+  "composer_version": "$composer_version",
   "runtime_php": ">=8.3 <8.6",
   "database_targets": ["MySQL 8.4", "MariaDB 10.11"],
   "dependency_install_mode": "production-only --no-dev",
