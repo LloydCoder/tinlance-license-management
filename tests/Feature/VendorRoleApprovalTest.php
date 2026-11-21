@@ -296,7 +296,7 @@ final class VendorRoleApprovalTest extends TestCase
 
         $decision = ApprovalDecision::query()->where('approval_request_id', $requestId)->firstOrFail();
 
-        $this->expectException(\\LogicException::class);
+        $this->expectException(\LogicException::class);
 
         $decision->update(['reason' => 'Altered decision evidence.']);
     }
@@ -307,7 +307,7 @@ final class VendorRoleApprovalTest extends TestCase
         VendorMembership $target,
         Role $role,
         string $idempotencyKey,
-    ): \Illuminate\Testing\TestResponse {
+    ) {
         return $this->authenticatedJson($maker)
             ->withHeaders(['Idempotency-Key' => $idempotencyKey])
             ->postJson(
