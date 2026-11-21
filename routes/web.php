@@ -18,7 +18,7 @@ Route::get('/', static fn () => response()->json(['service' => 'TLMS', 'status' 
 
 Route::middleware(RequireSecureSetupTransport::class)->group(function (): void {
     Route::get('/setup/super-admin', [SuperAdminBootstrapController::class, 'show'])
-        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->middleware('throttle:10,1')
         ->name('setup.super-admin');
 
     Route::post('/setup/super-admin', [SuperAdminBootstrapController::class, 'store'])
