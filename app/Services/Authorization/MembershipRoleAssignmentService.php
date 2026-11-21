@@ -160,6 +160,7 @@ final readonly class MembershipRoleAssignmentService
                 'vendor_membership_id' => $target->getKey(),
                 'role_id' => $currentRole->getKey(),
                 'actor_user_id' => $actor->getKey(),
+                'actor_type' => 'user',
                 'action' => $action,
                 'reason' => $reason,
                 'created_at' => now(),
