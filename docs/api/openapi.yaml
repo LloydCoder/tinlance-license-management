@@ -91,10 +91,6 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -150,8 +146,6 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-        '423':
-          $ref: '#/components/responses/Locked'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
@@ -201,8 +195,6 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-        '423':
-          $ref: '#/components/responses/Locked'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -258,8 +250,6 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-        '423':
-          $ref: '#/components/responses/Locked'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
@@ -309,8 +299,6 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-        '423':
-          $ref: '#/components/responses/Locked'
   /products:
     get:
       tags: [Products]
