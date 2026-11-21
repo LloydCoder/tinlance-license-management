@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\Role;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
