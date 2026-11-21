@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Identity\MembershipRoleController;
+use App\Http\Controllers\Identity\MembershipLifecycleController;
 use App\Http\Controllers\Identity\VendorRoleApprovalController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
@@ -69,6 +70,14 @@ Route::middleware([
     Route::post('/security/step-up/totp', [MfaStepUpController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('api.security.step-up.totp');
+    Route::post('/vendor-accounts/{vendor}/memberships/{membership}/revoke', [MembershipLifecycleController::class, 'revokeVendor'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.vendor-memberships.revoke');
+
+    Route::post('/customer-organizations/{organization}/memberships/{membership}/revoke', [MembershipLifecycleController::class, 'revokeCustomer'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.customer-memberships.revoke');
+
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/roles/{role}', [MembershipRoleController::class, 'assignVendor'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor-memberships.roles.assign');
