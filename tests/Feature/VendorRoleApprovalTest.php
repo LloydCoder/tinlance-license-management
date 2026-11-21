@@ -384,6 +384,13 @@ final class VendorRoleApprovalTest extends TestCase
         )->json('data.id');
 
         $this->authenticatedJson($beneficiary)
+            ->postJson($this->approvalPath($vendor, $requestId, 'approve'), [
+                'reason' => 'The beneficiary must not approve their own grant.',
+            ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'FORBIDDEN');
+
+        $this->authenticatedJson($beneficiary)
             ->postJson($this->approvalPath($vendor, $requestId, 'reject'), [
                 'reason' => 'The beneficiary must not decide their own grant.',
             ])
