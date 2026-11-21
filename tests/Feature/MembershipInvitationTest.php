@@ -203,6 +203,47 @@ final class MembershipInvitationTest extends TestCase
         $this->assertNotNull($acceptedInvitation?->accepted_at);
     }
 
+    public function test_authenticated_different_account_cannot_complete_new_account_invitation_setup(): void
+    {
+        Mail::fake();
+        [$actor, $vendor] = $this->vendorActor();
+        $email = mb_strtolower('session-confusion-'.str()->random(8).'@example.test');
+
+        $response = $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations', [
+                'email' => $email,
+                'role_slug' => 'support_agent',
+                'reason' => 'Protect account setup from session confusion.',
+            ])
+            ->assertCreated();
+
+        $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
+        $token = $this->sentInvitationTokens($email)[0];
+        $invitee = User::query()->where('email', $email)->firstOrFail();
+        $otherUser = $this->createVerifiedUser('session-confusion-other');
+
+        Auth::logout();
+        $this->postJson('/membership-invitations/prepare', ['token' => $token])
+            ->assertOk()
+            ->assertJsonPath('next', 'account_setup');
+
+        $this->actingAs($otherUser, 'web')
+            ->withSession(['auth_session_version' => (int) $otherUser->session_version])
+            ->post('/membership-invitations/accept', [
+                'name' => 'Attacker Controlled Name',
+                'password' => 'A-very-strong-password-2026!',
+                'password_confirmation' => 'A-very-strong-password-2026!',
+            ])
+            ->assertForbidden();
+
+        $this->assertNull($invitee->refresh()->email_verified_at);
+        $this->assertSame('invited', $membership->refresh()->status);
+        $this->assertDatabaseMissing('vendor_membership_lifecycle_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'to_status' => 'active',
+        ]);
+    }
+
     public function test_verified_existing_invitee_must_authenticate_as_the_invited_account(): void
     {
         Mail::fake();
