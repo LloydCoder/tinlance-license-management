@@ -62,6 +62,7 @@ final class AuthorizationCatalogSeeder extends Seeder
     private function permissions(): array
     {
         return [
+            'vendor.account.read' => 'Read non-secret vendor account profile and operational status.',
             'platform.settings.manage' => 'Manage installation-wide platform settings.',
             'admins.manage' => 'Manage vendor administrator accounts and memberships.',
             'customers.manage' => 'Manage customer organizations and their account lifecycle.',
@@ -103,31 +104,31 @@ final class AuthorizationCatalogSeeder extends Seeder
                 ],
                 'platform_admin' => [
                     'name' => 'Platform Admin',
-                    'permissions' => ['platform.settings.manage', 'audit.read'],
+                    'permissions' => ['vendor.account.read', 'platform.settings.manage', 'audit.read'],
                 ],
                 'finance_admin' => [
                     'name' => 'Finance Admin',
-                    'permissions' => ['licences.issue', 'payments.read', 'payments.refund', 'ledger.adjust', 'audit.read'],
+                    'permissions' => ['vendor.account.read', 'licences.issue', 'payments.read', 'payments.refund', 'ledger.adjust', 'audit.read'],
                 ],
                 'support_agent' => [
                     'name' => 'Support Agent',
-                    'permissions' => ['customers.support.read', 'licences.read', 'audit.read'],
+                    'permissions' => ['vendor.account.read', 'customers.support.read', 'licences.read', 'audit.read'],
                 ],
                 'security_auditor' => [
                     'name' => 'Security Auditor',
-                    'permissions' => ['audit.read', 'licences.read', 'payments.read'],
+                    'permissions' => ['vendor.account.read', 'audit.read', 'licences.read', 'payments.read'],
                 ],
                 'vendor_product_manager' => [
                     'name' => 'Vendor Product Manager',
-                    'permissions' => ['products.manage', 'plans.entitlements.manage', 'licences.read', 'releases.publish'],
+                    'permissions' => ['vendor.account.read', 'products.manage', 'plans.entitlements.manage', 'licences.read', 'releases.publish'],
                 ],
                 'vendor_developer' => [
                     'name' => 'Vendor Developer',
-                    'permissions' => ['licences.read', 'releases.nonproduction.publish'],
+                    'permissions' => ['vendor.account.read', 'licences.read', 'releases.nonproduction.publish'],
                 ],
                 'reseller_manager' => [
                     'name' => 'Reseller Manager',
-                    'permissions' => ['resellers.manage', 'payments.read', 'audit.read'],
+                    'permissions' => ['vendor.account.read', 'resellers.manage', 'payments.read', 'audit.read'],
                 ],
             ],
             'customer' => [
