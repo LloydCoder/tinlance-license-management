@@ -137,6 +137,7 @@ Any future dual-control workflow must prohibit both maker/checker identity confl
 ## 3B. Additional Phase 4 hardening (PRs #49–#52)
 
 - Super Admin session listing and global session revocation require Laravel recent password confirmation. Revocation remains self-scoped and invalidates all of the actor's sessions.
+- The self-service `/security/mfa` enrollment page is available to any authenticated, verified active user, not only Super Admins. Secure transport, session-version enforcement and recent password confirmation remain mandatory; the page exposes only the current user's own factors and passkeys (PR #60).
 - Session-version middleware reloads persisted account status on every protected request and fails closed for missing or non-active users, so account suspension invalidates existing web/API sessions.
 - Active users may view their own active/invited vendor or customer membership without administrator permissions. Viewing another member remains subject to the relevant tenant-scoped administrator permission; no `viewAny`, update or delete ability is granted.
 - Customer organization reads reload the persisted active organization and parent vendor before evaluating customer-member or vendor-support access. In-memory relationship state is not an authorization source; suspended organizations and stale/tampered tenant foreign keys are denied.
