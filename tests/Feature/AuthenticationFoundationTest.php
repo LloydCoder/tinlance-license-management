@@ -190,6 +190,16 @@ final class AuthenticationFoundationTest extends TestCase
         $this->get('/security/mfa')->assertOk();
     }
 
+    public function test_mfa_enrollment_requires_recent_password_confirmation(): void
+    {
+        $user = $this->createSuperAdmin();
+
+        $this->actingAs($user)
+            ->withSession(['auth_session_version' => 0])
+            ->get('/security/mfa')
+            ->assertRedirect(route('password.confirm'));
+    }
+
     public function test_inactive_users_cannot_authenticate_with_a_valid_password(): void
     {
         $user = $this->createUser();
