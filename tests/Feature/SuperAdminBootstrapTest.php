@@ -74,6 +74,38 @@ final class SuperAdminBootstrapTest extends TestCase
         $this->assertDatabaseCount('vendor_accounts', 0);
     }
 
+    public function test_bootstrap_accepts_long_passphrases_without_character_composition_rules(): void
+    {
+        $password = str_repeat('correct horse ', 4).'battery staple';
+
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'passphrase@example.test',
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertCreated();
+
+        $user = User::query()->where('email', 'passphrase@example.test')->firstOrFail();
+
+        $this->assertTrue(Hash::check($password, $user->password));
+        $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_bootstrap_rejects_passwords_shorter_than_fifteen_characters(): void
+    {
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'short-password@example.test',
+            'password' => 'short',
+            'password_confirmation' => 'short',
+        ])->assertUnprocessable();
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('vendor_accounts', 0);
+    }
+
     public function test_valid_one_time_bootstrap_creates_the_initial_super_admin(): void
     {
         $response = $this->postJson('/setup/super-admin', [
