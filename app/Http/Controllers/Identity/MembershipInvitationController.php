@@ -198,6 +198,12 @@ final class MembershipInvitationController
             return redirect()->guest('/login');
         }
 
+        if (! $preview['requires_account_setup'] && ! $this->hasRecentPasswordConfirmation($request)) {
+            $request->session()->put('url.intended', '/membership-invitations/accept');
+
+            return redirect('/user/confirm-password');
+        }
+
         return response()->view('identity.membership-invitation-accept', [
             'mode' => $preview['requires_account_setup'] ? 'account_setup' : 'authenticated',
             'preview' => $preview,
@@ -235,6 +241,12 @@ final class MembershipInvitationController
             throw new GoneHttpException('This invitation is invalid or no longer available.');
         }
 
+        if (! $this->hasRecentPasswordConfirmation($request)) {
+            $request->session()->put('url.intended', '/membership-invitations/accept');
+
+            return redirect('/user/confirm-password');
+        }
+
         $invitations->acceptAuthenticated($tokenHash, $actor);
         $request->session()->forget('pending_membership_invitation_hash');
 
@@ -244,5 +256,14 @@ final class MembershipInvitationController
     public function accepted(): View
     {
         return view('identity.membership-invitation-accepted');
+    }
+
+    private function hasRecentPasswordConfirmation(Request $request): bool
+    {
+        $confirmedAt = $request->session()->get('auth.password_confirmed_at');
+        $timeout = max(1, (int) config('auth.password_timeout', 10800));
+        $timestamp = is_numeric($confirmedAt) ? (int) $confirmedAt : null;
+
+        return $timestamp !== null && $timestamp >= now()->timestamp - $timeout;
     }
 }
