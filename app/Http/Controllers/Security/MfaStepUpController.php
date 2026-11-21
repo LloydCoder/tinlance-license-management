@@ -41,6 +41,8 @@ final class MfaStepUpController
         try {
             $secret = Fortify::currentEncrypter()->decrypt($user->two_factor_secret);
         } catch (DecryptException) {
+            $audit->record($user, 'totp', 'failed', $request);
+
             return response()->json([
                 'type' => 'about:blank',
                 'title' => 'TOTP factor is unavailable',
