@@ -35,11 +35,7 @@ final class HostingPreflight
             ),
             'security.app_key_configured' => $this->appKeyCheck(),
             'security.secure_session_cookie' => $this->sessionSecurityCheck(),
-            'filesystem.storage_writable' => $this->check(
-                is_dir(storage_path()) && is_writable(storage_path())
-                    && is_dir(storage_path('framework')) && is_writable(storage_path('framework')),
-                'The storage and storage/framework directories must exist and be writable by the PHP runtime.',
-            ),
+            'filesystem.storage_writable' => $this->storageDirectoriesCheck(),
             'filesystem.bootstrap_cache_writable' => $this->check(
                 is_dir(base_path('bootstrap/cache')) && is_writable(base_path('bootstrap/cache')),
                 'bootstrap/cache must exist and be writable by the PHP runtime.',
@@ -97,6 +93,33 @@ final class HostingPreflight
             $missing === []
                 ? 'All required PHP extensions are loaded.'
                 : 'Missing required PHP extensions: '.implode(', ', $missing).'.',
+        );
+    }
+
+
+    /**
+     * @return array{passed: bool, required: bool, message: string}
+     */
+    private function storageDirectoriesCheck(): array
+    {
+        $requiredDirectories = [
+            storage_path('app'),
+            storage_path('framework/cache/data'),
+            storage_path('framework/sessions'),
+            storage_path('framework/views'),
+            storage_path('logs'),
+        ];
+
+        $unavailable = array_values(array_filter(
+            $requiredDirectories,
+            static fn (string $directory): bool => ! is_dir($directory) || ! is_writable($directory),
+        ));
+
+        return $this->check(
+            $unavailable === [],
+            $unavailable === []
+                ? 'All required Laravel storage directories exist and are writable.'
+                : 'Required Laravel storage directories are missing or not writable: '.implode(', ', $unavailable).'.',
         );
     }
 
