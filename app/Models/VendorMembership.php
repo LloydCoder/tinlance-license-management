@@ -41,6 +41,12 @@ final class VendorMembership extends BaseModel
         return $this->hasMany(VendorMembershipRoleEvent::class);
     }
 
+    /** @return HasMany<VendorMembershipLifecycleEvent, $this> */
+    public function lifecycleEvents(): HasMany
+    {
+        return $this->hasMany(VendorMembershipLifecycleEvent::class, 'vendor_membership_id');
+    }
+
     /** @return BelongsToMany<Role, $this> */
     public function roles(): BelongsToMany
     {

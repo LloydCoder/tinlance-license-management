@@ -41,6 +41,12 @@ final class CustomerMembership extends BaseModel
         return $this->hasMany(CustomerMembershipRoleEvent::class);
     }
 
+    /** @return HasMany<CustomerMembershipLifecycleEvent, $this> */
+    public function lifecycleEvents(): HasMany
+    {
+        return $this->hasMany(CustomerMembershipLifecycleEvent::class, 'customer_membership_id');
+    }
+
     /** @return BelongsToMany<Role, $this> */
     public function roles(): BelongsToMany
     {
