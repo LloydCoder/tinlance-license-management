@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (PR #32 stale customer-membership and role-revocation regression coverage merged; exact-head CI and Security workflows green)
+**Last reviewed:** 2026-11-21 (main `4e7d45c129594f60df50b1aeb108a2cfe633f786`; post-merge CI 8/8 and Security 4/4 green; PR #34 closed as superseded)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -110,3 +110,17 @@ The policy currently supports only `view`. It intentionally does not define `vie
 PR #32 exact head `63026dfa51f2f30624a50fdd36609be382ac6ca5` passed [CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880034445) and [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880034388). CI passed all eight jobs: PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, cPanel production artifact verification, OpenAPI validation and documentation governance. Security passed all four jobs: Larastan/PHPStan, Semgrep, Gitleaks full-history scanning and OSV-Scanner. The added feature tests establish that a customer organization view decision is denied after the customer's membership is revoked or the customer's role is detached, even when the request context began with an authorized state. PR #32 was merged as `d1a729b4a50c86066f6c9044ff09797d8cff14ee`.
 
 The exact-head PR workflows are green. A separate post-merge mainline workflow run has not yet been verified in this status update; do not treat PR checks as post-merge deployment evidence.
+
+
+## Phase 0–3 forensic acceptance audit (2026-11-21)
+
+The full evidence and owner-gated acceptance matrix is maintained in [PHASE-0-3-FORENSIC-ACCEPTANCE-AUDIT.md](docs/architecture/PHASE-0-3-FORENSIC-ACCEPTANCE-AUDIT.md).
+
+- **Main baseline:** `4e7d45c129594f60df50b1aeb108a2cfe633f786`.
+- **Post-merge main CI:** [44880367359](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880367359) — all 8 jobs passed.
+- **Post-merge main Security:** [44880367355](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880367355) — all 4 jobs passed.
+- **Open PRs/issues at audit time:** none.
+
+Phase 0 remains partial: the repository rulesets endpoint returned no rulesets; branch-protection details remain unreadable to the connected integration (403); native secret scanning/push protection/Dependabot alert settings and legal/trademark review require owner/counsel evidence. Phase 1 remains a documented architecture baseline but still needs operation-by-operation API authorization mapping, executable semantic contract tests and legal/privacy decisions. Phase 2 has preflight and operational documentation but no real annual cPanel provider account PoC. Phase 3 has green CI and reproducible production-only packaging but still lacks signed artifacts/SBOM/provenance, install/upgrade/rollback automation and tested backup/restore. None of Phases 0–3 is accepted as complete.
+
+PR #33 — documentation reconciliation and PR #32 evidence: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/33), merge commit `4e7d45c129594f60df50b1aeb108a2cfe633f786`. PR #34 — stale authentication CI branch: [closed without merge](https://github.com/LloydCoder/tinlance-license-management/pull/34) because the current mainline already contains the corrected authentication implementation; its older divergent branch failed tests, Gitleaks and Larastan and would have reintroduced superseded code.
