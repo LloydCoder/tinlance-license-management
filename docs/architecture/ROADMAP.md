@@ -12,7 +12,7 @@ PRD; customer/vendor personas; deployment model; domain model; lifecycle/state m
 Select candidate annual cPanel providers only after validating PHP/Sodium/cURL/OpenSSL/PDO, MySQL or MariaDB, HTTPS egress, webhook reachability, cron behavior, document root, resource limits, backups, restore and commercial API policy. Prove deployment on a real test account before annual purchase.
 
 ## Phase 3 — Engineering foundation and CI/CD
-Laravel bootstrap; supported PHP matrix; database integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; secret scanning; dependency review; pinned GitHub Actions; prebuilt deployment artifacts.
+Laravel bootstrap; supported PHP matrix; database integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; pull-request dependency review; Dependabot; pinned GitHub Actions; prebuilt deployment artifacts.
 
 ## Phase 4 — Identity, organizations and portals
 Admin and customer identity; MFA; recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
@@ -49,6 +49,10 @@ OWASP ASVS verification; application/API testing; dependency and supply-chain re
 
 ## Phase 15 — Beta, production launch and release certification
 Functional and regression suites; shared-host acceptance; concurrency/performance; security and privacy sign-off; payment reconciliation; release artifact signature; SBOM and provenance; changelog; rollback; final forensic audit and production readiness approval.
+
+## Current Phase 3 evidence and residual work
+
+The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, PHPStan 2.3.7 over `src/`, Gitleaks full-history scanning, pull-request dependency review and weekly Composer/GitHub Actions Dependabot configuration. This does not complete Phase 3: Larastan with a committed lockfile, GitHub native secret scanning/push protection, required branch rulesets, production artifact reproducibility, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. See `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
 
 ## Cross-phase engineering gates
 
