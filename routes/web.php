@@ -42,6 +42,29 @@ Route::middleware([
     'auth',
     'verified',
     EnsureSessionVersionCurrent::class,
+    'password.confirm',
+    EnsureMfaEnrolled::class,
+])->prefix('/api/v1')->group(function (): void {
+    Route::post('/vendor-accounts/{vendor}/memberships/{membership}/roles/{role}', [MembershipRoleController::class, 'assignVendor'])
+        ->middleware('throttle:10,1')
+        ->name('api.vendor-memberships.roles.assign');
+    Route::post('/vendor-accounts/{vendor}/memberships/{membership}/roles/{role}/revoke', [MembershipRoleController::class, 'revokeVendor'])
+        ->middleware('throttle:10,1')
+        ->name('api.vendor-memberships.roles.revoke');
+
+    Route::post('/customer-organizations/{organization}/memberships/{membership}/roles/{role}', [MembershipRoleController::class, 'assignCustomer'])
+        ->middleware('throttle:10,1')
+        ->name('api.customer-memberships.roles.assign');
+    Route::post('/customer-organizations/{organization}/memberships/{membership}/roles/{role}/revoke', [MembershipRoleController::class, 'revokeCustomer'])
+        ->middleware('throttle:10,1')
+        ->name('api.customer-memberships.roles.revoke');
+});
+
+Route::middleware([
+    RequireSecureSetupTransport::class,
+    'auth',
+    'verified',
+    EnsureSessionVersionCurrent::class,
     EnsureMfaEnrolled::class,
     EnsureSuperAdmin::class,
 ])->group(function (): void {
