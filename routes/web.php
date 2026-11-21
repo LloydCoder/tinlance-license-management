@@ -37,8 +37,9 @@ Route::middleware([
     'verified',
     EnsureSessionVersionCurrent::class,
     'password.confirm',
-    EnsureSuperAdmin::class,
 ])->group(function (): void {
+    // Every authenticated tenant user must be able to enroll their own MFA
+    // before accessing protected vendor/customer operations.
     Route::get('/security/mfa', MfaEnrollmentController::class)
         ->name('security.mfa.enroll');
 });
