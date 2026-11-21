@@ -7,6 +7,8 @@
 - Laravel Framework ^13.17; committed lock currently resolves Laravel Framework v13.43.0.
 - PHP 8.3 minimum; CI exercises PHP 8.3, 8.4 and 8.5.
 - composer.lock is committed; CI uses composer install, not composer update.
+- Composer dependency resolution is pinned to PHP 8.3.0 via `config.platform.php`, the minimum supported runtime, to prevent dev-tool transitive dependencies from silently raising the PHP floor.
+- Larastan 3.15.0 and PHPStan 2.3.7 are locked development dependencies; `composer analyse` runs at level 8 across the Laravel application, domain, database, routes, bootstrap, config and tests, without a baseline.
 - Existing Tlms namespace and dependency-free domain test runner remain intact.
 - Application code uses the App namespace; framework-independent licensing logic remains under Tlms.
 - PHPUnit 12.5.45 and Laravel Pint 1.32.3 are locked development dependencies.
@@ -44,7 +46,7 @@ The bootstrap is still not a complete licensing service; identity/business APIs,
 
 ## Acceptance gates still open
 
-1. Static analysis and security scanning are integrated and pass.
+1. Static analysis and security scanning are integrated and pass; Larastan/PHPStan is configured at level 8 with no baseline.
 2. One-time Super Admin bootstrap, authentication, MFA, session revocation and recovery are implemented with deny-by-default tests.
 3. Resource-level ABAC and cross-customer IDOR protections are implemented for business resources.
 4. Production artifact excludes secrets, tests, development dependencies and writable runtime data.
