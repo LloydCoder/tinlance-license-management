@@ -113,6 +113,8 @@ final class MembershipInvitationTest extends TestCase
         $membership = CustomerMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
+        $this->app['auth']->guard('web')->logout();
+
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertOk()
             ->assertJsonPath('next', 'account_setup');
@@ -154,6 +156,8 @@ final class MembershipInvitationTest extends TestCase
 
         $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
+
+        $this->app['auth']->guard('web')->logout();
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertOk()
@@ -234,7 +238,7 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->get('/membership-invitations/accept')
             ->assertOk()
-            ->assertSee('Accept your TLMS invitation');
+            ->assertSee('Confirm acceptance while signed in to the invited account.');
 
         $this->post('/membership-invitations/accept/authenticated')
             ->assertRedirect('/membership-invitations/accepted');
@@ -298,6 +302,8 @@ final class MembershipInvitationTest extends TestCase
         $this->assertCount(2, $tokens);
         $newToken = $tokens[1];
         $this->assertNotSame($oldToken, $newToken);
+
+        $this->app['auth']->guard('web')->logout();
 
         $this->postJson('/membership-invitations/prepare', ['token' => $oldToken])
             ->assertStatus(410);
