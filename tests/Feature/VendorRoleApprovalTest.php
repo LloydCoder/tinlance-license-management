@@ -365,6 +365,40 @@ final class VendorRoleApprovalTest extends TestCase
         return '/api/v1/vendor-accounts/'.$vendor->getKey().'/role-approval-requests/'.$requestId.'/'.$action;
     }
 
+    public function test_pending_request_cannot_be_used_as_direct_authority_to_assign_a_high_risk_role(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $checker = $this->createActor($vendor);
+        $target = $this->createMembership($vendor, $this->createUser());
+        $role = $this->role('finance_admin');
+        $requestId = $this->createApprovalRequest(
+            $maker,
+            $vendor,
+            $target,
+            $role,
+            'maker-key-bypass-0001',
+        )->json('data.id');
+        $pendingRequest = ApprovalRequest::query()->findOrFail($requestId);
+
+        try {
+            app(MembershipRoleAssignmentService::class)->assignVendorRoleAfterApproval(
+                $checker,
+                $vendor,
+                $target,
+                $role,
+                'Attempted direct use of pending request.',
+                $pendingRequest,
+            );
+        } catch (AuthorizationException) {
+            $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+
+            return;
+        }
+
+        $this->fail('A pending request must never authorize a privileged role grant.');
+    }
+
     public function test_role_beneficiary_cannot_reject_their_own_privileged_grant_request(): void
     {
         $vendor = $this->createVendor();
