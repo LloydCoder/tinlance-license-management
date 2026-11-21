@@ -53,7 +53,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 - Laravel's session guard and Eloquent user provider are configured; login, logout, password reset, email verification and MFA flows are not yet exposed.
 - Browser authentication must regenerate the session ID after authentication and invalidate the session on logout.
-- A one-time browser bootstrap implementation candidate in PR #20 is built behind a deployment-configured 256-bit base64url secret, HTTPS enforcement outside local/testing, CSRF protection, no-store security headers, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment and clear cached Laravel configuration after successful bootstrap.
+- A one-time browser bootstrap implementation candidate in PR #20 is built behind a deployment-configured 256-bit base64url secret, HTTPS enforcement outside local/testing, CSRF protection, no-store security headers, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The initial Super Admin grant is recorded in the vendor membership-role event table as a system-attributed `assigned` event in the same transaction. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment and clear cached Laravel configuration after successful bootstrap.
 - Bootstrap creates the initial vendor account, user, active vendor membership and system Super Admin role transactionally. The initial email remains unverified and the password must be at least 15 characters; long passphrases are accepted without character-composition rules. It does not create a login session or expose admin access. Login must remain unavailable until mandatory MFA enrollment and recovery controls are implemented.
 - Passkeys/WebAuthn are the preferred phishing-resistant factor; TOTP is the fallback. TOTP seeds must be encrypted at rest, replay-protected and rate-limited. Recovery codes must be single-use and stored as verifiers.
 - Sensitive actions require recent authentication and MFA step-up. Authorization is deny-by-default and enforced server-side at service/policy boundaries.
@@ -72,8 +72,9 @@ The vendor account is identified by a non-user-editable installation key whose i
 - customer_organizations
 - customer_memberships
 - customer_membership_roles
-- vendor_membership_role_events
-- customer_membership_role_events
+- vendor_membership_role_events (user- or system-attributed; append-only at the model boundary)
+- customer_membership_role_events (user- or system-attributed; append-only at the model boundary)
+- platform_installations
 
 ## Verification evidence
 
@@ -82,7 +83,7 @@ Earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tin
 ## Remaining acceptance work
 
 1. Add resource-level ABAC for product assignment, reseller relationships, customer ownership and vendor scope; membership permission alone is not sufficient for these resources.
-2. Implement one-time Super Admin bootstrap, login/logout, password reset, email verification, session rotation/revocation, MFA enrollment and recovery.
+2. Implement login/logout, password reset, email verification, session rotation/revocation, MFA enrollment and recovery.
 3. Implement passkeys/WebAuthn, TOTP replay protection, recovery-code verification, step-up authentication and maker-checker workflows.
 4. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment/revocation.
 5. Integrate global append-only/hash-chained audit anchoring; membership-role events are a local transactional audit precursor only.
