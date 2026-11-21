@@ -4,7 +4,7 @@ set -Eeuo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 builder="$repo_root/scripts/release/build-cpanel-artifact.sh"
 
-if [[ ! -x "$builder" ]]; then
+if [[ ! -f "$builder" ]]; then
     printf 'Required cPanel artifact builder is missing or not executable: %s\n' "$builder" >&2
     exit 1
 fi
@@ -13,7 +13,7 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
 artifact_dir="$tmp_dir/dist"
-TLMS_RELEASE_VERSION="0.0.0-test" TLMS_ARTIFACT_DIR="$artifact_dir" "$builder"
+TLMS_RELEASE_VERSION="0.0.0-test" TLMS_ARTIFACT_DIR="$artifact_dir" bash "$builder"
 
 artifact="$artifact_dir/tlms-0.0.0-test-cpanel.zip"
 checksum="$artifact.sha256"
