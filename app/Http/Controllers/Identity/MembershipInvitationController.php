@@ -180,10 +180,13 @@ final class MembershipInvitationController
             'token' => ['required', 'string', 'regex:/\A[a-f0-9]{64}\z/D'],
         ]);
 
-        $preview = $invitations->prepare($validated['token'], $request->user());
-        $request->session()->put('pending_membership_invitation_hash', hash('sha256', $validated['token']));
+        $authenticatedUser = $request->user();
+        $authenticatedUser = $authenticatedUser instanceof User ? $authenticatedUser : null;
+        $token = (string) $validated['token'];
+        $preview = $invitations->prepare($token, $authenticatedUser);
+        $request->session()->put('pending_membership_invitation_hash', hash('sha256', $token));
 
-        if (! $preview['requires_account_setup'] && $request->user() === null) {
+        if (! $preview['requires_account_setup'] && $authenticatedUser === null) {
             $request->session()->put('url.intended', '/membership-invitations/accept');
 
             return response()->json([
@@ -207,9 +210,11 @@ final class MembershipInvitationController
                 ->header('Cache-Control', 'no-store, max-age=0');
         }
 
-        $preview = $invitations->prepareHash($tokenHash, $request->user());
+        $authenticatedUser = $request->user();
+        $authenticatedUser = $authenticatedUser instanceof User ? $authenticatedUser : null;
+        $preview = $invitations->prepareHash($tokenHash, $authenticatedUser);
 
-        if (! $preview['requires_account_setup'] && $request->user() === null) {
+        if (! $preview['requires_account_setup'] && $authenticatedUser === null) {
             $request->session()->put('url.intended', '/membership-invitations/accept');
 
             return redirect()->guest('/login');
