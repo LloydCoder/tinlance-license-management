@@ -361,8 +361,10 @@ final class MembershipRoleApiTest extends TestCase
 
     private function authenticatedJson(User $user): static
     {
-        return $this->actingAs($user)->withSession([
-            'auth_session_version' => $user->session_version,
+        $sessionVersion = (int) User::query()->whereKey($user->getKey())->value('session_version');
+
+        return $this->actingAs($user, 'web')->withSession([
+            'auth_session_version' => $sessionVersion,
             'auth.password_confirmed_at' => time(),
         ]);
     }
