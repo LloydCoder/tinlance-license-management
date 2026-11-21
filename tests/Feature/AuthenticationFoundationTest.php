@@ -358,7 +358,7 @@ final class AuthenticationFoundationTest extends TestCase
         $this->post('/login', [
             'email' => $user->email,
             'password' => $password,
-        ])->assertRedirect(route('admin.dashboard'));
+        ])->assertRedirect('/workspace');
 
         $storedHash = (string) DB::table('users')
             ->where('id', $user->getKey())
