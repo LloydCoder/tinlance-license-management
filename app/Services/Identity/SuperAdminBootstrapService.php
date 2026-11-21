@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Identity;
 
+use App\Models\Permission;
 use App\Models\PlatformInstallation;
 use App\Models\Role;
 use App\Models\User;
@@ -130,6 +131,21 @@ final class SuperAdminBootstrapService
 
             if ($role === null) {
                 abort(503, 'The authorization catalogue could not be initialized.');
+            }
+
+            $vendorPermissionCount = Permission::query()
+                ->where('scope', 'vendor')
+                ->count();
+
+            $assignedVendorPermissionCount = $role->permissions()
+                ->where('permissions.scope', 'vendor')
+                ->count();
+
+            if (
+                $vendorPermissionCount === 0
+                || $assignedVendorPermissionCount !== $vendorPermissionCount
+            ) {
+                abort(503, 'The authorization catalogue is incomplete.');
             }
 
             $existingSuperAdmin = VendorMembership::query()
