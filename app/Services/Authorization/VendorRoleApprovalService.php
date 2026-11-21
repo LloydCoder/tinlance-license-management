@@ -223,6 +223,15 @@ final readonly class VendorRoleApprovalService
                 500,
             );
 
+            $request->transitionTo('approved', $checker->getKey(), $decisionReason);
+            ApprovalDecision::query()->create([
+                'approval_request_id' => $request->getKey(),
+                'actor_user_id' => $checker->getKey(),
+                'decision' => 'approved',
+                'reason' => $decisionReason,
+                'created_at' => now(),
+            ]);
+
             $changed = $this->membershipRoles->assignVendorRoleAfterApproval(
                 $checker,
                 $vendor,
@@ -235,15 +244,6 @@ final readonly class VendorRoleApprovalService
             if (! $changed) {
                 throw new ConflictHttpException('The requested role grant could not be applied.');
             }
-
-            $request->transitionTo('approved', $checker->getKey(), $decisionReason);
-            ApprovalDecision::query()->create([
-                'approval_request_id' => $request->getKey(),
-                'actor_user_id' => $checker->getKey(),
-                'decision' => 'approved',
-                'reason' => $decisionReason,
-                'created_at' => now(),
-            ]);
 
             $request->refresh();
 
