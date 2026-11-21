@@ -19,4 +19,6 @@
 | SA-015 | Signing root keys remain outside ordinary dashboard/API credential settings | Must | Architecture and UI review |
 | SA-016 | Destructive/bulk operations require confirmation, bounded scope, impact awareness and recovery handling where feasible | Must | Workflow and abuse-case tests |
 | SA-017 | Emergency access and recovery are documented, constrained and audited | Must | Recovery exercise |
+
+**Implementation note:** Initial one-time Super Admin account creation is implemented as a bootstrap subtrack. It does not satisfy authentication, MFA, session security, Control Center or the full SA-001–SA-018 acceptance criteria.
 | SA-018 | No Super Admin capability bypasses cryptographic checks, ledger integrity, auditability or legal/provider qualification gates | Must | Security and architecture review |
