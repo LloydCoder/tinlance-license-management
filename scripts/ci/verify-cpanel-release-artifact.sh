@@ -47,7 +47,7 @@ for required in "${required_entries[@]}"; do
     fi
 done
 
-for forbidden in "tlms/.env" "tlms/composer.json" "tlms/composer.lock" "tlms/phpunit.xml" "tlms/phpstan.neon"; do
+for forbidden in "tlms/.env" "tlms/composer.json" "tlms/composer.lock" "tlms/phpunit.xml" "tlms/phpstan.neon" "tlms/auth.json"; do
     if printf '%s\n' "${entries[@]}" | grep -Fx "$forbidden" >/dev/null; then
         printf 'Forbidden release entry found: %s\n' "$forbidden" >&2
         exit 1
