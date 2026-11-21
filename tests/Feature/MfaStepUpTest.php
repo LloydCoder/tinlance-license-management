@@ -103,6 +103,32 @@ final class MfaStepUpTest extends TestCase
             ->assertJsonValidationErrors('code');
     }
 
+    public function test_fortify_totp_provider_rejects_reuse_of_an_accepted_code(): void
+    {
+        $secret = 'JBSWY3DPEHPK3PXP';
+        $code = app(Google2FA::class)->getCurrentOtp($secret);
+        $provider = app(TwoFactorAuthenticationProvider::class);
+
+        $this->assertTrue($provider->verify($secret, $code));
+        $this->assertFalse($provider->verify($secret, $code));
+    }
+
+    public function test_mfa_step_up_audit_events_are_immutable(): void
+    {
+        $user = $this->createUserWithTotp();
+        $event = MfaStepUpEvent::query()->create([
+            'user_id' => $user->getKey(),
+            'method' => 'totp',
+            'outcome' => 'succeeded',
+            'request_id' => 'step-up-immutable-test',
+            'created_at' => now(),
+        ]);
+
+        $this->expectException(LogicException::class);
+
+        $event->update(['outcome' => 'failed']);
+    }
+
     private function authenticatedJson(User $user): static
     {
         return $this->actingAs($user, 'web')->withSession([
