@@ -1209,13 +1209,11 @@ components:
         requested_by_user_id:
           type: string
         decided_by_user_id:
-          type: string
-          nullable: true
+          type: [string, 'null']
         reason:
           type: string
         decision_reason:
-          type: string
-          nullable: true
+          type: [string, 'null']
         expires_at:
           type: string
           format: date-time
