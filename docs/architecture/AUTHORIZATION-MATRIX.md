@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization `view` policy and vendor-account `view` policy are implemented and tested. Complete resource-level ABAC, mutation policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization `view`, vendor-account `view`, vendor-membership `view` and customer-membership `view` policies are implemented and tested. Complete resource-level ABAC, mutation policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
@@ -76,7 +76,8 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 - Membership-role events are an application-level append-only precursor, not the future global hash-chained audit ledger.
 - PR #29 adds `CustomerOrganizationPolicy::view`: a customer principal may read only its own organization with `customer.licences.read`; a vendor support principal may read organizations only under its active vendor with `customers.support.read`. Both branches delegate to `MembershipAuthorization`, which reloads current actor, membership and resource/vendor state from the database.
 - PR #38 adds `VendorAccountPolicy::view`, backed by the dedicated vendor-scoped `vendor.account.read` permission. The permission is granted to the defined vendor staff roles, never customer roles; authorization reloads current user, vendor and membership state. The policy exposes no collection listing or mutation abilities.
-- The policy deliberately defines no `viewAny`, create, update, delete or mutation abilities. Product, reseller, licence, payment and nested-resource policies remain pending; this is not complete ABAC.
+- PR #40 adds `VendorMembershipPolicy::view` and `CustomerMembershipPolicy::view`. Each policy reloads the target membership and parent resource, rejects non-active target memberships, and requires `admins.manage` or `customer.members.manage` in the matching vendor/customer scope. The existing authorization service reloads actor and role/permission state; cross-vendor and cross-organization access is denied.
+- These resource policies define no `viewAny`, create, update or delete abilities. Product, reseller, licence, payment and other business-resource policies remain pending; this is not complete ABAC.
 
 ## 4. Super Admin authority
 
