@@ -289,6 +289,57 @@ final class MembershipInvitationTest extends TestCase
         $this->assertNotNull($membership->joined_at);
     }
 
+    public function test_customer_invitation_for_verified_existing_user_activates_only_once(): void
+    {
+        Mail::fake();
+        [$actor, $organization] = $this->customerActor();
+        $invitee = $this->createVerifiedUser('existing-customer-invitee');
+
+        $response = $this->authenticatedJson($actor)
+            ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations', [
+                'email' => $invitee->email,
+                'role_slug' => 'customer_technical_admin',
+                'reason' => 'Existing customer technical contact onboarding.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'invited');
+
+        $membership = CustomerMembership::query()
+            ->whereKey((string) $response->json('data.membership_id'))
+            ->firstOrFail();
+        $token = $this->sentInvitationTokens($invitee->email)[0];
+
+        Auth::logout();
+        $this->postJson('/membership-invitations/prepare', ['token' => $token])
+            ->assertOk()
+            ->assertJsonPath('next', 'login');
+
+        $this->actingAs($invitee, 'web')
+            ->withSession([
+                'auth_session_version' => (int) $invitee->session_version,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->get('/membership-invitations/accept')
+            ->assertOk()
+            ->assertSee('Confirm acceptance while signed in to the invited account.');
+
+        $this->post('/membership-invitations/accept/authenticated')
+            ->assertRedirect('/membership-invitations/accepted');
+
+        $this->assertSame('active', $membership->refresh()->status);
+        $this->assertNotNull($membership->joined_at);
+        $this->assertDatabaseHas('customer_membership_lifecycle_events', [
+            'customer_membership_id' => $membership->getKey(),
+            'actor_user_id' => $invitee->getKey(),
+            'from_status' => 'invited',
+            'to_status' => 'active',
+            'reason' => 'Invitation accepted by the invited user.',
+        ]);
+
+        $this->post('/membership-invitations/accept/authenticated')
+            ->assertStatus(410);
+    }
+
     public function test_expired_invitation_cannot_be_prepared_or_accepted(): void
     {
         Mail::fake();
