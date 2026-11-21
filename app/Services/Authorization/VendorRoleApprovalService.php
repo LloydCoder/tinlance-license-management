@@ -246,6 +246,7 @@ final readonly class VendorRoleApprovalService
             ]);
 
             $request->refresh();
+
             return $request;
         }, 3);
     }
@@ -286,10 +287,12 @@ final readonly class VendorRoleApprovalService
             ]);
 
             $request->refresh();
-        return $request;
+
+            return $request;
         }, 3);
     }
 
+    /** @return LengthAwarePaginator<int, ApprovalRequest> */
     public function listVendorRoleGrants(
         User $viewer,
         VendorAccount $vendor,
