@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\\Services\\Identity;
+namespace App\Services\Identity;
 
-use App\\Models\\PlatformInstallation;
-use App\\Models\\Role;
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorMembership;
-use Database\\Seeders\\AuthorizationCatalogSeeder;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\PlatformInstallation;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Support\Facades\DB;
 
 final class SuperAdminBootstrapService
 {
