@@ -124,6 +124,31 @@ final class VendorRoleApprovalTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    public function test_former_vendor_member_cannot_view_their_old_approval_request(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $target = $this->createMembership($vendor, $this->createUser());
+        $requestId = $this->createApprovalRequest(
+            $maker,
+            $vendor,
+            $target,
+            $this->role('finance_admin'),
+            'maker-key-former-0001',
+        )->json('data.id');
+
+        VendorMembership::query()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('user_id', $maker->getKey())
+            ->update(['status' => 'revoked']);
+
+        $this->authenticatedJson($maker)
+            ->getJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/role-approval-requests/'.$requestId)
+            ->assertForbidden()
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('code', 'FORBIDDEN');
+    }
+
     public function test_maker_cannot_approve_own_role_grant_request(): void
     {
         $vendor = $this->createVendor();
