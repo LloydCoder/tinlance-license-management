@@ -78,10 +78,10 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertTrue(Passkeys::allowsLogin(request(), $passkey));
 
         $verified->forceFill(['status' => 'suspended'])->save();
-        $this->assertFalse(Passkeys::allowsLogin(request(), $passkey));
+        $this->assertFalse(Passkeys::allowsLogin(request(), $verified->passkeys()->firstOrFail()));
 
         $verified->forceFill(['status' => 'active', 'email_verified_at' => null])->save();
-        $this->assertFalse(Passkeys::allowsLogin(request(), $passkey));
+        $this->assertFalse(Passkeys::allowsLogin(request(), $verified->passkeys()->firstOrFail()));
     }
 
     public function test_active_super_admin_without_a_confirmed_factor_is_redirected_to_mfa_enrollment(): void
