@@ -1,6 +1,6 @@
 # TLMS shared-hosting operations and recovery baseline
 
-**Status:** Phase 1 architecture baseline; provider-specific settings and recovery objectives remain unvalidated.
+**Status:** Phase 2 provider-qualification requirements documented; database compatibility CI covers MySQL 8.4 and MariaDB 10.11. No real provider account or recovery objective has been validated.
 
 ## 1. Deployment contract
 
