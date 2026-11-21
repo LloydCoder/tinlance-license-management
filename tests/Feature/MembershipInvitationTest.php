@@ -95,6 +95,48 @@ final class MembershipInvitationTest extends TestCase
         $this->assertCount(1, $this->sentInvitationTokens($membership->user->email));
     }
 
+    public function test_new_customer_invitee_can_set_password_verify_email_and_accept_membership(): void
+    {
+        Mail::fake();
+        [$actor, $organization] = $this->customerActor();
+        $email = 'accept-new-customer-'.str()->random(8).'@example.test';
+
+        $response = $this->authenticatedJson($actor)
+            ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations', [
+                'email' => $email,
+                'name' => 'Pending Customer Member',
+                'role_slug' => 'customer_member',
+                'reason' => 'Customer invitation acceptance test.',
+            ])
+            ->assertCreated();
+
+        $membership = CustomerMembership::query()->findOrFail($response->json('data.membership_id'));
+        $token = $this->sentInvitationTokens($email)[0];
+
+        $this->postJson('/membership-invitations/prepare', ['token' => $token])
+            ->assertOk()
+            ->assertJsonPath('next', 'account_setup');
+
+        $password = str()->random(40).'Bb8!';
+        $this->post('/membership-invitations/accept', [
+            'name' => 'Accepted Customer Member',
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertRedirect('/login');
+
+        $invitee = User::query()->where('email', $email)->firstOrFail();
+        $this->assertNotNull($invitee->email_verified_at);
+        $this->assertTrue(Hash::check($password, $invitee->password));
+        $this->assertSame('active', $membership->refresh()->status);
+        $this->assertDatabaseHas('customer_membership_lifecycle_events', [
+            'customer_membership_id' => $membership->getKey(),
+            'actor_user_id' => $invitee->getKey(),
+            'from_status' => 'invited',
+            'to_status' => 'active',
+            'reason' => 'Invitation accepted by the invited user.',
+        ]);
+    }
+
     public function test_new_invitee_can_set_password_verify_email_and_accept_membership(): void
     {
         Mail::fake();
