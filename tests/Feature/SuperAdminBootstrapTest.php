@@ -187,6 +187,41 @@ final class SuperAdminBootstrapTest extends TestCase
         $this->assertDatabaseCount('vendor_accounts', 0);
     }
 
+    public function test_bootstrap_rejects_cross_scope_permissions_on_the_super_admin_role(): void
+    {
+        $vendorPermission = Permission::query()->create([
+            'scope' => 'vendor',
+            'name' => 'platform.settings.manage',
+            'description' => 'Manage installation-wide platform settings.',
+        ]);
+        $customerPermission = Permission::query()->create([
+            'scope' => 'customer',
+            'name' => 'customer.billing.read',
+            'description' => 'Read customer billing information.',
+        ]);
+        $role = Role::query()->create([
+            'scope' => 'vendor',
+            'slug' => 'super_admin',
+            'name' => 'Super Admin',
+            'is_system' => true,
+        ]);
+        $role->permissions()->attach([
+            $vendorPermission->getKey(),
+            $customerPermission->getKey(),
+        ]);
+
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'admin@example.test',
+            'password' => 'Correct-Horse-Battery-2026!',
+            'password_confirmation' => 'Correct-Horse-Battery-2026!',
+        ])->assertStatus(503);
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('vendor_accounts', 0);
+    }
+
     public function test_valid_one_time_bootstrap_creates_the_initial_super_admin(): void
     {
         $response = $this->postJson('/setup/super-admin', [
