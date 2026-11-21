@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
@@ -154,6 +155,33 @@ final class SuperAdminBootstrapTest extends TestCase
             'password' => $password,
             'password_confirmation' => $password,
         ])->assertUnprocessable();
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('vendor_accounts', 0);
+    }
+
+    public function test_bootstrap_fails_closed_when_the_authorization_catalogue_is_incomplete(): void
+    {
+        Permission::query()->create([
+            'scope' => 'vendor',
+            'name' => 'platform.settings.manage',
+            'description' => 'Manage installation-wide platform settings.',
+        ]);
+
+        Role::query()->create([
+            'scope' => 'vendor',
+            'slug' => 'super_admin',
+            'name' => 'Super Admin',
+            'is_system' => true,
+        ]);
+
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'admin@example.test',
+            'password' => 'Correct-Horse-Battery-2026!',
+            'password_confirmation' => 'Correct-Horse-Battery-2026!',
+        ])->assertStatus(503);
 
         $this->assertDatabaseCount('users', 0);
         $this->assertDatabaseCount('vendor_accounts', 0);
