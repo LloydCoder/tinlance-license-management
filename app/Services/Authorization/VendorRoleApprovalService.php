@@ -295,7 +295,8 @@ final readonly class VendorRoleApprovalService
         VendorAccount $vendor,
         string $status = 'pending',
     ): LengthAwarePaginator {
-        $canReview = $this->authorization->vendorCan($viewer, $vendor, 'approvals.review');
+        $canReview = $this->authorization->vendorCan($viewer, $vendor, 'approvals.review')
+            && $this->authorization->vendorCan($viewer, $vendor, 'admins.manage');
         $canManage = $this->authorization->vendorCan($viewer, $vendor, 'admins.manage');
 
         if (! $canReview && ! $canManage) {
@@ -347,7 +348,7 @@ final readonly class VendorRoleApprovalService
 
             if (
                 $request->requested_by_user_id !== $viewer->getKey()
-                && ! $this->authorization->vendorCan($viewer, $vendor, 'approvals.review')
+                && ! (\$this->authorization->vendorCan($viewer, $vendor, 'approvals.review') && \$this->authorization->vendorCan($viewer, $vendor, 'admins.manage'))
             ) {
                 throw new AuthorizationException('The approval request is not visible to this actor.');
             }
