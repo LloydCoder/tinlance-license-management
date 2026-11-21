@@ -59,13 +59,13 @@ if printf '%s\n' "${entries[@]}" | grep -E '^tlms/(tests|docs|scripts|\.github)/
     exit 1
 fi
 
-unexpected_env_files="$(printf '%s\n' "${entries[@]}" | grep -E '^tlms/\.env($|\.)' | grep -Fxv 'tlms/.env.example' || true)"
+unexpected_env_files="$(printf '%s\n' "${entries[@]}" | grep -E '(^|/)\.env($|\.)' | grep -Fxv 'tlms/.env.example' || true)"
 if [[ -n "$unexpected_env_files" ]]; then
     printf 'Unexpected environment file found in the production artifact: %s\n' "$unexpected_env_files" >&2
     exit 1
 fi
 
-unexpected_auth_files="$(printf '%s\n' "${entries[@]}" | grep -E '(^|/)(auth\.json|\.npmrc|\.pypirc|\.netrc)
+unexpected_auth_files="$(printf '%s\n' "${entries[@]}" | grep -E '(^|/)(auth\.json|\.npmrc|\.pypirc|\.netrc)$' || true)"
 php -r '
 $installed = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
 if (($installed["dev"] ?? true) !== false || ($installed["dev-package-names"] ?? []) !== []) {
