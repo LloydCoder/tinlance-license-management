@@ -335,6 +335,7 @@ final readonly class VendorRoleApprovalService
             || $activeVendor === null
             || $checkerMembership === null
             || ! $this->authorization->vendorCan($checker, $vendor, 'approvals.review')
+            || ! $this->authorization->vendorCan($checker, $vendor, 'admins.manage')
         ) {
             throw new AuthorizationException('The actor is not an authorized approval checker for this vendor.');
         }
