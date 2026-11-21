@@ -199,7 +199,10 @@ final class HostingPreflight
      */
     private function documentRootCheck(): array
     {
-        $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? config('tlms.expected_document_root');
+        $serverDocumentRoot = $_SERVER['DOCUMENT_ROOT'] ?? null;
+        $documentRoot = is_string($serverDocumentRoot) && trim($serverDocumentRoot) !== ''
+            ? $serverDocumentRoot
+            : config('tlms.expected_document_root');
 
         if (! is_string($documentRoot) || trim($documentRoot) === '') {
             return $this->check(
