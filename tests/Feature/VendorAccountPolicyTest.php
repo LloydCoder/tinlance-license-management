@@ -35,6 +35,27 @@ final class VendorAccountPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($user)->allows('view', $otherVendor));
     }
 
+    public function test_vendor_account_policy_does_not_grant_listing_or_mutation_abilities(): void
+    {
+        $user = $this->createUser();
+        $vendor = $this->createVendor('read-only');
+        $this->attachVendorRole($user, $vendor, 'support_agent');
+
+        $this->assertFalse(Gate::forUser($user)->allows('viewAny', VendorAccount::class));
+        $this->assertFalse(Gate::forUser($user)->allows('update', $vendor));
+        $this->assertFalse(Gate::forUser($user)->allows('delete', $vendor));
+    }
+
+    public function test_vendor_account_read_permission_is_not_granted_to_customer_roles(): void
+    {
+        $customerRole = Role::query()
+            ->where('scope', 'customer')
+            ->where('slug', 'customer_member')
+            ->firstOrFail();
+
+        $this->assertFalse($customerRole->permissions()->where('name', 'vendor.account.read')->exists());
+    }
+
     public function test_vendor_account_view_is_denied_without_an_active_vendor_membership(): void
     {
         $user = $this->createUser();
