@@ -28,7 +28,7 @@ final class EnsureSessionVersionCurrent
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            if ($request->is('api/*') && $request->expectsJson()) {
+            if ($request->is('api/*')) {
                 return response()->json([
                     'type' => 'about:blank',
                     'title' => 'Session is no longer valid',
