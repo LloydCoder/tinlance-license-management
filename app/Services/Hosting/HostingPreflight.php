@@ -19,7 +19,7 @@ final class HostingPreflight
     {
         $checks = [
             'runtime.php_version' => $this->check(
-                PHP_VERSION_ID >= 80300 && PHP_VERSION_ID < 80600,
+                version_compare(PHP_VERSION, '8.3.0', '>=') && version_compare(PHP_VERSION, '8.6.0', '<'),
                 'PHP 8.3, 8.4 or 8.5 is required; other runtimes are not qualified.',
             ),
             'runtime.required_extensions' => $this->requiredExtensionsCheck(),
