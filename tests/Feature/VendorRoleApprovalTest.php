@@ -382,7 +382,7 @@ final class VendorRoleApprovalTest extends TestCase
             $role,
             'maker-key-bypass-0001',
         )->json('data.id');
-        $pendingRequest = ApprovalRequest::query()->findOrFail($requestId);
+        $pendingRequest = ApprovalRequest::query()->whereKey($requestId)->firstOrFail();
 
         try {
             app(MembershipRoleAssignmentService::class)->assignVendorRoleAfterApproval(
