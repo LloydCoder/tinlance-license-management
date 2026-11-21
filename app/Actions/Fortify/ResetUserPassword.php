@@ -17,7 +17,7 @@ final class ResetUserPassword implements ResetsUserPasswords
     ) {}
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      */
     public function reset(User $user, array $input): void
     {
