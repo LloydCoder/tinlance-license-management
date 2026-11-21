@@ -12,10 +12,18 @@ final class RequireSecureSetupTransport
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! in_array(config('app.env'), ['local', 'testing'], true) && ! $request->isSecure()) {
-            $response = redirect()->secure($request->getRequestUri(), 308);
+        $requiresHttps = ! in_array(config('app.env'), ['local', 'testing'], true);
+
+        if ($requiresHttps && ! $request->isSecure()) {
+            $response = in_array($request->method(), ['GET', 'HEAD'], true)
+                ? redirect()->secure($request->getRequestUri(), 308)
+                : response('HTTPS is required for this endpoint.', 426)->header('Upgrade', 'TLS/1.2');
         } else {
             $response = $next($request);
+        }
+
+        if ($requiresHttps && $request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
         }
 
         $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
