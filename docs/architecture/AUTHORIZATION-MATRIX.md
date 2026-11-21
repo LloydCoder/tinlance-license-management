@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue, membership-level authorization service and a narrowly scoped customer-organization `view` policy are implemented and tested. Complete resource-level ABAC, mutation policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization `view` policy and vendor-account `view` policy are implemented and tested. Complete resource-level ABAC, mutation policies, MFA/step-up, maker-checker and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
