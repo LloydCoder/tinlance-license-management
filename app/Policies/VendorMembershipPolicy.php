@@ -17,7 +17,7 @@ final readonly class VendorMembershipPolicy
     {
         $currentMembership = VendorMembership::query()
             ->whereKey($membership->getKey())
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'invited'])
             ->first();
 
         if ($currentMembership === null) {
