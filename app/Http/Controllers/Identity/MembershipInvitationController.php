@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 
 final class MembershipInvitationController
@@ -36,14 +37,18 @@ final class MembershipInvitationController
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
 
-        $membership = $invitations->inviteVendor(
-            $actor,
-            $vendor,
-            $validated['email'],
-            $validated['role_slug'],
-            $validated['reason'],
-            $validated['name'] ?? null,
-        );
+        try {
+            $membership = $invitations->inviteVendor(
+                $actor,
+                $vendor,
+                $validated['email'],
+                $validated['role_slug'],
+                $validated['reason'],
+                $validated['name'] ?? null,
+            );
+        } catch (RuntimeException) {
+            return $this->deliveryFailure();
+        }
 
         $expiresAt = VendorMembershipInvitation::query()
             ->where('vendor_membership_id', $membership->getKey())
@@ -75,14 +80,18 @@ final class MembershipInvitationController
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
 
-        $membership = $invitations->inviteCustomer(
-            $actor,
-            $organization,
-            $validated['email'],
-            $validated['role_slug'],
-            $validated['reason'],
-            $validated['name'] ?? null,
-        );
+        try {
+            $membership = $invitations->inviteCustomer(
+                $actor,
+                $organization,
+                $validated['email'],
+                $validated['role_slug'],
+                $validated['reason'],
+                $validated['name'] ?? null,
+            );
+        } catch (RuntimeException) {
+            return $this->deliveryFailure();
+        }
 
         $expiresAt = CustomerMembershipInvitation::query()
             ->where('customer_membership_id', $membership->getKey())
@@ -111,7 +120,11 @@ final class MembershipInvitationController
 
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
-        $invitations->resendVendor($actor, $vendor, $membership, $validated['reason']);
+        try {
+            $invitations->resendVendor($actor, $vendor, $membership, $validated['reason']);
+        } catch (RuntimeException) {
+            return $this->deliveryFailure();
+        }
 
         $expiresAt = VendorMembershipInvitation::query()
             ->where('vendor_membership_id', $membership->getKey())
@@ -140,7 +153,11 @@ final class MembershipInvitationController
 
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
-        $invitations->resendCustomer($actor, $organization, $membership, $validated['reason']);
+        try {
+            $invitations->resendCustomer($actor, $organization, $membership, $validated['reason']);
+        } catch (RuntimeException) {
+            return $this->deliveryFailure();
+        }
 
         $expiresAt = CustomerMembershipInvitation::query()
             ->where('customer_membership_id', $membership->getKey())
@@ -256,6 +273,18 @@ final class MembershipInvitationController
     public function accepted(): View
     {
         return view('identity.membership-invitation-accepted');
+    }
+
+    private function deliveryFailure(): JsonResponse
+    {
+        return response()->json([
+            'type' => 'about:blank',
+            'title' => 'Invitation email delivery failed',
+            'status' => 503,
+            'detail' => 'The invitation is stored but its email could not be delivered. Correct mail configuration and resend the invitation.',
+            'code' => 'INVITATION_DELIVERY_FAILED',
+            'request_id' => bin2hex(random_bytes(16)),
+        ], 503, ['Content-Type' => 'application/problem+json']);
     }
 
     private function hasRecentPasswordConfirmation(Request $request): bool
