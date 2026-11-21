@@ -37,7 +37,8 @@ final class MembershipRoleApiTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.action', 'assigned')
-            ->assertJsonPath('data.changed', true);
+            ->assertJsonPath('data.changed', true)
+            ->assertJsonStructure(['request_id', 'data' => ['membership_id', 'role_id', 'action', 'changed']]);
 
         $this->assertTrue($target->refresh()->roles()->whereKey($role->getKey())->exists());
         $this->assertDatabaseHas('vendor_membership_role_events', [
