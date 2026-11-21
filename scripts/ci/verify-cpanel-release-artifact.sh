@@ -54,7 +54,7 @@ for forbidden in "tlms/.env" "tlms/composer.json" "tlms/composer.lock" "tlms/php
     fi
 done
 
-if printf '%s\n' "${entries[@]}" | grep -Eq '^tlms/(tests|docs|scripts|\.github)/'; then
+if printf '%s\n' "${entries[@]}" | grep -E '^tlms/(tests|docs|scripts|\.github)/' >/dev/null; then
     echo "Development or internal-only files were included in the production artifact." >&2
     exit 1
 fi
