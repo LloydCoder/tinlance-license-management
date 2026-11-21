@@ -459,11 +459,22 @@ final readonly class MembershipInvitationService
         throw new GoneHttpException('This invitation is invalid or no longer available.');
     }
 
-    public function acceptNewAccount(string $tokenHash, string $name, string $password): void
-    {
-        DB::transaction(function () use ($tokenHash, $name, $password): void {
+    public function acceptNewAccount(
+        string $tokenHash,
+        string $name,
+        string $password,
+        ?User $authenticatedUser = null,
+    ): void {
+        DB::transaction(function () use ($tokenHash, $name, $password, $authenticatedUser): void {
             $context = $this->lockInvitationContext($tokenHash);
             $user = $context['user'];
+
+            if (
+                $authenticatedUser instanceof User
+                && $authenticatedUser->getKey() !== $user->getKey()
+            ) {
+                throw new AuthorizationException('Sign out of the other account before completing this invitation.');
+            }
 
             if ($user->email_verified_at !== null) {
                 throw new AuthorizationException('This account must sign in to accept its invitation.');
