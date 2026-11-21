@@ -301,13 +301,14 @@ final class VendorRoleApprovalTest extends TestCase
         $decision->update(['reason' => 'Altered decision evidence.']);
     }
 
+    /** @return \\Illuminate\\Testing\\TestResponse<\\Illuminate\\Http\\JsonResponse> */
     private function createApprovalRequest(
         User $maker,
         VendorAccount $vendor,
         VendorMembership $target,
         Role $role,
         string $idempotencyKey,
-    ) {
+    ): \\Illuminate\\Testing\\TestResponse {
         return $this->authenticatedJson($maker)
             ->withHeaders(['Idempotency-Key' => $idempotencyKey])
             ->postJson(
