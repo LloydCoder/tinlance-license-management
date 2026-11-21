@@ -23,6 +23,10 @@
 - Semgrep and Larastan/PHPStan level 8 fail the workflow on findings; no baseline or ignored-error suppression is configured.
 - Security jobs are not treated as proof of production readiness.
 
+## Production artifact delivery boundary
+
+The CI job builds and verifies the production-only cPanel ZIP on pushes and pull requests. It does not upload the package by default. Temporary Actions artifact upload requires an explicit manual workflow dispatch on `main` and expires after seven days. The ZIP carries a source/lockfile provenance manifest and SHA-256 checksum, but it is not cryptographically signed; checksum verification is not publisher authentication. Do not treat this package as a commercial deployment licence or as a signed release.
+
 ## Owner-controlled GitHub settings still required
 
 The repository API currently reports `main.protected=false` and the repository rulesets endpoint returns an empty list. The connected GitHub integration cannot create rulesets or change admin-only security settings.
