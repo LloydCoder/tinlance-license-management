@@ -143,6 +143,22 @@ final class SuperAdminBootstrapTest extends TestCase
         $this->assertDatabaseCount('vendor_accounts', 0);
     }
 
+    public function test_bootstrap_rejects_passwords_over_1024_characters(): void
+    {
+        $password = str_repeat('a', 1025);
+
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'oversized-password@example.test',
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertUnprocessable();
+
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('vendor_accounts', 0);
+    }
+
     public function test_valid_one_time_bootstrap_creates_the_initial_super_admin(): void
     {
         $response = $this->postJson('/setup/super-admin', [
