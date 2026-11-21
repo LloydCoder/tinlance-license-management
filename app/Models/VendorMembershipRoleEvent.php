@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\\Models;
+namespace App\Models;
 
-use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 final class VendorMembershipRoleEvent extends BaseModel
