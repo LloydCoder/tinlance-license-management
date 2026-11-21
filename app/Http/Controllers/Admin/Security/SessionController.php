@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin\Security;
 
+use App\Models\User;
 use App\Services\Identity\SessionRevocationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -15,8 +16,11 @@ final class SessionController
 {
     public function index(Request $request): View
     {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
         $sessions = DB::table('sessions')
-            ->where('user_id', $request->user()->getKey())
+            ->where('user_id', $user->getKey())
             ->orderByDesc('last_activity')
             ->get(['id', 'ip_address', 'user_agent', 'last_activity']);
 
@@ -28,7 +32,10 @@ final class SessionController
 
     public function revokeAll(Request $request, SessionRevocationService $revocationService): RedirectResponse
     {
-        $revocationService->revokeAll($request->user());
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $revocationService->revokeAll($user);
 
         Auth::guard('web')->logout();
         $request->session()->invalidate();
