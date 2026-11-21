@@ -67,6 +67,10 @@ fi
 unzip -p "$artifact" tlms/vendor/composer/installed.json > "$tmp_dir/installed.json"
 php -r '
 $installed = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
+if (($installed["dev"] ?? true) !== false) {
+    fwrite(STDERR, "Production Composer install metadata is missing or marked as a dev install.".PHP_EOL);
+    exit(1);
+}
 $forbidden = ["larastan/larastan", "phpstan/phpstan", "phpunit/phpunit", "laravel/pint", "mockery/mockery"];
 foreach (($installed["packages"] ?? []) as $package) {
     if (in_array($package["name"] ?? "", $forbidden, true)) {
@@ -87,6 +91,14 @@ if (! preg_match("/^[a-f0-9]{40}$/", (string) ($manifest["source_commit"] ?? "")
     fwrite(STDERR, "Manifest source commit is invalid.".PHP_EOL);
     exit(1);
 }
+if (($manifest["source_commit"] ?? null) !== trim($argv[2])) {
+    fwrite(STDERR, "Manifest source commit does not match the checked-out revision.".PHP_EOL);
+    exit(1);
+}
+if (($manifest["composer_lock_sha256"] ?? null) !== trim($argv[3])) {
+    fwrite(STDERR, "Manifest lockfile digest does not match composer.lock.".PHP_EOL);
+    exit(1);
+}
 if (! preg_match("/^[a-f0-9]{64}$/", (string) ($manifest["composer_lock_sha256"] ?? ""))) {
     fwrite(STDERR, "Manifest lockfile digest is invalid.".PHP_EOL);
     exit(1);
@@ -99,6 +111,6 @@ if (($manifest["dependency_install_mode"] ?? null) !== "production-only --no-dev
     fwrite(STDERR, "Manifest does not record a production-only dependency install.".PHP_EOL);
     exit(1);
 }
-' "$tmp_dir/manifest.json"
+' "$tmp_dir/manifest.json" "$(git -C "$repo_root" rev-parse HEAD)" "$(sha256sum "$repo_root/composer.lock" | cut -d ' ' -f 1)"
 
 echo "cPanel production artifact verification passed."
