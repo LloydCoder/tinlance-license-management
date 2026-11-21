@@ -33,7 +33,7 @@ final class FortifyServiceProvider extends ServiceProvider
 
             $storedDriver = match (password_get_info($user->password)['algoName'] ?? null) {
                 'bcrypt' => 'bcrypt',
-                'argon2i' => 'argon2i',
+                'argon2i' => 'argon',
                 'argon2id' => 'argon2id',
                 default => null,
             };
@@ -44,7 +44,7 @@ final class FortifyServiceProvider extends ServiceProvider
 
             $driverStrength = [
                 'bcrypt' => 1,
-                'argon2i' => 2,
+                'argon' => 2,
                 'argon2id' => 3,
             ];
             $activeDriver = (string) config('hash.driver');
