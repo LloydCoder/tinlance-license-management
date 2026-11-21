@@ -170,6 +170,26 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertDatabaseMissing('sessions', ['user_id' => $user->getKey()]);
     }
 
+    public function test_authenticated_super_admin_security_views_render_with_recent_password_confirmation(): void
+    {
+        $user = $this->createSuperAdmin();
+        $user->forceFill([
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-one'], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->get('/admin/security/sessions')
+            ->assertOk();
+
+        $this->get('/security/mfa')->assertOk();
+    }
+
     public function test_inactive_users_cannot_authenticate_with_a_valid_password(): void
     {
         $user = $this->createUser();
