@@ -131,7 +131,6 @@ final class SuperAdminBootstrapService
                 'email' => mb_strtolower(trim($attributes['email'])),
                 'password' => $attributes['password'],
                 'status' => 'active',
-                'email_verified_at' => now(),
             ]);
 
             $membership = VendorMembership::query()->create([
