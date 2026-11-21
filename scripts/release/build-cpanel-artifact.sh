@@ -77,7 +77,7 @@ rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     
 
 find "$app_root" \( -type f -o -type l \) -name '.env*' ! -path "$app_root/.env.example" -delete
 find "$app_root" -type d -name '.env*' -prune -exec rm -rf {} +
-find "$app_root" -type f \( -name 'auth.json' -o -name '.npmrc' -o -name '.pypirc' -o -name '.netrc' \) -delete
+find "$app_root" \( -type f -o -type l \) \( -name 'auth.json' -o -name '.npmrc' -o -name '.pypirc' -o -name '.netrc' \) -delete
 find "$app_root/storage" -type f -name '*.log' -delete
 find "$app_root/bootstrap/cache" -type f ! -name '.gitignore' -delete
 
