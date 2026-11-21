@@ -38,7 +38,7 @@ final class SuperAdminBootstrapController
             'bootstrap_token' => ['required', 'string', 'regex:/\\A[A-Za-z0-9_-]{43,128}\\z/'],
             'name' => ['required', 'string', 'min:2', 'max:160'],
             'email' => ['required', 'string', 'email:rfc', 'max:254', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', Password::min(15), 'confirmed'],
+            'password' => ['required', 'string', 'max:1024', Password::min(15), 'confirmed'],
         ]);
 
         if ($validator->fails()) {
