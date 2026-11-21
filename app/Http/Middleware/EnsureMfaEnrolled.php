@@ -27,7 +27,7 @@ final class EnsureMfaEnrolled
                     'status' => 403,
                     'code' => 'MFA_REQUIRED',
                     'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
-                ], 403);
+                ], 403, ['Content-Type' => 'application/problem+json']);
             }
 
             return redirect()->route('security.mfa.enroll');
