@@ -30,6 +30,7 @@ Route::middleware([
     'auth',
     'verified',
     EnsureSessionVersionCurrent::class,
+    'password.confirm',
     EnsureSuperAdmin::class,
 ])->group(function (): void {
     Route::get('/security/mfa', MfaEnrollmentController::class)
