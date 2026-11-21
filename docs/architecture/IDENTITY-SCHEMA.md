@@ -1,6 +1,6 @@
 # Identity and organization persistence baseline
 
-**Status:** Identity and membership persistence, role catalogue and membership-level authorization implemented; verified on PHP 8.3/8.4/8.5 and MySQL 8.4.13. Authentication flows, MFA, resource-level ABAC and portals remain unimplemented.
+**Status:** Identity and membership persistence, role catalogue and membership-level authorization implemented; verified on PHP 8.3/8.4/8.5, MySQL 8.4.13 and MariaDB 10.11.19. Authentication flows, MFA, resource-level ABAC and portals remain unimplemented.
 
 ## Deployment and ownership model
 
@@ -47,7 +47,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 - ULIDs are identifiers, not bearer secrets or authorization proof.
 - Foreign keys are restrictive by default. Do not cascade-delete financial, licensing, membership or audit history.
 - Status fields are portable strings rather than database-specific ENUM types.
-- The canonical production database is MySQL 8.4. SQLite is used for fast feature tests; MySQL 8.4.13 CI runs the same identity feature suite with an explicit assertion that MySQL is the active driver.
+- MySQL 8.4 is the primary reference database; MariaDB 10.11 is the supported cPanel/shared-hosting compatibility engine. SQLite is used for fast feature tests; CI runs the same identity feature suite against MySQL 8.4.13 and MariaDB 10.11.19 with explicit server-vendor assertions. See ADR 0006.
 
 ## Authentication and security boundary
 
@@ -76,7 +76,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 ## Verification evidence
 
-CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`: 25 domain test methods and 47 Laravel feature tests (91 assertions) passed on PHP 8.3/8.4/8.5 and MySQL 8.4.13. The MySQL job explicitly asserts that its configured database driver is mysql. Composer audit, Pint (49 PHP files), PHP syntax, OpenAPI and documentation governance all passed, including the final status and decision-record documentation.
+Earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`: 25 domain test methods and 47 Laravel feature tests (91 assertions) passed on PHP 8.3/8.4/8.5 and MySQL 8.4.13. The current dual-engine verification is recorded in the PR #15 evidence below. Both database jobs explicitly assert the actual server vendor; the Laravel PDO driver is mysql for both MySQL and MariaDB. Composer audit, Pint (49 PHP files), PHP syntax, OpenAPI and documentation governance all passed, including the final status and decision-record documentation.
 
 ## Remaining acceptance work
 
