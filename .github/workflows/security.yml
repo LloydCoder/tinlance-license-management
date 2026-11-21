@@ -60,22 +60,24 @@ jobs:
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
           GITLEAKS_ENABLE_SUMMARY: "true"
 
-  dependency-review:
-    name: Dependency vulnerability review
-    if: github.event_name == 'pull_request'
+  osv-scan:
+    name: OSV dependency vulnerability scan
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
+      actions: read
       contents: read
-      pull-requests: read
+      security-events: write
     steps:
-      - name: Review dependency changes
-        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          fail-on-severity: moderate
-          fail-on-scopes: runtime, development
-          show-patched-versions: true
-
+          persist-credentials: false
+      - name: Scan Composer lockfile and repository dependencies
+        uses: google/osv-scanner-action/osv-scanner-action@0e457b42d0120153c352875e9b758b1e5c58c7e5 # v2.7.1
+        with:
+          scan-args: |-
+            scan source -r ./
   phpstan:
     name: PHPStan domain static analysis
     runs-on: ubuntu-latest
