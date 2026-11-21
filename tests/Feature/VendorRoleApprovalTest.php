@@ -368,6 +368,44 @@ final class VendorRoleApprovalTest extends TestCase
         return '/api/v1/vendor-accounts/'.$vendor->getKey().'/role-approval-requests/'.$requestId.'/'.$action;
     }
 
+    public function test_approval_and_rejection_require_non_whitespace_decision_reasons(): void
+    {
+        $vendor = $this->createVendor();
+        $maker = $this->createActor($vendor);
+        $checker = $this->createActor($vendor);
+        $target = $this->createMembership($vendor, $this->createUser());
+        $role = $this->role('finance_admin');
+        $requestId = $this->createApprovalRequest(
+            $maker,
+            $vendor,
+            $target,
+            $role,
+            'maker-key-whitespace-01',
+        )->json('data.id');
+
+        $this->authenticatedJson($checker)
+            ->postJson($this->approvalPath($vendor, $requestId, 'approve'), [
+                'reason' => '   ',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reason');
+
+        $this->authenticatedJson($checker)
+            ->postJson($this->approvalPath($vendor, $requestId, 'reject'), [
+                'reason' => " \t ",
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reason');
+
+        $this->assertDatabaseHas('approval_requests', [
+            'id' => $requestId,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseMissing('approval_decisions', [
+            'approval_request_id' => $requestId,
+        ]);
+    }
+
     public function test_pending_request_cannot_be_used_as_direct_authority_to_assign_a_high_risk_role(): void
     {
         $vendor = $this->createVendor();
