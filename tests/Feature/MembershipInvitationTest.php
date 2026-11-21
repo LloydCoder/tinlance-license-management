@@ -13,6 +13,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -113,7 +114,7 @@ final class MembershipInvitationTest extends TestCase
         $membership = CustomerMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
-        $this->app['auth']->guard('web')->logout();
+        Auth::logout();
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertOk()
@@ -157,7 +158,7 @@ final class MembershipInvitationTest extends TestCase
         $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($email)[0];
 
-        $this->app['auth']->guard('web')->logout();
+        Auth::logout();
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertOk()
@@ -220,7 +221,7 @@ final class MembershipInvitationTest extends TestCase
         $membership = VendorMembership::query()->whereKey((string) $response->json('data.membership_id'))->firstOrFail();
         $token = $this->sentInvitationTokens($invitee->email)[0];
 
-        $this->app['auth']->guard('web')->logout();
+        Auth::logout();
 
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertOk()
@@ -303,7 +304,7 @@ final class MembershipInvitationTest extends TestCase
         $newToken = $tokens[1];
         $this->assertNotSame($oldToken, $newToken);
 
-        $this->app['auth']->guard('web')->logout();
+        Auth::logout();
 
         $this->postJson('/membership-invitations/prepare', ['token' => $oldToken])
             ->assertStatus(410);
