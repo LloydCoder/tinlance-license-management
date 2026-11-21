@@ -17,7 +17,15 @@ Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration
 ## Phase 4 — Identity, organizations and portals
 Admin and customer identity; MFA; recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
 
-## Phase 4 implementation boundary\n\nThe implemented one-time browser bootstrap creates the initial vendor account, administrator, active vendor membership and Super Admin role grant atomically. It requires a deployment-provided secret, secure transport, CSRF, rate limiting, exact authorization-catalogue verification and a system-attributed membership-role event. It deliberately does not authenticate the administrator. Login, email verification, MFA/passkeys, recovery, step-up, maker-checker, resource-level ABAC and the Super Admin Control Center remain separate acceptance work.\n\n## Phase 5 — Product registry and entitlement catalogue
+## Phase 4 implementation boundary
+
+PR #20 implements the one-time browser bootstrap for the initial Super Admin. It creates the primary vendor account, initial administrator, active vendor membership and system-attributed Super Admin role grant atomically. It requires a deployment-provided secret, secure transport, CSRF, rate limiting, exact authorization-catalogue validation and a consumed installation state. It deliberately does not authenticate the administrator.
+
+PR #23 adds the first authentication foundation: Fortify login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gating, password-confirmed MFA/recovery-code management, encrypted database sessions, session-version enforcement and global session revocation. Public registration remains disabled.
+
+Phase 4 remains incomplete. Resource-level ABAC, privileged step-up authorization, maker-checker approvals, complete customer/vendor portals, comprehensive cross-tenant IDOR/concurrency coverage, stronger recovery-code assurance and end-to-end audit coverage remain acceptance requirements.
+
+## Phase 5 — Product registry and entitlement catalogue
 Products, versions, release channels, plans, price versions, feature/seat/usage/support/update entitlements, trials, perpetual and maintenance separation, enterprise and agency terms, immutable entitlement snapshots.
 
 ## Phase 6 — Licence engine
@@ -52,7 +60,7 @@ Functional and regression suites; shared-host acceptance; concurrency/performanc
 
 ## Current Phase 3 evidence and residual work
 
-The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, Larastan 3.15.0/PHPStan 2.3.7 level 8 across application, domain, migrations, routes, bootstrap, config and tests, Gitleaks full-history scanning, OSV-Scanner dependency scanning, weekly Composer/GitHub Actions Dependabot configuration, and a deterministic production-only cPanel artifact builder with byte-for-byte verification and explicit manual retrieval. This does not complete Phase 3: GitHub native secret scanning/push protection, dependency graph/Dependabot alerts, required branch rulesets, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. See `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
+The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, Larastan 3.15.0/PHPStan 2.3.7 level 8 across application, domain, migrations, routes, bootstrap, config and tests, Gitleaks full-history scanning, OSV-Scanner dependency scanning and weekly Composer/GitHub Actions Dependabot configuration. This does not complete Phase 3: GitHub native secret scanning/push protection, dependency graph/Dependabot alerts, required branch rulesets, independent cross-host reproducibility, signed release artifacts, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. The current ZIP is byte-for-byte reproducible within its pinned CI toolchain but is not signed. See `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
 
 ## Cross-phase engineering gates
 
