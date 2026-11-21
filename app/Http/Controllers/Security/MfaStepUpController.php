@@ -63,10 +63,10 @@ final class MfaStepUpController
 
         $timestamp = (int) now()->getTimestamp();
         $ttl = max(1, (int) config('tlms.security.step_up_ttl_seconds', 300));
+        $event = $audit->record($user, 'totp', 'succeeded', $request);
+
         $request->session()->put('auth.mfa_step_up_at', $timestamp);
         $request->session()->put('auth.mfa_step_up_method', 'totp');
-
-        $event = $audit->record($user, 'totp', 'succeeded', $request);
 
         return response()->json([
             'data' => [
