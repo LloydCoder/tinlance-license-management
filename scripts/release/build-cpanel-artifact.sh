@@ -61,7 +61,7 @@ fi
 
 source_symlink="$(find "$app_root" -type l -print -quit)"
 if [[ -n "$source_symlink" ]]; then
-    printf 'Symlinks are not allowed in the production artifact source tree: %s\\n' "$source_symlink" >&2
+    printf 'Symlinks are not allowed in the production artifact source tree: %s\n' "$source_symlink" >&2
     exit 2
 fi
 
