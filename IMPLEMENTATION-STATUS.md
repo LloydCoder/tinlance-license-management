@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (PR #8 merged; secret-history and dependency-review controls added on the current engineering branch)
+**Last reviewed:** 2026-11-21 (PR #9 candidate; secret-history and OSV dependency-scanning controls)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -8,7 +8,7 @@
 
 | Phase | Scope | Status | Remaining exit evidence |
 |---|---|---|---|
-| 0 | Repository governance and project control | Initial governance documentation merged. Main branch currently reports `protected=false`; the connected GitHub integration cannot read admin-only protection settings. | Owner must enable PR-only changes, required CI checks, prevent force-push/deletion, resolve conversations, enable secret scanning/push protection and dependency review; counsel/contributor rights review. |
+| 0 | Repository governance and project control | Initial governance documentation merged. Main branch currently reports `protected=false`; the connected GitHub integration cannot read admin-only protection settings. | Owner must enable PR-only changes, required CI checks, prevent force-push/deletion, resolve conversations, enable GitHub native secret scanning/push protection, dependency graph and Dependabot alerts; counsel/contributor rights review. |
 | 1 | Requirements and architecture freeze | Initial ADRs, threat model, OpenAPI, authorization matrix, state machines, traceability and 31 decision records are present. | Complete semantic API authorization, lifecycle contracts, privacy/controller-processor/legal review, decision owners and explicit closure evidence. |
 | 2 | Shared-hosting qualification | Requirements and candidate shortlist documented; no provider approved. | Real annual cPanel provider PoC: PHP 8.5, intl, Sodium, Argon2id, MySQL 8.4, outbound HTTPS, cron, webhooks, document-root isolation, permissions, resource limits and restore drill. |
 | 3 | Engineering foundation and CI/CD | Laravel 13, locked Composer dependencies, PHP 8.3–8.5 CI, Pint, Composer audit, OpenAPI lint, MySQL 8.4.13 integration, Semgrep (`p/security-audit`), PHPStan 2.3.7 (level 6 on `src/`), full-history Gitleaks 8.30.1, OSV-Scanner 2.7.1 Composer lockfile/repository scanning, and weekly Composer/GitHub Actions Dependabot configuration are implemented. | Larastan with a committed reproducible Composer lock, GitHub native secret scanning/push protection and Dependabot alert settings, enforced `main` ruleset, reproducible production artifact, install/upgrade/rollback scripts, backup/restore automation and real cPanel PoC. |
@@ -39,11 +39,11 @@ No phase is declared 100% complete. Phase 0 and Phase 1 remain partially complet
 - PR #6 — identity and membership authorization: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/6), merge commit `282e526aa4e6395d95621965a732a630022f9505`.
 - PR #7 — Semgrep Community Edition and PHPStan security analysis gates: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/7), merge commit `1bf3f8bad7b8d9ffdf67a9323952482aa9e7bc55`.
 - PR #8 — engineering status reconciliation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/8), merge commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb`.
-- No pull requests remain open on the base branch at the time of this review.
+- PR #9 — full-history secret scanning, OSV dependency scanning and Dependabot configuration: [candidate PR](https://github.com/LloydCoder/tinlance-license-management/pull/9); exact-head CI and security evidence is recorded below.
 
 ## Latest verified engineering evidence
 
-Main commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb` has passing post-merge CI [44865113927](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865113927) and Security analysis [44865114018](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865114018). Both workflows completed successfully. The merged PR #7 exact-head CI [44864721250](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721250) and security run [44864721221](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721221) also passed on `5fc895ffc0066a3c5d49f6ae5b733f1b08c6e180` before merge. CI passed all six jobs (PHP 8.3/8.4/8.5, MySQL 8.4 integration, documentation governance and OpenAPI validation); Semgrep and PHPStan both passed. The post-merge main CI run was cancelled by GitHub and is not counted as a passing run.
+PR #9 candidate head `248fb37b85d27f6c0360efea49464686b83b4aaf` passed exact-head CI [44866375092](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375092) (6/6 jobs) and Security analysis [44866375075](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375075) (4/4 jobs: Semgrep, Gitleaks, OSV-Scanner and PHPStan). Main commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb` also has passing post-merge CI [44865113927](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865113927) and Security analysis [44865114018](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865114018). The merged PR #7 exact-head CI [44864721250](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721250) and security run [44864721221](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721221) also passed on `5fc895ffc0066a3c5d49f6ae5b733f1b08c6e180` before merge. CI passed all six jobs (PHP 8.3/8.4/8.5, MySQL 8.4 integration, documentation governance and OpenAPI validation); Semgrep and PHPStan both passed. The post-merge main CI run was cancelled by GitHub and is not counted as a passing run.
 
 The earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
 - PHP 8.3, 8.4 and 8.5 jobs passed.
@@ -72,7 +72,7 @@ The PR #6 exact-head run passed before merge. The merge commit contains the same
 
 1. Configure and verify a `main` ruleset: the current branch metadata reports `protected=false`, and the rulesets API currently returns no rulesets. Require PRs and CI/Security checks; block force-push and deletion.
 2. Enable and verify GitHub native secret scanning and push protection. Gitleaks CI is not a replacement for push protection.
-3. Verify dependency graph, Dependabot alerts and Dependabot security updates. Dependabot weekly update configuration and PR dependency review are now in source control.
+3. Verify dependency graph, Dependabot alerts and Dependabot security updates. Dependabot weekly update configuration and OSV-Scanner lockfile scanning are now in source control; native dependency graph and Dependabot alert settings remain unverified.
 4. Complete Larastan application analysis only after its package and transitive dependency lock are committed reproducibly; current PHPStan analysis remains limited to `src/`.
 5. Complete counsel review of source-visible commercial licensing, contributor rights, trademarks, privacy roles and target-market payment compliance.
 6. Qualify a real annual cPanel provider and complete backup/restore and operational recovery exercises.
