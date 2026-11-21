@@ -110,6 +110,12 @@ final class MembershipRoleController
 
     private function result(Request $request, string $membershipId, string $roleId, string $action, bool $changed): JsonResponse
     {
+        $candidateRequestId = $request->headers->get('X-Request-ID');
+        $requestId = is_string($candidateRequestId)
+            && preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $candidateRequestId) === 1
+                ? $candidateRequestId
+                : (string) Str::uuid();
+
         return response()->json([
             'data' => [
                 'membership_id' => $membershipId,
@@ -117,7 +123,7 @@ final class MembershipRoleController
                 'action' => $action,
                 'changed' => $changed,
             ],
-            'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
+            'request_id' => $requestId,
         ], $action === 'assigned' && $changed ? 201 : 200);
     }
 }
