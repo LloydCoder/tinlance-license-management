@@ -20,5 +20,6 @@
 | SA-016 | Destructive/bulk operations require confirmation, bounded scope, impact awareness and recovery handling where feasible | Must | Workflow and abuse-case tests |
 | SA-017 | Emergency access and recovery are documented, constrained and audited | Must | Recovery exercise |
 
-**Implementation note:** Initial one-time Super Admin account creation is implemented as a setup-only bootstrap. It does not satisfy authentication, MFA, session security, Control Center or the full SA-001–SA-018 acceptance criteria.
 | SA-018 | No Super Admin capability bypasses cryptographic checks, ledger integrity, auditability or legal/provider qualification gates | Must | Security and architecture review |
+
+**Implementation note:** PR #20 implements one-time initial Super Admin account creation. PR #23 adds login/logout, verified email, TOTP/WebAuthn passkeys, MFA enrollment gating, password recovery, password-confirmed factor/recovery management and session revocation. These are foundational controls, not completion of SA-001–SA-018: the Control Center, resource-level ABAC, privileged step-up, maker-checker, tenant-isolation evidence and global tamper-evident audit remain outstanding.
