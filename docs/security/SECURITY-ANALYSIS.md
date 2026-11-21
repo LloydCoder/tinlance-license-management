@@ -23,6 +23,20 @@
 - Semgrep and Larastan/PHPStan level 8 fail the workflow on findings; no baseline or ignored-error suppression is configured.
 - Security jobs are not treated as proof of production readiness.
 
+## One-time Super Admin bootstrap security boundary
+
+The initial bootstrap is a setup-only capability, not an authentication endpoint or a permanent administrator recovery path.
+
+- The setup routes are available only while the primary installation row is unbootstrapped and a configured token matches the required base64url shape (43–128 characters; deployment instructions require at least 32 CSPRNG bytes).
+- The submitted token is compared with `hash_equals`; it is never persisted, echoed in JSON, or flashed back as old form input.
+- POST requests are rate-limited and remain under Laravel's web middleware, including CSRF protection.
+- A database transaction locks the single primary installation row before creating the initial vendor, administrator, membership and Super Admin role assignment. A second successful bootstrap must fail.
+- The authorization catalogue is initialized by the bootstrap service only when the catalogue is empty; a partial or inconsistent catalogue fails closed rather than silently rewriting existing roles.
+- The initial administrator email is not marked verified. Authentication, email verification, mandatory MFA enrollment, recovery and session controls are separate Phase 4 deliverables.
+- The password policy uses a 15-character minimum without character-composition requirements and accepts long passphrases. Breached-password screening remains an explicit authentication-phase requirement.
+
+The design follows Laravel's request-forgery and rate-limiting middleware guidance and OWASP ASVS 5.0 authentication requirements. In particular, ASVS 6.2.5 advises against composition rules, and 6.2.1 strongly recommends a 15-character minimum.
+
 ## Owner-controlled GitHub settings still required
 
 The repository API currently reports `main.protected=false` and the repository rulesets endpoint returns an empty list. The connected GitHub integration cannot create rulesets or change admin-only security settings.
