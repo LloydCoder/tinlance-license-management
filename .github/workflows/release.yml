@@ -57,12 +57,12 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "TLMS_RELEASE_VERSION=$version" >> "$GITHUB_ENV"
 
-      - name: Build deterministic production-only cPanel artifac
+      - name: Build deterministic production-only cPanel package
         run: bash scripts/release/build-cpanel-artifact.sh
         env:
-          TLMS_ARTIFACT_DIR: dis
+          TLMS_ARTIFACT_DIR: dist # artifact output
 
-      - name: Verify artifact checksum and expected outpu
+      - name: Verify artifact checksum and expected output file
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -151,7 +151,7 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tlms-cpanel-release-candidate
-          path: dis
+          path: dist # download target
 
       - name: Verify release candidate checksums
         id: files
@@ -194,10 +194,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          gh release create "$GITHUB_REF_NAME"
-            "${{ steps.files.outputs.artifact }}"
-            "${{ steps.files.outputs.checksum }}"
-            "${{ steps.files.outputs.sbom }}"
-            --verify-tag
-            --title "$GITHUB_REF_NAME"
-            --generate-notes
+          gh release create "$GITHUB_REF_NAME" "${{ steps.files.outputs.artifact }}" "${{ steps.files.outputs.checksum }}" "${{ steps.files.outputs.sbom }}" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
