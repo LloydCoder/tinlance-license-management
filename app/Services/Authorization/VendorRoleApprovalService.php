@@ -12,6 +12,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -124,7 +125,7 @@ final readonly class VendorRoleApprovalService
                     throw new ConflictHttpException('The idempotency key was already used for a different approval request.');
                 }
 
-                if ($existing->status === 'pending' && $existing->expires_at->isPast()) {
+                if ($existing->status === 'pending' && Carbon::parse($existing->expires_at)->isPast()) {
                     return $this->expire($existing);
                 }
 
@@ -145,7 +146,7 @@ final readonly class VendorRoleApprovalService
                 ->first();
 
             if ($pending instanceof ApprovalRequest) {
-                if ($pending->expires_at->isPast()) {
+                if (Carbon::parse($pending->expires_at)->isPast()) {
                     $this->expire($pending);
                 } else {
                     throw new ConflictHttpException('A pending approval already exists for this membership and role.');
@@ -193,7 +194,7 @@ final readonly class VendorRoleApprovalService
                 throw new ConflictHttpException('This approval request is no longer pending.');
             }
 
-            if ($request->expires_at->isPast()) {
+            if (Carbon::parse($request->expires_at)->isPast()) {
                 return $this->expire($request);
             }
 
@@ -243,7 +244,8 @@ final readonly class VendorRoleApprovalService
                 'created_at' => now(),
             ]);
 
-            return $request->fresh();
+            $request->refresh();
+            return $request;
         }, 3);
     }
 
