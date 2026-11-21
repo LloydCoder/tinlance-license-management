@@ -12,7 +12,7 @@ final class RequireSecureSetupTransport
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('app.env') === 'production' && ! $request->isSecure()) {
+        if (! in_array(config('app.env'), ['local', 'testing'], true) && ! $request->isSecure()) {
             $response = redirect()->secure($request->getRequestUri(), 308);
         } else {
             $response = $next($request);
