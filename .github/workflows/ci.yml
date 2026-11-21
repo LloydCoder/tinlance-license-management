@@ -224,7 +224,7 @@ jobs:
       - name: Verify production package contents and dependency exclusion
         run: bash scripts/ci/verify-cpanel-release-artifact.sh
       - name: Build package for explicit manual retrieval
-        if: github.event_name == 'workflow_dispatch' && inputs.publish_cpanel_artifact == true
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_cpanel_artifact == true
         env:
           TLMS_RELEASE_VERSION: ${{ inputs.release_version }}
         run: bash scripts/release/build-cpanel-artifact.sh
