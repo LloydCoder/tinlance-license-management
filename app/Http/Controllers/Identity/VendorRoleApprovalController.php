@@ -129,6 +129,8 @@ final class VendorRoleApprovalController
      */
     private function data(ApprovalRequest $approval): array
     {
+        $approval->loadMissing('role');
+
         return [
             'id' => $approval->getKey(),
             'status' => $approval->status,
