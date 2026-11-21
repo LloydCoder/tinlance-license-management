@@ -253,7 +253,15 @@ final class MembershipInvitationController
             throw new GoneHttpException('This invitation is invalid or no longer available.');
         }
 
-        $invitations->acceptNewAccount($tokenHash, $validated['name'], $validated['password']);
+        $authenticatedUser = $request->user();
+        $authenticatedUser = $authenticatedUser instanceof User ? $authenticatedUser : null;
+
+        $invitations->acceptNewAccount(
+            $tokenHash,
+            $validated['name'],
+            $validated['password'],
+            $authenticatedUser,
+        );
         $request->session()->forget('pending_membership_invitation_hash');
 
         return redirect('/login')->with('status', 'Your email is verified and your membership is active. Sign in to enroll MFA and continue.');
