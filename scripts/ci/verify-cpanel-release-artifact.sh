@@ -68,8 +68,8 @@ fi
 unzip -p "$artifact" tlms/vendor/composer/installed.json > "$tmp_dir/installed.json"
 php -r '
 $installed = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
-if (($installed["dev"] ?? true) !== false) {
-    fwrite(STDERR, "Production Composer install metadata is missing or marked as a dev install.".PHP_EOL);
+if (($installed["dev"] ?? true) !== false || ($installed["dev-package-names"] ?? []) !== []) {
+    fwrite(STDERR, "Production Composer install metadata is missing or contains development packages.".PHP_EOL);
     exit(1);
 }
 $forbidden = ["larastan/larastan", "phpstan/phpstan", "phpunit/phpunit", "laravel/pint", "mockery/mockery"];
@@ -102,6 +102,14 @@ if (($manifest["composer_lock_sha256"] ?? null) !== trim($argv[3])) {
 }
 if (! preg_match("/^[a-f0-9]{64}$/", (string) ($manifest["composer_lock_sha256"] ?? ""))) {
     fwrite(STDERR, "Manifest lockfile digest is invalid.".PHP_EOL);
+    exit(1);
+}
+if (($manifest["artifact_format"] ?? null) !== 1) {
+    fwrite(STDERR, "Unsupported artifact manifest format.".PHP_EOL);
+    exit(1);
+}
+if (($manifest["database_targets"] ?? null) !== ["MySQL 8.4", "MariaDB 10.11"]) {
+    fwrite(STDERR, "Manifest database targets do not match the qualified CI matrix.".PHP_EOL);
     exit(1);
 }
 if (($manifest["public_document_root"] ?? null) !== "public/") {
