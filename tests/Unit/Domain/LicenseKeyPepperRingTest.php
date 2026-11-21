@@ -27,7 +27,13 @@ final class LicenseKeyPepperRingTest
         expectTrue($result->valid);
         expectSame('pepper-v2', $result->pepperKeyId);
         expectTrue($result->replacementVerifier !== null);
-        expectTrue(LicenseKey::verify($issued->plaintext, $result->replacementVerifier, self::NEW_PEPPER, 'pepper-v2'));
+        $replacementVerifier = $result->replacementVerifier;
+
+        if ($replacementVerifier === null) {
+            throw new RuntimeException('A successful pepper rotation must return a replacement verifier.');
+        }
+
+        expectTrue(LicenseKey::verify($issued->plaintext, $replacementVerifier, self::NEW_PEPPER, 'pepper-v2'));
     }
 
     public function testCurrentPepperVerificationDoesNotRequireRehash(): void
