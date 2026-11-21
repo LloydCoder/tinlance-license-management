@@ -17,6 +17,7 @@ final readonly class MembershipInvitationWorkspaceQuery
 {
     public function __construct(private MembershipAuthorization $authorization) {}
 
+    /** @return LengthAwarePaginator<int, VendorMembershipInvitation> */
     public function vendorInvitations(User $actor, VendorAccount $vendor): LengthAwarePaginator
     {
         if (! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')) {
@@ -55,6 +56,7 @@ final readonly class MembershipInvitationWorkspaceQuery
             ->paginate(25, ['*'], 'vendor_'.$vendor->getKey().'_page');
     }
 
+    /** @return LengthAwarePaginator<int, CustomerMembershipInvitation> */
     public function customerInvitations(User $actor, CustomerOrganization $organization): LengthAwarePaginator
     {
         if (! $this->authorization->customerCan($actor, $organization, 'customer.members.manage')) {
