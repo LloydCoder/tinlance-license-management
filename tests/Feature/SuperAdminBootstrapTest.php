@@ -256,6 +256,14 @@ final class SuperAdminBootstrapTest extends TestCase
             'action' => 'assigned',
             'reason' => 'Initial installation bootstrap',
         ]);
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $superAdmin->getKey(),
+            'actor_user_id' => null,
+            'actor_type' => 'system',
+            'action' => 'assigned',
+            'reason' => 'Initial installation bootstrap',
+        ]);
     }
 
     public function test_successful_bootstrap_is_irreversible_through_the_public_setup_endpoint(): void
