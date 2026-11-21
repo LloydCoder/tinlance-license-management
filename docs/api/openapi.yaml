@@ -89,6 +89,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -142,6 +144,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
@@ -189,6 +193,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -242,6 +248,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke:
     post:
       tags: [Identity]
@@ -289,6 +297,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '423':
           $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /products:
     get:
       tags: [Products]
