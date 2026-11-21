@@ -166,11 +166,11 @@ final class MembershipInvitationController
         $request->session()->put('pending_membership_invitation_hash', hash('sha256', $validated['token']));
 
         if (! $preview['requires_account_setup'] && $request->user() === null) {
-            $request->session()->put('url.intended', route('membership-invitations.accept.form'));
+            $request->session()->put('url.intended', '/membership-invitations/accept');
 
             return response()->json([
                 'next' => 'login',
-                'redirect' => route('login'),
+                'redirect' => '/login',
             ]);
         }
 
