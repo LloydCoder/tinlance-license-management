@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (Larastan/PHPStan level 8 integrated; dependency and secret scanning controls reconciled)
+**Last reviewed:** 2026-11-21 (PR #21 cPanel artifact builder merged; Super Admin bootstrap candidate reconciled)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -12,7 +12,7 @@
 | 1 | Requirements and architecture freeze | Initial ADRs, threat model, OpenAPI, authorization matrix, state machines, traceability and 31 decision records are present. | Complete semantic API authorization, lifecycle contracts, privacy/controller-processor/legal review, decision owners and explicit closure evidence. |
 | 2 | Shared-hosting qualification | Requirements, provider shortlist and automated `tlms:hosting-preflight --json` runtime checks implemented; no provider approved and no live account tested. | Real annual cPanel provider PoC: PHP 8.3–8.5, intl, Sodium, Argon2id, MySQL 8.4 or MariaDB 10.11, outbound HTTPS, cron, webhooks, document-root isolation, permissions, resource limits and restore drill. |
 | 3 | Engineering foundation and CI/CD | Laravel 13, locked Composer dependencies, PHP 8.3–8.5 CI, Pint, Composer audit, OpenAPI lint, MySQL 8.4.13 and MariaDB 10.11 integration, Semgrep (`p/security-audit`), Larastan 3.15.0 with PHPStan 2.3.7 (level 8 across `app/`, `src/`, `database/`, `routes/`, `bootstrap/`, `config/` and `tests/`; committed lock, no baseline), full-history Gitleaks 8.30.1, OSV-Scanner 2.7.1 Composer lockfile/repository scanning, and weekly Composer/GitHub Actions Dependabot configuration are implemented. | GitHub native secret scanning/push protection and Dependabot alert settings, enforced `main` ruleset, artifact install/upgrade/rollback automation, backup/restore automation and real cPanel PoC. A reproducible production-only cPanel ZIP builder/verifier is under active PR review; no artifact is published by default. |
-| 4 | Identity, organizations and portals | ULID-backed user/vendor/customer schema, scoped permission catalogue, deny-by-default membership authorization, transactional allowlisted role assignment/revocation and immutable membership-role event models implemented. | One-time Super Admin bootstrap; login/logout, email verification, password recovery, session revocation, WebAuthn/TOTP/recovery, rate limits, step-up/MFA, maker-checker, resource-level ABAC, portals and cross-customer IDOR/concurrency tests. |
+| 4 | Identity, organizations and portals | ULID-backed user/vendor/customer schema, scoped permission catalogue, deny-by-default membership authorization, transactional allowlisted role assignment/revocation, immutable membership-role event models and a one-time browser-based initial Super Admin bootstrap implementation candidate are present in PR #20. Bootstrap requires a configured 256-bit base64url secret, uses a locked installation row and one-time database state, redacts the secret from validation old input, initializes the authorization catalogue only on an empty catalogue, and leaves the administrator email unverified. It is not an authentication or MFA system. | Login/logout, mandatory MFA enrollment, email verification, password recovery, session revocation, WebAuthn/TOTP/recovery, step-up/MFA, maker-checker, resource-level ABAC, portals and cross-customer IDOR/concurrency tests. Bootstrap is not a login/authentication system and must not be treated as production admin access. |
 | 5 | Product, plans and entitlements | Not started. | Product registry, immutable plan versions, entitlement definitions/snapshots, upgrades/downgrades and entitlement contract tests. |
 | 6 | Licence engine | Initial 256-bit licence-key and pepper-ring primitives plus domain normalization only. | Persisted issuance/verification, atomic activation allocation, lifecycle state machine, transfers, renewals, suspensions, revocation, trials, quotas, concurrency and recovery tests. |
 | 7 | Cryptographic signing | Not started. | Ed25519 signing/verification, offline root custody, delegated operational keys, thresholds, rotation/revocation, independent verifier and cross-language vectors. |
@@ -46,21 +46,20 @@ No phase is declared 100% complete. Phase 0 and Phase 1 remain partially complet
 - PR #13 — PHPUnit 13.4.7: closed without merge because its dependency graph requires PHP 8.4+, incompatible with TLMS's PHP 8.3 support floor.
 - PR #14 — Laravel-aware Larastan/PHPStan level 8 analysis: [pull request and exact-head workflow evidence](https://github.com/LloydCoder/tinlance-license-management/pull/14).
 
+
+- PR #17 — shared-hosting runtime preflight and cPanel compatibility checks: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/17), merge commit `ae5d7f1174b997ef84f5c342eaf507d07e72ebcb`.
+- PR #21 — reproducible cPanel production artifact builder and verifier: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/21), merge commit `be5cbe205f4bd01ce66a87469f7da772f917539d`.
+- PR #22 — one-time browser Super Admin bootstrap: implementation candidate; not yet accepted or merged.
+
 ## Latest verified engineering evidence
 
-An earlier PR #9 candidate head `248fb37b85d27f6c0360efea49464686b83b4aaf` passed exact-head CI [44866375092](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375092) (6/6 jobs) and Security analysis [44866375075](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44866375075) (4/4 jobs: Semgrep, Gitleaks, OSV-Scanner and PHPStan). Main commit `9b0b6a69ab12a0bbf06d2f24c336a0de8ee852fb` also has passing post-merge CI [44865113927](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865113927) and Security analysis [44865114018](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44865114018). The merged PR #7 exact-head CI [44864721250](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721250) and security run [44864721221](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721221) also passed on `5fc895ffc0066a3c5d49f6ae5b733f1b08c6e180` before merge. CI passed all six jobs (PHP 8.3/8.4/8.5, MySQL 8.4 integration, documentation governance and OpenAPI validation); Semgrep and PHPStan both passed.
+PR #21 exact head `03b2ea3111096321348a07b4eaa559a7084ea197` passed [CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44872660976) and [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44872660973). CI verified PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, OpenAPI, documentation governance and the production cPanel artifact build/verifier. Security analysis passed Semgrep, Larastan/PHPStan level 8, OSV-Scanner and full-history Gitleaks.
 
-The earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
-- PHP 8.3, 8.4 and 8.5 jobs passed.
-- 25 framework-independent domain test methods passed.
-- 52 Laravel feature tests passed (the current shared-hosting preflight increment adds four regression tests; exact assertion totals are recorded in the workflow).
-- The same 47 Laravel feature tests passed against MySQL 8.4.13; the integration job asserts that MySQL is the active driver.
-- Composer validation, locked installation and `composer audit --locked` passed with no advisories.
-- Laravel Pint passed across 49 PHP files.
-- PHP syntax lint, Artisan bootstrap, documentation governance and OpenAPI 3.1.1 validation passed.
-- Password tests verify Argon2id with at least 19 MiB memory, two iterations and one lane; the explicit bcrypt fallback rejects inputs above 72 bytes.
+The PR #21 merge commit `be5cbe205f4bd01ce66a87469f7da772f917539d` passed post-merge [main CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44872817454) and [main Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44872817441). The main CI run passed all eight jobs, including cPanel artifact verification and both database integration engines; Security analysis passed all four jobs.
 
-The PR #6 exact-head run passed before merge. The merge commit contains the same tested tree; the post-merge main-branch workflow is the final integration gate.
+PR #17's shared-hosting preflight was merged at `ae5d7f1174b997ef84f5c342eaf507d07e72ebcb`. The actual provider qualification remains open: CI preflight is not a substitute for a live annual cPanel account test.
+
+Earlier identity baseline CI [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`. The PR #7 security-analysis gates also passed on their exact tested head. Historical run evidence is retained in the corresponding PRs.
 
 ## Implemented identity and authorization boundaries
 

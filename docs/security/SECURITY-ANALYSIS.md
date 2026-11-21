@@ -23,9 +23,20 @@
 - Semgrep and Larastan/PHPStan level 8 fail the workflow on findings; no baseline or ignored-error suppression is configured.
 - Security jobs are not treated as proof of production readiness.
 
-## Production artifact delivery boundary
+## One-time Super Admin bootstrap security boundary
 
-The CI job builds and verifies the production-only cPanel ZIP on pushes and pull requests. It does not upload the package by default. Temporary Actions artifact upload requires an explicit manual workflow dispatch on `main` and expires after seven days. The ZIP carries a source/lockfile provenance manifest and SHA-256 checksum, but it is not cryptographically signed; checksum verification is not publisher authentication. Do not treat this package as a commercial deployment licence or as a signed release.
+The initial bootstrap is a setup-only capability, not an authentication endpoint or a permanent administrator recovery path.
+
+- The setup routes are available only while the primary installation row is unbootstrapped and a configured token matches the required base64url shape (43–128 characters; deployment instructions require at least 32 CSPRNG bytes).
+- The submitted token is compared with `hash_equals`; it is never persisted, echoed in JSON, or flashed back as old form input.
+- Setup responses use `no-store`, restrictive CSP, `no-referrer`, `nosniff` and frame-denial headers. HTTPS is mandatory outside local/testing; safe HTTP GET/HEAD requests redirect, insecure credential-bearing POSTs return 426 without redirect/replay, and secure responses set HSTS.
+- POST requests are rate-limited and remain under Laravel's web middleware, including CSRF protection.
+- A database transaction locks the single primary installation row before creating the initial vendor, administrator, membership and Super Admin role assignment. The grant is recorded as a system-attributed membership-role event in that same transaction; a second successful bootstrap must fail.
+- The authorization catalogue is initialized by the bootstrap service only when the catalogue is empty; a partial or inconsistent catalogue fails closed rather than silently rewriting existing roles.
+- The initial administrator email is not marked verified. Authentication, email verification, mandatory MFA enrollment, recovery and session controls are separate Phase 4 deliverables.
+- The password policy accepts 15–1024 characters without character-composition requirements and accepts long passphrases. Breached-password screening remains an explicit authentication-phase requirement.
+
+The design follows Laravel's request-forgery and rate-limiting middleware guidance and OWASP ASVS 5.0 authentication requirements. In particular, ASVS 6.2.5 advises against composition rules, and 6.2.1 strongly recommends a 15-character minimum.
 
 ## Owner-controlled GitHub settings still required
 

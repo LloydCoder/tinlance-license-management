@@ -15,7 +15,7 @@ Select candidate annual cPanel providers only after validating PHP/Sodium/cURL/O
 Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; OSV-Scanner lockfile scanning; Dependabot; pinned GitHub Actions; deterministic production-only cPanel artifact packaging with checksum/provenance and explicit manual retrieval.
 
 ## Phase 4 — Identity, organizations and portals
-Admin and customer identity; MFA; recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
+Admin and customer identity; one-time browser bootstrap for the initial Super Admin; login/logout; mandatory MFA enrollment and recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
 
 ## Phase 5 — Product registry and entitlement catalogue
 Products, versions, release channels, plans, price versions, feature/seat/usage/support/update entitlements, trials, perpetual and maintenance separation, enterprise and agency terms, immutable entitlement snapshots.
@@ -52,7 +52,7 @@ Functional and regression suites; shared-host acceptance; concurrency/performanc
 
 ## Current Phase 3 evidence and residual work
 
-The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, Larastan 3.15.0/PHPStan 2.3.7 level 8 across application, domain, migrations, routes, bootstrap, config and tests, Gitleaks full-history scanning, OSV-Scanner dependency scanning and weekly Composer/GitHub Actions Dependabot configuration. This does not complete Phase 3: GitHub native secret scanning/push protection, dependency graph/Dependabot alerts, required branch rulesets, production artifact reproducibility, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. See `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
+The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, Larastan 3.15.0/PHPStan 2.3.7 level 8 across application, domain, migrations, routes, bootstrap, config and tests, Gitleaks full-history scanning, OSV-Scanner dependency scanning and weekly Composer/GitHub Actions Dependabot configuration. This does not complete Phase 3: GitHub native secret scanning/push protection, dependency graph/Dependabot alerts, required branch rulesets, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. See `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
 
 ## Cross-phase engineering gates
 
