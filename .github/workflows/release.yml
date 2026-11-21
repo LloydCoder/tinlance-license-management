@@ -84,7 +84,7 @@ jobs:
           unzip -q "$artifact" -d dist/sbom-source
           source_root="$(find dist/sbom-source -mindepth 1 -maxdepth 1 -type d -print -quit)"
           [[ -n "$source_root" && -f "$source_root/vendor/composer/installed.json" ]]
-          echo "path=$source_root" >> "$GITHUB_OUTPUT"
+          echo "path=$source_root/vendor" >> "$GITHUB_OUTPUT"
 
       - name: Generate SPDX 2.3 SBOM from the extracted production package
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
