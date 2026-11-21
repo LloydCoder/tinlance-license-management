@@ -116,6 +116,15 @@ jobs:
               static fn (array $package): string => strtolower((string) ($package["name"] ?? "")),
               $sbom["packages"],
           );
+          fwrite(STDERR, "SBOM package count: ".count($names).PHP_EOL);
+          foreach ($sbom["packages"] as $package) {
+              $name = strtolower((string) ($package["name"] ?? ""));
+              $refs = json_encode($package["externalRefs"] ?? [], JSON_THROW_ON_ERROR);
+              if (str_contains($name, "laravel") || str_contains(strtolower($refs), "laravel")) {
+                  fwrite(STDERR, "Laravel SBOM candidate: ".$name." ".$refs.PHP_EOL);
+              }
+          }
+          fwrite(STDERR, "First SBOM package names: ".implode(", ", array_slice($names, 0, 25)).PHP_EOL);
           if (! in_array("laravel/framework", $names, true)) {
               fwrite(STDERR, "SBOM does not identify the Laravel framework dependency.".PHP_EOL);
               exit(1);
