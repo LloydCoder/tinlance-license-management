@@ -54,6 +54,17 @@ app_root="$stage_root/tlms"
 mkdir -p "$stage_root"
 
 git -C "$repo_root" archive --format=tar --prefix=tlms/ HEAD | tar -xf - -C "$stage_root"
+if [[ ! -f "$app_root/.env.example" || -L "$app_root/.env.example" ]]; then
+    echo "A regular root .env.example is required in the source tree." >&2
+    exit 2
+fi
+
+source_symlink="$(find "$app_root" -type l -print -quit)"
+if [[ -n "$source_symlink" ]]; then
+    printf 'Symlinks are not allowed in the production artifact source tree: %s\\n' "$source_symlink" >&2
+    exit 2
+fi
+
 
 (
     cd "$app_root"
