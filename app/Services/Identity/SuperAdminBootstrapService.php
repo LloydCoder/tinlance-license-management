@@ -9,9 +9,7 @@ use App\\Models\\Role;
 use App\\Models\\User;
 use App\\Models\\VendorAccount;
 use App\\Models\\VendorMembership;
-use Illuminate\\Auth\\Access\\AuthorizationException;
 use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Validation\\ValidationException;
 
 final class SuperAdminBootstrapService
 {
@@ -27,9 +25,29 @@ final class SuperAdminBootstrapService
             ->where('installation_key', 'primary')
             ->first();
 
-        return $installation !== null
-            && $installation->bootstrapped_at === null
-            && $installation->bootstrapped_user_id === null;
+        if (
+            $installation === null
+            || $installation->bootstrapped_at !== null
+            || $installation->bootstrapped_user_id !== null
+        ) {
+            return false;
+        }
+
+        return ! VendorMembership::query()
+            ->whereHas('roles', static fn ($query) => $query
+                ->where('scope', 'vendor')
+                ->where('slug', 'super_admin'))
+            ->exists();
+    }
+
+    public function isBootstrapped(): bool
+    {
+        $installation = PlatformInstallation::query()
+            ->where('installation_key', 'primary')
+            ->first();
+
+        return $installation?->bootstrapped_at !== null
+            && $installation?->bootstrapped_user_id !== null;
     }
 
     /**
@@ -44,9 +62,7 @@ final class SuperAdminBootstrapService
             || strlen($configuredToken) < 43
             || ! hash_equals($configuredToken, $providedToken)
         ) {
-            throw ValidationException::withMessages([
-                'bootstrap_token' => 'The installation bootstrap credential is invalid.',
-            ]);
+            abort(404);
         }
 
         return DB::transaction(function () use ($attributes): User {
