@@ -43,11 +43,13 @@ final class User extends Authenticatable
         });
     }
 
+    /** @return HasMany<VendorMembership, $this> */
     public function vendorMemberships(): HasMany
     {
         return $this->hasMany(VendorMembership::class);
     }
 
+    /** @return HasMany<CustomerMembership, $this> */
     public function customerMemberships(): HasMany
     {
         return $this->hasMany(CustomerMembership::class);
