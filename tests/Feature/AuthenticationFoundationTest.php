@@ -31,6 +31,8 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertTrue(Route::has('password.request'));
         $this->assertTrue(Route::has('verification.notice'));
         $this->assertTrue(Route::has('two-factor.login'));
+        $this->assertTrue(Route::has('two-factor.recovery-codes'));
+        $this->assertTrue(Route::has('passkey.destroy'));
     }
 
     public function test_fortify_guest_authentication_views_are_renderable(): void
@@ -188,7 +190,7 @@ final class AuthenticationFoundationTest extends TestCase
             ->get('/admin/security/sessions')
             ->assertOk();
 
-        $this->get('/security/mfa')->assertOk();
+        $this->get('/security/mfa')->assertOk()->assertDontSee('recovery-code-one');
     }
 
     public function test_mfa_enrollment_requires_recent_password_confirmation(): void
@@ -198,6 +200,9 @@ final class AuthenticationFoundationTest extends TestCase
         $this->actingAs($user)
             ->withSession(['auth_session_version' => 0])
             ->get('/security/mfa')
+            ->assertRedirect(route('password.confirm'));
+
+        $this->get('/user/two-factor-recovery-codes')
             ->assertRedirect(route('password.confirm'));
     }
 
