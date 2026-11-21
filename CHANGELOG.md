@@ -1,0 +1,25 @@
+# Changelog
+
+All notable changes to TLMS are recorded here. This file tracks repository engineering changes; it does not imply that a production release has been published.
+
+## Unreleased
+
+### Added
+- Laravel 13 modular-monolith foundation with PHP 8.3–8.5 CI and MySQL 8.4 / MariaDB 10.11 integration coverage.
+- Product-independent licensing-key, pepper-ring and domain-normalization primitives.
+- ULID-backed vendor, user, customer organization, membership, role and permission schema.
+- Deny-by-default, scope-aware membership authorization and transactional role assignment/revocation.
+- One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
+- Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
+- Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
+- Semgrep, Larastan/PHPStan, Gitleaks and OSV-Scanner security gates; weekly Composer and GitHub Actions Dependabot update configuration.
+
+### Security
+- Bootstrap credentials are never persisted or flashed to browser input; successful setup requires removal of the environment secret and clearing cached configuration.
+- MFA management and recovery-code retrieval require recent password confirmation; recovery codes are returned only after an explicit user action and are not embedded in rendered pages by default.
+- Password resets and global session revocation execute in one database transaction; successful login upgrades supported weaker legacy password hashes to the configured stronger driver without downgrading stronger hashes.
+- Production artifact verification rejects environment files, package-authentication files and private-key material.
+- Production artifact publication remains manual; the package is not cryptographically signed.
+
+### Not yet released
+No production TLMS service or production software package is published. Resource-level ABAC, maker-checker and privileged step-up workflows, customer/vendor portals, product and licence lifecycle, payment processing, cryptographic signing, secure updates, customer SDK, Talyvane integration and live cPanel provider qualification remain in development.
