@@ -15,7 +15,7 @@ Select candidate annual cPanel providers only after validating PHP/Sodium/cURL/O
 Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; OSV-Scanner lockfile scanning; Dependabot; pinned GitHub Actions; prebuilt deployment artifacts.
 
 ## Phase 4 — Identity, organizations and portals
-Admin and customer identity; MFA; recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
+Admin and customer identity; one-time browser bootstrap for the initial Super Admin; login/logout; mandatory MFA enrollment and recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
 
 ## Phase 5 — Product registry and entitlement catalogue
 Products, versions, release channels, plans, price versions, feature/seat/usage/support/update entitlements, trials, perpetual and maintenance separation, enterprise and agency terms, immutable entitlement snapshots.
