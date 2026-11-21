@@ -45,6 +45,11 @@ final class PasskeyStepUpListenerTest extends TestCase
             'auth.password_confirmed_at' => time(),
         ]);
 
+        $request = app('request');
+        $request->setLaravelSession(app('session.store'));
+        $this->assertTrue($request->hasSession());
+        $this->assertAuthenticatedAs($actor, 'web');
+
         event(new PasskeyVerified($actor, $passkey));
 
         $this->assertSame('passkey', session('auth.mfa_step_up_method'));
