@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Authorization;
 
 use App\Mail\MembershipInvitationMail;
+use App\Exceptions\MembershipInvitationDeliveryException;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerMembershipLifecycleEvent;
@@ -722,7 +723,7 @@ final readonly class MembershipInvitationService
                 'exception' => $exception::class,
             ]);
 
-            throw new RuntimeException('The invitation was created but its email could not be delivered. Resend it after correcting mail configuration.', 0, $exception);
+            throw new MembershipInvitationDeliveryException('The invitation was created but its email could not be delivered.', 0, $exception);
         }
     }
 
