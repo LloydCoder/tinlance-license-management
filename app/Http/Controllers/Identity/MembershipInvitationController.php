@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Identity;
 
+use App\Exceptions\MembershipInvitationDeliveryException;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerOrganization;
@@ -17,7 +18,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
-use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 
 final class MembershipInvitationController
@@ -46,7 +46,7 @@ final class MembershipInvitationController
                 $validated['reason'],
                 $validated['name'] ?? null,
             );
-        } catch (RuntimeException) {
+        } catch (MembershipInvitationDeliveryException) {
             return $this->deliveryFailure();
         }
 
