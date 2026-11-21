@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\\Http\\Controllers\\Setup;
+namespace App\Http\Controllers\Setup;
 
-use App\\Services\\Identity\\SuperAdminBootstrapService;
-use Illuminate\\Http\\JsonResponse;
-use Illuminate\\Http\\RedirectResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Validator;
-use Illuminate\\Support\\Str;
-use Illuminate\\Validation\\Rule;
-use Illuminate\\Validation\\Rules\\Password;
-use Illuminate\\View\\View;
+use App\Services\Identity\SuperAdminBootstrapService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View;
 
 final class SuperAdminBootstrapController
 {
