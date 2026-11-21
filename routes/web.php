@@ -1,8 +1,8 @@
 <?php
 
-use App\\Http\\Controllers\\Setup\\SuperAdminBootstrapController;
-use App\\Http\\Middleware\\RequireSecureSetupTransport;
-use Illuminate\\Support\\Facades\\Route;
+use App\Http\Controllers\Setup\SuperAdminBootstrapController;
+use App\Http\Middleware\RequireSecureSetupTransport;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', static fn () => response()->json(['service' => 'TLMS', 'status' => 'development']));
 
