@@ -31,12 +31,14 @@ final class CustomerMembershipRoleEvent extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $event): void {
-            $actorType = $event->actor_type;
+            $actorType = $event->getAttribute('actor_type');
+            $actorUserId = $event->getAttribute('actor_user_id');
 
             if (
-                ! in_array($actorType, ['user', 'system'], true)
-                || ($actorType === 'user' && $event->actor_user_id === null)
-                || ($actorType === 'system' && $event->actor_user_id !== null)
+                ! is_string($actorType)
+                || ! in_array($actorType, ['user', 'system'], true)
+                || ($actorType === 'user' && (! is_string($actorUserId) || trim($actorUserId) === ''))
+                || ($actorType === 'system' && $actorUserId !== null)
             ) {
                 throw new LogicException('Membership role event actor attribution is invalid.');
             }
