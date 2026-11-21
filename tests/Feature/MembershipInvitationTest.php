@@ -167,7 +167,7 @@ final class MembershipInvitationTest extends TestCase
             ->assertOk()
             ->assertHeader('Referrer-Policy', 'no-referrer')
             ->assertHeader('X-Frame-Options', 'DENY')
-            ->assertSee('Set up your TLMS account');
+            ->assertSee('Confirm your name and set a strong password.');
 
         $password = str()->random(40).'Aa9!';
         $this->post('/membership-invitations/accept', [
