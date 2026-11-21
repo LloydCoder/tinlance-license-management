@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build-and-verify:
     name: Build cPanel artifact and SBOM
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
@@ -140,7 +140,7 @@ jobs:
     name: Attest and publish tagged release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: build-and-verify
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: write
