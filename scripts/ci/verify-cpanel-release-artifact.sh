@@ -15,11 +15,17 @@ trap 'rm -rf "$tmp_dir"' EXIT
 artifact_dir="$tmp_dir/dist"
 TLMS_RELEASE_VERSION="0.0.0-test" TLMS_ARTIFACT_DIR="$artifact_dir" bash "$builder"
 
+repeat_artifact_dir="$tmp_dir/repeat"
+TLMS_RELEASE_VERSION="0.0.0-test" TLMS_ARTIFACT_DIR="$repeat_artifact_dir" bash "$builder"
+
 artifact="$artifact_dir/tlms-0.0.0-test-cpanel.zip"
 checksum="$artifact.sha256"
+repeat_artifact="$repeat_artifact_dir/tlms-0.0.0-test-cpanel.zip"
 
 [[ -s "$artifact" ]] || { echo "Artifact was not created." >&2; exit 1; }
 [[ -s "$checksum" ]] || { echo "Artifact checksum was not created." >&2; exit 1; }
+[[ -s "$repeat_artifact" ]] || { echo "Second reproducibility artifact was not created." >&2; exit 1; }
+cmp -s "$artifact" "$repeat_artifact" || { echo "Repeated package builds are not byte-for-byte reproducible." >&2; exit 1; }
 unzip -t "$artifact" >/dev/null
 (cd "$artifact_dir" && sha256sum -c "$(basename "$checksum")")
 
@@ -87,6 +93,10 @@ if (! preg_match("/^[a-f0-9]{64}$/", (string) ($manifest["composer_lock_sha256"]
 }
 if (($manifest["public_document_root"] ?? null) !== "public/") {
     fwrite(STDERR, "Manifest document root is not public/.".PHP_EOL);
+    exit(1);
+}
+if (($manifest["dependency_install_mode"] ?? null) !== "production-only --no-dev") {
+    fwrite(STDERR, "Manifest does not record a production-only dependency install.".PHP_EOL);
     exit(1);
 }
 ' "$tmp_dir/manifest.json"
