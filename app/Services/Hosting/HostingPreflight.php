@@ -60,7 +60,6 @@ final class HostingPreflight
     }
 
     /**
-     * @param  list<string>  $required
      * @return array{passed: bool, required: bool, message: string}
      */
     private function requiredExtensionsCheck(): array
@@ -157,7 +156,7 @@ final class HostingPreflight
 
             $version = (string) DB::scalar('SELECT VERSION()');
             $isMariaDb = str_contains(strtolower($version), 'mariadb');
-            $expectedVendor = (string) config('tlms.expected_db_vendor', 'mysql');
+            $expectedVendor = strtolower(trim((string) config('tlms.expected_db_vendor', 'mysql')));
 
             $isSupportedVersion = $isMariaDb
                 ? preg_match('/\b10\.11\.\d+\b/', $version) === 1
