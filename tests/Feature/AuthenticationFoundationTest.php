@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Role;
+use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
@@ -192,6 +193,33 @@ final class AuthenticationFoundationTest extends TestCase
             ->assertOk();
 
         $this->get('/security/mfa')->assertOk()->assertDontSee('recovery-code-one');
+    }
+
+    public function test_password_reset_and_global_session_revocation_are_atomic(): void
+    {
+        $user = $this->createUser();
+        $newPassword = str_repeat('new-long-password-', 2).'123';
+        $sessionId = str_repeat('s', 40);
+
+        DB::table('sessions')->insert([
+            'id' => $sessionId,
+            'user_id' => $user->getKey(),
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'TLMS security test',
+            'payload' => 'test-session-payload',
+            'last_activity' => time(),
+        ]);
+
+        app(ResetUserPassword::class)->reset($user, [
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
+        ]);
+
+        $this->assertDatabaseMissing('sessions', ['id' => $sessionId]);
+        $this->assertSame(1, (int) DB::table('users')->where('id', $user->getKey())->value('session_version'));
+
+        $storedPassword = (string) DB::table('users')->where('id', $user->getKey())->value('password');
+        $this->assertTrue(Hash::check($newPassword, $storedPassword));
     }
 
     public function test_mfa_enrollment_requires_recent_password_confirmation(): void
