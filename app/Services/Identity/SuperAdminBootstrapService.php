@@ -18,7 +18,7 @@ final class SuperAdminBootstrapService
     {
         $token = config('tlms.bootstrap_token');
 
-        if (! is_string($token) || strlen($token) < 43) {
+        if (! is_string($token) || preg_match('/\\A[A-Za-z0-9_-]{43,128}\\z/', $token) !== 1) {
             return false;
         }
 
@@ -60,7 +60,7 @@ final class SuperAdminBootstrapService
 
         if (
             ! is_string($configuredToken)
-            || strlen($configuredToken) < 43
+            || preg_match('/\\A[A-Za-z0-9_-]{43,128}\\z/', $configuredToken) !== 1
             || ! hash_equals($configuredToken, $providedToken)
         ) {
             abort(404);
@@ -101,7 +101,7 @@ final class SuperAdminBootstrapService
                 ->where('is_system', true)
                 ->first();
 
-            if ($role === null) {
+            if ($role === null && ! Role::query()->exists()) {
                 app(AuthorizationCatalogSeeder::class)->run();
 
                 $role = Role::query()
