@@ -23,6 +23,12 @@ final readonly class MembershipRoleAssignmentService
         'vendor_developer',
     ];
 
+    private const APPROVAL_REQUIRED_VENDOR_ROLES = [
+        'finance_admin',
+        'vendor_product_manager',
+        'reseller_manager',
+    ];
+
     private const ASSIGNABLE_CUSTOMER_ROLES = [
         'customer_billing_admin',
         'customer_technical_admin',
@@ -49,6 +55,30 @@ final readonly class MembershipRoleAssignmentService
         string $reason,
     ): bool {
         return $this->mutateVendorRole($actor, $vendor, $membership, $role, $reason, 'revoked');
+    }
+
+    public function assignVendorRoleAfterApproval(
+        User $checker,
+        VendorAccount $vendor,
+        VendorMembership $membership,
+        Role $role,
+        string $reason,
+        ApprovalRequest $approvalRequest,
+    ): bool {
+        if (
+            $approvalRequest->status !== 'pending'
+            || $approvalRequest->action !== 'vendor_role.assign'
+            || $approvalRequest->vendor_account_id !== $vendor->getKey()
+            || $approvalRequest->target_vendor_membership_id !== $membership->getKey()
+            || $approvalRequest->role_id !== $role->getKey()
+            || $approvalRequest->requested_by_user_id === $checker->getKey()
+            || ! in_array($role->slug, self::APPROVAL_REQUIRED_VENDOR_ROLES, true)
+            || ! $this->authorization->vendorCan($checker, $vendor, 'approvals.review')
+        ) {
+            throw new AuthorizationException('The approved vendor role grant is not permitted.');
+        }
+
+        return $this->mutateVendorRole($checker, $vendor, $membership, $role, $reason, 'assigned', true);
     }
 
     public function assignCustomerRole(
@@ -78,14 +108,18 @@ final readonly class MembershipRoleAssignmentService
         Role $role,
         string $reason,
         string $action,
+        bool $approvedGrant = false,
     ): bool {
         $reason = trim($reason);
+        $allowedRoleSlugs = $action === 'revoked'
+            ? array_merge(self::ASSIGNABLE_VENDOR_ROLES, self::APPROVAL_REQUIRED_VENDOR_ROLES)
+            : ($approvedGrant ? self::APPROVAL_REQUIRED_VENDOR_ROLES : self::ASSIGNABLE_VENDOR_ROLES);
 
-        if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, self::ASSIGNABLE_VENDOR_ROLES, true)) {
+        if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, $allowedRoleSlugs, true)) {
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
-        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action): bool {
+        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs): bool {
             $activeActor = User::query()
                 ->whereKey($actor->getKey())
                 ->where('status', 'active')
@@ -123,7 +157,7 @@ final readonly class MembershipRoleAssignmentService
             $currentRole = Role::query()
                 ->whereKey($role->getKey())
                 ->where('scope', 'vendor')
-                ->whereIn('slug', self::ASSIGNABLE_VENDOR_ROLES)
+                ->whereIn('slug', $allowedRoleSlugs)
                 ->lockForUpdate()
                 ->first();
 
