@@ -29,6 +29,23 @@ final class SuperAdminBootstrapTest extends TestCase
         ]);
     }
 
+    public function test_setup_routes_require_https_in_production_and_send_no_store_headers(): void
+    {
+        config(['app.env' => 'production']);
+
+        $this->withServerVariables(['HTTPS' => 'off'])
+            ->get('/setup/super-admin')
+            ->assertStatus(308)
+            ->assertRedirect('https://localhost/setup/super-admin');
+
+        $this->withServerVariables(['HTTPS' => 'on'])
+            ->get('/setup/super-admin')
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+            ->assertHeader('Referrer-Policy', 'no-referrer')
+            ->assertHeader('X-Frame-Options', 'DENY');
+    }
+
     public function test_bootstrap_page_is_not_available_without_a_configured_secret(): void
     {
         config(['tlms.bootstrap_token' => null]);
