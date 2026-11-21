@@ -27,7 +27,12 @@ final class HostingPreflightCommandTest extends TestCase
         $this->assertArrayHasKey('filesystem.bootstrap_cache_writable', $report['checks']);
         $this->assertArrayHasKey('filesystem.document_root_isolated', $report['checks']);
         $this->assertStringNotContainsString((string) config('app.key'), $output);
-        $this->assertStringNotContainsString((string) env('DB_PASSWORD', ''), $output);
+
+        $databasePassword = (string) config('database.connections.mysql.password', '');
+
+        if ($databasePassword !== '') {
+            $this->assertStringNotContainsString($databasePassword, $output);
+        }
     }
 
     public function test_preflight_json_report_has_stable_check_shape(): void
