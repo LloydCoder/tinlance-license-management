@@ -60,6 +60,22 @@ final class LicenseKeyPepperRingTest
         );
     }
 
+    public function testNonStringPepperKeyIsRejectedDuringConfiguration(): void
+    {
+        expectThrows(
+            static fn () => new LicenseKeyPepperRing([0 => self::OLD_PEPPER], '0'),
+            InvalidArgumentException::class,
+        );
+    }
+
+    public function testNonStringPepperMaterialIsRejectedDuringConfiguration(): void
+    {
+        expectThrows(
+            static fn () => new LicenseKeyPepperRing(['pepper-v1' => 123], 'pepper-v1'),
+            InvalidArgumentException::class,
+        );
+    }
+
     public function testTamperedKeyNeverProducesReplacementVerifier(): void
     {
         $issued = LicenseKey::issue(self::OLD_PEPPER, 'pepper-v1');

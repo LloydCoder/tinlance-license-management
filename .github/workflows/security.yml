@@ -1,0 +1,72 @@
+name: Security analysis
+
+on:
+  push:
+    branches:
+      - main
+      - "chore/**"
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "17 23 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: Semgrep community SAST
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Scan PHP and repository configuration
+        run: |
+          docker run --rm \
+            --volume "${GITHUB_WORKSPACE}:/src" \
+            --workdir /src \
+            semgrep/semgrep:1.186.0-nonroot@sha256:9e7a5ea2466f5a9b7f308a1c6087ced2626b988869d432b326668578abf60944 \
+            semgrep scan --config p/security-audit --error --metrics=off .
+
+  phpstan:
+    name: PHPStan domain static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.5"
+          extensions: intl, pdo_mysql, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+      - name: Install locked project dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Download pinned PHPStan PHAR
+        run: |
+          curl --fail --location --retry 3 \
+            --output phpstan.phar \
+            https://github.com/phpstan/phpstan/releases/download/2.3.7/phpstan.phar
+          echo "87fa9aa451bb9b61d7c65d40ec7d14d5bab67e3ad74ce75a09b3140d6f22631a  phpstan.phar" | sha256sum --check
+      - name: Analyze framework-independent licensing domain
+        run: |
+          php phpstan.phar analyse src \
+            --level=6 \
+            --autoload-file=vendor/autoload.php \
+            --no-progress \
+            --error-format=github

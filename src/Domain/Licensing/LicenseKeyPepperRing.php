@@ -9,7 +9,7 @@ use InvalidArgumentException;
 final readonly class LicenseKeyPepperRing
 {
     /**
-     * @param  array<string, string>  $peppers  Pepper material indexed by immutable key ID.
+     * @param  array<array-key, mixed>  $peppers  Pepper material indexed by immutable key ID.
      */
     public function __construct(
         private array $peppers,
