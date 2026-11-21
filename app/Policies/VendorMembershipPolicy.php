@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\\Policies;
+namespace App\Policies;
 
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorMembership;
-use App\\Services\\Authorization\\MembershipAuthorization;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use App\Services\Authorization\MembershipAuthorization;
 
 final readonly class VendorMembershipPolicy
 {
