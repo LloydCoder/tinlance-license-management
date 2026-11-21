@@ -17,7 +17,6 @@ use App\Models\VendorMembershipInvitation;
 use App\Models\VendorMembershipLifecycleEvent;
 use App\Services\Identity\SessionRevocationService;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -98,6 +97,10 @@ final readonly class MembershipInvitationService
                 'vendor_membership_id' => $membership->getKey(),
                 'invited_by_user_id' => $actor->getKey(),
                 'invited_email' => $invitee->email,
+                'reason' => $reason,
+                'reason' => $reason,
+                'reason' => $reason,
+                'reason' => $reason,
                 'token_hash' => hash('sha256', $token),
                 'expires_at' => $this->invitationExpiry(),
                 'delivery_status' => 'pending',
@@ -591,7 +594,7 @@ final readonly class MembershipInvitationService
                 ->where('vendor_membership_id', $membership->getKey())
                 ->whereNull('accepted_at')
                 ->whereNull('revoked_at')
-                ->whereKeyNot($invitation->getKey())
+                ->where('id', '<>', $invitation->getKey())
                 ->update(['revoked_at' => now(), 'updated_at' => now()]);
 
             VendorMembershipLifecycleEvent::query()->create([
@@ -611,7 +614,7 @@ final readonly class MembershipInvitationService
                 ->where('customer_membership_id', $membership->getKey())
                 ->whereNull('accepted_at')
                 ->whereNull('revoked_at')
-                ->whereKeyNot($invitation->getKey())
+                ->where('id', '<>', $invitation->getKey())
                 ->update(['revoked_at' => now(), 'updated_at' => now()]);
 
             CustomerMembershipLifecycleEvent::query()->create([
@@ -681,9 +684,9 @@ final readonly class MembershipInvitationService
     private function deliver(array $payload): void
     {
         $invitation = $payload['invitation'];
-        $url = $this->acceptanceUrl($payload['token']);
 
         try {
+            $url = $this->acceptanceUrl($payload['token']);
             Mail::to($payload['email'])->send(new MembershipInvitationMail(
                 $url,
                 $payload['tenant_name'],
