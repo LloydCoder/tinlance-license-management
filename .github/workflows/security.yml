@@ -37,7 +37,7 @@ jobs:
             --volume "${GITHUB_WORKSPACE}:/src" \
             --workdir /src \
             semgrep/semgrep:1.186.0 \
-            semgrep scan --config auto --error --metrics=off .
+            semgrep scan --config p/security-audit --error --metrics=off .
 
   codeql:
     name: CodeQL PHP analysis
