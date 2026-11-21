@@ -434,6 +434,7 @@ final readonly class VendorRoleApprovalService
         ]);
 
         $request->refresh();
+
         return $request;
     }
 
