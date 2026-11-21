@@ -375,6 +375,16 @@ final readonly class VendorRoleApprovalService
             throw new AuthorizationException('The request maker cannot approve or reject their own request.');
         }
 
+        $targetMembership = VendorMembership::query()
+            ->whereKey($request->target_vendor_membership_id)
+            ->where('vendor_account_id', $vendor->getKey())
+            ->lockForUpdate()
+            ->first();
+
+        if ($targetMembership instanceof VendorMembership && $targetMembership->user_id === $checker->getKey()) {
+            throw new AuthorizationException('The privileged role beneficiary cannot approve or reject their own request.');
+        }
+
         $activeChecker = User::query()
             ->whereKey($checker->getKey())
             ->where('status', 'active')
