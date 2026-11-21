@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Identity;
 
-use App\Models\Permission;
 use App\Models\PlatformInstallation;
 use App\Models\Role;
 use App\Models\User;
@@ -119,8 +118,10 @@ final class SuperAdminBootstrapService
                 ->where('is_system', true)
                 ->first();
 
+            $authorizationCatalog = app(AuthorizationCatalogSeeder::class);
+
             if ($role === null && ! Role::query()->exists()) {
-                app(AuthorizationCatalogSeeder::class)->run();
+                $authorizationCatalog->run();
 
                 $role = Role::query()
                     ->where('scope', 'vendor')
@@ -133,20 +134,16 @@ final class SuperAdminBootstrapService
                 abort(503, 'The authorization catalogue could not be initialized.');
             }
 
-            $vendorPermissionCount = Permission::query()
-                ->where('scope', 'vendor')
-                ->count();
+            $expectedPermissionNames = $authorizationCatalog->expectedVendorPermissionNames();
+            $assignedPermissionNames = $role->permissions()
+                ->orderBy('permissions.name')
+                ->pluck('permissions.name')
+                ->all();
 
-            $assignedPermissionCount = $role->permissions()->count();
-            $assignedVendorPermissionCount = $role->permissions()
-                ->where('permissions.scope', 'vendor')
-                ->count();
+            sort($expectedPermissionNames);
+            sort($assignedPermissionNames);
 
-            if (
-                $vendorPermissionCount === 0
-                || $assignedVendorPermissionCount !== $vendorPermissionCount
-                || $assignedPermissionCount !== $vendorPermissionCount
-            ) {
+            if ($assignedPermissionNames !== $expectedPermissionNames) {
                 abort(503, 'The authorization catalogue is incomplete.');
             }
 
