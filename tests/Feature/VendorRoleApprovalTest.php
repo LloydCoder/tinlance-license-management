@@ -13,6 +13,7 @@ use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -230,7 +231,7 @@ final class VendorRoleApprovalTest extends TestCase
         $role = $this->role('finance_admin');
         $requestId = $this->createApprovalRequest($maker, $vendor, $target, $role, 'maker-key-000008')->json('data.id');
 
-        \Illuminate\Support\Facades\DB::table('approval_requests')
+        DB::table('approval_requests')
             ->where('id', $requestId)
             ->update(['expires_at' => now()->subSecond()]);
 
@@ -272,7 +273,7 @@ final class VendorRoleApprovalTest extends TestCase
         $role = $this->role('finance_admin');
         $requestId = $this->createApprovalRequest($maker, $vendor, $target, $role, 'maker-key-000009')->json('data.id');
 
-        \Illuminate\Support\Facades\DB::table('approval_requests')
+        DB::table('approval_requests')
             ->where('id', $requestId)
             ->update(['reason' => 'Tampered after maker submission.']);
 
