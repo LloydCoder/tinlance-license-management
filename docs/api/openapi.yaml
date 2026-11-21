@@ -849,7 +849,7 @@ components:
     MembershipRoleChangeResult:
       type: object
       additionalProperties: false
-      required: [data]
+      required: [data, request_id]
       properties:
         data:
           type: object
@@ -865,6 +865,8 @@ components:
               enum: [assigned, revoked]
             changed:
               type: boolean
+        request_id:
+          type: string
     Problem:
       type: object
       required: [type, title, status, code, request_id]
