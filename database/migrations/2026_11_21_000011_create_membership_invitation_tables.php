@@ -31,6 +31,7 @@ return new class extends Migration
             $table->foreignUlid('customer_membership_id')->constrained('customer_memberships')->restrictOnDelete();
             $table->foreignUlid('invited_by_user_id')->constrained('users')->restrictOnDelete();
             $table->string('invited_email', 254);
+            $table->string('reason', 500);
             $table->char('token_hash', 64)->unique();
             $table->timestamp('expires_at');
             $table->timestamp('sent_at')->nullable();
