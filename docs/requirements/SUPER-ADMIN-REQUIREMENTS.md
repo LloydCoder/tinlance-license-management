@@ -19,7 +19,6 @@
 | SA-015 | Signing root keys remain outside ordinary dashboard/API credential settings | Must | Architecture and UI review |
 | SA-016 | Destructive/bulk operations require confirmation, bounded scope, impact awareness and recovery handling where feasible | Must | Workflow and abuse-case tests |
 | SA-017 | Emergency access and recovery are documented, constrained and audited | Must | Recovery exercise |
-
 | SA-018 | No Super Admin capability bypasses cryptographic checks, ledger integrity, auditability or legal/provider qualification gates | Must | Security and architecture review |
 
 **Implementation note:** PR #20 implements one-time initial Super Admin account creation. PR #23 adds login/logout, verified email, TOTP/WebAuthn passkeys, MFA enrollment gating, password recovery, password-confirmed factor/recovery management and session revocation. These are foundational controls, not completion of SA-001–SA-018: the Control Center, resource-level ABAC, privileged step-up, maker-checker, tenant-isolation evidence and global tamper-evident audit remain outstanding.
