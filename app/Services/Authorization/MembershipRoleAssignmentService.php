@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Authorization;
 
+use App\Models\ApprovalDecision;
 use App\Models\ApprovalRequest;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipRoleEvent;
