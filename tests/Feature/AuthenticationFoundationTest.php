@@ -13,6 +13,7 @@ use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Contracts\PasskeyUser as FortifyPasskeyUser;
 use Laravel\Fortify\Features;
@@ -204,6 +205,29 @@ final class AuthenticationFoundationTest extends TestCase
 
         $this->get('/user/two-factor-recovery-codes')
             ->assertRedirect(route('password.confirm'));
+    }
+
+    public function test_successful_login_rehashes_legacy_passwords_to_the_active_driver(): void
+    {
+        $user = $this->createUser();
+        $password = 'A-long-test-passphrase-123';
+        $legacyHash = Hash::driver('bcrypt')->make($password);
+
+        DB::table('users')
+            ->where('id', $user->getKey())
+            ->update(['password' => $legacyHash]);
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => $password,
+        ])->assertRedirect(route('admin.dashboard'));
+
+        $storedHash = (string) DB::table('users')
+            ->where('id', $user->getKey())
+            ->value('password');
+
+        $this->assertNotSame($legacyHash, $storedHash);
+        $this->assertFalse(Hash::needsRehash($storedHash));
     }
 
     public function test_inactive_users_cannot_authenticate_with_a_valid_password(): void
