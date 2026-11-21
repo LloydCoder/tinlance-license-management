@@ -31,7 +31,7 @@ The initial bootstrap is a setup-only capability, not an authentication endpoint
 - The submitted token is compared with `hash_equals`; it is never persisted, echoed in JSON, or flashed back as old form input.
 - Setup responses use `no-store`, restrictive CSP, `no-referrer`, `nosniff` and frame-denial headers. HTTPS is mandatory outside local/testing; safe HTTP GET/HEAD requests redirect, insecure credential-bearing POSTs return 426 without redirect/replay, and secure responses set HSTS.
 - POST requests are rate-limited and remain under Laravel's web middleware, including CSRF protection.
-- A database transaction locks the single primary installation row before creating the initial vendor, administrator, membership and Super Admin role assignment. A second successful bootstrap must fail.
+- A database transaction locks the single primary installation row before creating the initial vendor, administrator, membership and Super Admin role assignment. The grant is recorded as a system-attributed membership-role event in that same transaction; a second successful bootstrap must fail.
 - The authorization catalogue is initialized by the bootstrap service only when the catalogue is empty; a partial or inconsistent catalogue fails closed rather than silently rewriting existing roles.
 - The initial administrator email is not marked verified. Authentication, email verification, mandatory MFA enrollment, recovery and session controls are separate Phase 4 deliverables.
 - The password policy accepts 15–1024 characters without character-composition requirements and accepts long passphrases. Breached-password screening remains an explicit authentication-phase requirement.
