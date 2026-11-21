@@ -38,7 +38,7 @@ final class MfaStepUpController
         ]);
 
         try {
-            $secret = decrypt($user->two_factor_secret);
+            $secret = Fortify::currentEncrypter()->decrypt($user->two_factor_secret);
         } catch (DecryptException) {
             return response()->json([
                 'type' => 'about:blank',
