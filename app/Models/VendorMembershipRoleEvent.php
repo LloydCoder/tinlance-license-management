@@ -11,6 +11,8 @@ final class VendorMembershipRoleEvent extends BaseModel
 {
     public $timestamps = false;
 
+    protected $attributes = ['actor_type' => 'user'];
+
     protected $fillable = [
         'vendor_membership_id',
         'role_id',
@@ -28,6 +30,20 @@ final class VendorMembershipRoleEvent extends BaseModel
 
     protected static function booted(): void
     {
+        self::creating(static function (self $event): void {
+            $actorType = $event->getAttribute('actor_type');
+            $actorUserId = $event->getAttribute('actor_user_id');
+
+            if (
+                ! is_string($actorType)
+                || ! in_array($actorType, ['user', 'system'], true)
+                || ($actorType === 'user' && (! is_string($actorUserId) || trim($actorUserId) === ''))
+                || ($actorType === 'system' && $actorUserId !== null)
+            ) {
+                throw new LogicException('Membership role event actor attribution is invalid.');
+            }
+        });
+
         self::updating(static function (): never {
             throw new LogicException('Membership role events are immutable.');
         });

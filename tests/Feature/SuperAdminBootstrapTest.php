@@ -9,9 +9,11 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Models\VendorMembershipRoleEvent;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use LogicException;
 use Tests\TestCase;
 
 final class SuperAdminBootstrapTest extends TestCase
@@ -255,6 +257,71 @@ final class SuperAdminBootstrapTest extends TestCase
             'actor_type' => 'system',
             'action' => 'assigned',
             'reason' => 'Initial installation bootstrap',
+        ]);
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $superAdmin->getKey(),
+            'actor_user_id' => null,
+            'actor_type' => 'system',
+            'action' => 'assigned',
+            'reason' => 'Initial installation bootstrap',
+        ]);
+    }
+
+    public function test_user_attributed_membership_events_require_a_human_actor(): void
+    {
+        $password = str_repeat('correct horse ', 4).'battery staple';
+
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'admin@example.test',
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertCreated();
+
+        $membership = VendorMembership::query()->firstOrFail();
+        $role = Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail();
+
+        $this->expectException(LogicException::class);
+
+        VendorMembershipRoleEvent::query()->create([
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => null,
+            'actor_type' => 'user',
+            'action' => 'assigned',
+            'reason' => 'Invalid missing human actor',
+            'created_at' => now(),
+        ]);
+    }
+
+    public function test_system_attributed_membership_events_reject_a_human_actor_id(): void
+    {
+        $password = str_repeat('correct horse ', 4).'battery staple';
+
+        $this->postJson('/setup/super-admin', [
+            'bootstrap_token' => self::BOOTSTRAP_TOKEN,
+            'name' => 'Initial Administrator',
+            'email' => 'admin@example.test',
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertCreated();
+
+        $membership = VendorMembership::query()->firstOrFail();
+        $role = Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail();
+        $user = User::query()->firstOrFail();
+
+        $this->expectException(LogicException::class);
+
+        VendorMembershipRoleEvent::query()->create([
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => $user->getKey(),
+            'actor_type' => 'system',
+            'action' => 'assigned',
+            'reason' => 'Invalid system actor with user id',
+            'created_at' => now(),
         ]);
     }
 

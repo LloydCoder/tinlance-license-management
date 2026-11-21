@@ -4,16 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
-final class User extends Authenticatable
+final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     use HasUlids;
+    use MustVerifyEmailTrait;
     use Notifiable;
+    use PasskeyAuthenticatable;
+    use TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
@@ -25,6 +33,8 @@ final class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -32,6 +42,8 @@ final class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
+            'session_version' => 'integer',
             'password' => 'hashed',
         ];
     }
