@@ -13,6 +13,7 @@ final class CustomerMembershipInvitation extends BaseModel
         'customer_membership_id',
         'invited_by_user_id',
         'invited_email',
+        'reason',
         'token_hash',
         'expires_at',
         'sent_at',
@@ -34,7 +35,7 @@ final class CustomerMembershipInvitation extends BaseModel
     protected static function booted(): void
     {
         self::updating(static function (self $invitation): void {
-            foreach (['customer_membership_id', 'invited_by_user_id', 'invited_email', 'token_hash', 'expires_at'] as $immutable) {
+            foreach (['customer_membership_id', 'invited_by_user_id', 'invited_email', 'reason', 'token_hash', 'expires_at'] as $immutable) {
                 if ($invitation->isDirty($immutable)) {
                     throw new LogicException('Membership invitation identity and token fields are immutable.');
                 }
