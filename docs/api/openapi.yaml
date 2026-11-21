@@ -361,10 +361,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /licences/{licenceId}:
     get:
       tags: [Licences]
@@ -411,12 +407,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /activations/verify:
     post:
       tags: [Licences]
@@ -440,8 +430,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /admin/integrations/{provider}/credentials:
     get:
       tags: [Integrations]
@@ -483,10 +471,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
-        '423':
-          $ref: '#/components/responses/Locked'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /admin/integrations/{provider}/credentials/{credentialId}/test:
     post:
       tags: [Integrations]
