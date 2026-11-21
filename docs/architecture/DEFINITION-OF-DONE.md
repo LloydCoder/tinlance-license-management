@@ -16,6 +16,7 @@ A task is complete only when all applicable criteria are satisfied.
 - Sensitive actions are auditable and appropriately reauthenticated.
 - Cryptographic operations use reviewed algorithms and versioned formats.
 - Dependencies and build actions are pinned and reviewed.
+- Secret detection covers the intended Git history; dependency changes are reviewed for known vulnerabilities; native repository push protection and required branch rules are independently verified.
 - Logs redact credentials and sensitive personal data.
 
 ## Data and compatibility
