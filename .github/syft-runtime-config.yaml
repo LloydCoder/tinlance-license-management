@@ -3,4 +3,4 @@
 # authoritative inventory after --no-dev installation. Do not include npm
 # development dependencies or unrelated repository metadata in this runtime SBOM.
 select-catalogers:
-  - php-composer-installed-cataloger
+  - php
