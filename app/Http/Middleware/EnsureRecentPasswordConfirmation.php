@@ -6,7 +6,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 final class EnsureRecentPasswordConfirmation
@@ -15,15 +14,16 @@ final class EnsureRecentPasswordConfirmation
     {
         $confirmedAt = $request->session()->get('auth.password_confirmed_at');
         $timeout = max(1, (int) config('auth.password_timeout', 10800));
-        $isFresh = is_int($confirmedAt)
-            && $confirmedAt >= now()->timestamp - $timeout;
+        $confirmedAtTimestamp = is_numeric($confirmedAt) ? (int) $confirmedAt : null;
+        $isFresh = $confirmedAtTimestamp !== null
+            && $confirmedAtTimestamp >= now()->timestamp - $timeout;
 
         if (! $isFresh) {
             $candidateRequestId = $request->headers->get('X-Request-ID');
             $requestId = is_string($candidateRequestId)
                 && preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $candidateRequestId) === 1
                     ? $candidateRequestId
-                    : (string) Str::uuid();
+                    : bin2hex(random_bytes(16));
 
             return response()->json([
                 'type' => 'about:blank',
