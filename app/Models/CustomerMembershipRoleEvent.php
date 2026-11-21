@@ -15,6 +15,7 @@ final class CustomerMembershipRoleEvent extends BaseModel
         'customer_membership_id',
         'role_id',
         'actor_user_id',
+        'actor_type',
         'action',
         'reason',
         'created_at',
