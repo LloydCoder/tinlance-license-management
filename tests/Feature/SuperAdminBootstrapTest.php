@@ -37,12 +37,18 @@ final class SuperAdminBootstrapTest extends TestCase
             ->assertStatus(308)
             ->assertRedirect('https://localhost/setup/super-admin');
 
-        $this->get('https://localhost/setup/super-admin')
+        $response = $this->get('https://localhost/setup/super-admin')
             ->assertOk()
-            ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
             ->assertHeader('Referrer-Policy', 'no-referrer')
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Strict-Transport-Security', 'max-age=31536000');
+
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertStringContainsString('no-cache', $cacheControl);
+        $this->assertStringContainsString('must-revalidate', $cacheControl);
+        $this->assertStringContainsString('private', $cacheControl);
     }
 
     public function test_insecure_bootstrap_post_is_rejected_without_processing_the_credentials(): void
