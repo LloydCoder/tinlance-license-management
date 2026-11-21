@@ -62,6 +62,7 @@ final class HostingPreflightCommandTest extends TestCase
 
         $this->assertTrue($report['checks']['database.vendor']['passed']);
     }
+
     public function test_document_root_must_resolve_exactly_to_laravel_public_directory(): void
     {
         $previousDocumentRoot = $_SERVER['DOCUMENT_ROOT'] ?? null;
@@ -84,5 +85,4 @@ final class HostingPreflightCommandTest extends TestCase
             }
         }
     }
-
 }
