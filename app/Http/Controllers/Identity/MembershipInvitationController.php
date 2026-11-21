@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
 
@@ -243,7 +244,7 @@ final class MembershipInvitationController
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:160'],
-            'password' => ['required', 'string', 'max:1024', \Illuminate\Validation\Rules\Password::min(15), 'confirmed'],
+            'password' => ['required', 'string', 'max:1024', Password::min(15), 'confirmed'],
         ]);
 
         $tokenHash = $request->session()->get('pending_membership_invitation_hash');
