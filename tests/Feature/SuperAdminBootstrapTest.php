@@ -53,7 +53,6 @@ final class SuperAdminBootstrapTest extends TestCase
         $this->get('/setup/super-admin')->assertNotFound();
     }
 
-
     public function test_completion_page_is_not_available_before_bootstrap(): void
     {
         $this->get('/setup/super-admin/complete')->assertNotFound();
