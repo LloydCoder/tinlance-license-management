@@ -168,6 +168,10 @@ final readonly class VendorRoleApprovalService
     ): ApprovalRequest {
         $decisionReason = trim($decisionReason);
 
+        if ($decisionReason === '' || mb_strlen($decisionReason) > 500) {
+            throw new AuthorizationException('A valid approval decision reason is required.');
+        }
+
         return DB::transaction(function () use ($checker, $vendor, $approvalRequest, $decisionReason): ApprovalRequest {
             $request = $this->lockedRequest($vendor, $approvalRequest);
 
@@ -202,18 +206,6 @@ final readonly class VendorRoleApprovalService
 
             if (! $target instanceof VendorMembership || ! $role instanceof Role) {
                 throw new ModelNotFoundException('Approval target or role no longer exists.');
-            }
-
-            $expectedHash = $this->payloadHash(
-                $request->requested_by_user_id,
-                $request->vendor_account_id,
-                $request->target_vendor_membership_id,
-                $request->role_id,
-                $request->reason,
-            );
-
-            if (! hash_equals($request->payload_hash, $expectedHash)) {
-                throw new ConflictHttpException('Approval request integrity verification failed.');
             }
 
             $auditReason = mb_substr(
