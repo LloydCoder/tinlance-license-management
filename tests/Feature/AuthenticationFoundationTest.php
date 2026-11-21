@@ -195,6 +195,59 @@ final class AuthenticationFoundationTest extends TestCase
         $this->get('/security/mfa')->assertOk()->assertDontSee('recovery-code-one');
     }
 
+    public function test_admin_session_management_requires_recent_password_confirmation(): void
+    {
+        $user = $this->createSuperAdmin();
+        $user->forceFill([
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-one'], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)
+            ->withSession(['auth_session_version' => 0])
+            ->get('/admin/security/sessions')
+            ->assertRedirect(route('password.confirm'));
+
+        $this->actingAs($user)
+            ->withSession(['auth_session_version' => 0])
+            ->post('/admin/security/sessions/revoke-all')
+            ->assertRedirect(route('password.confirm'));
+
+        $this->assertSame(0, (int) User::query()->whereKey($user->getKey())->value('session_version'));
+    }
+
+    public function test_confirmed_super_admin_can_revoke_sessions_and_is_logged_out(): void
+    {
+        $user = $this->createSuperAdmin();
+        $user->forceFill([
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-one'], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        DB::table('sessions')->insert([
+            'id' => str_repeat('r', 40),
+            'user_id' => $user->getKey(),
+            'ip_address' => '192.0.2.30',
+            'user_agent' => 'TLMS session revocation test',
+            'payload' => base64_encode('revocation-test-session'),
+            'last_activity' => now()->timestamp,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->post('/admin/security/sessions/revoke-all')
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+        $this->assertSame(1, (int) User::query()->whereKey($user->getKey())->value('session_version'));
+        $this->assertDatabaseMissing('sessions', ['user_id' => $user->getKey()]);
+    }
+
     public function test_password_reset_and_global_session_revocation_are_atomic(): void
     {
         $user = $this->createUser();
