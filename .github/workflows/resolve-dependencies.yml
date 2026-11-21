@@ -27,7 +27,7 @@ jobs:
           extensions: intl, mbstring, openssl, pdo_mysql, sodium, gmp
           coverage: none
           tools: composer:2.11.2
-      - name: Resolve locked authentication dependencies without running package scripts or plugins
+      - name: Set up the pinned Node toolchain\n        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0\n        with:\n          node-version: \"22.16.0\"\n      - name: Resolve locked authentication dependencies without running package scripts or plugins
         run: composer update laravel/fortify laravel/passkeys --with-dependencies --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
       - name: Validate Composer manifest and lock
         run: composer validate --strict
@@ -39,14 +39,14 @@ jobs:
           composer show --locked laravel/passkeys
           composer show --locked web-auth/webauthn-lib
           composer show --locked pragmarx/google2fa
-      - name: Commit the generated lockfile to this isolated resolver branch
+      - name: Generate the npm lockfile without executing dependency scripts\n        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund\n      - name: Install locked browser dependencies\n        run: npm ci --ignore-scripts --no-audit --no-fund\n      - name: Audit browser dependencies\n        run: npm audit --audit-level=high\n      - name: Build and verify the local passkeys browser bundle\n        run: |\n          npm run build\n          test -s public/build/passkeys.js\n      - name: Commit the generated lockfiles to this isolated resolver branch
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REF: ${{ github.ref }}
         run: |
-          git diff --exit-code -- composer.json
-          git add composer.lock
+          git diff --exit-code -- composer.json package.json
+          git add composer.lock package-lock.json
           if git diff --cached --quiet; then
             echo "Composer lockfile is already current."
             exit 0
