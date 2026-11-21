@@ -53,7 +53,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 
 - Laravel's session guard and Eloquent user provider are configured; login, logout, password reset, email verification and MFA flows are not yet exposed.
 - Browser authentication must regenerate the session ID after authentication and invalidate the session on logout.
-- A one-time browser bootstrap is implemented behind a deployment-configured 256-bit base64url secret, CSRF protection, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment after successful bootstrap.
+- A one-time browser bootstrap implementation candidate in PR #20 is built behind a deployment-configured 256-bit base64url secret, CSRF protection, rate limiting, a row-locked installation state and a persistent consumed flag. The token is not stored in the database or flashed back to the browser. The owner must remove `TLMS_BOOTSTRAP_TOKEN` from the environment after successful bootstrap.
 - Bootstrap creates the initial vendor account, user, active vendor membership and system Super Admin role transactionally. It does not create a login session or expose admin access. Login must remain unavailable until mandatory MFA enrollment and recovery controls are implemented.
 - Passkeys/WebAuthn are the preferred phishing-resistant factor; TOTP is the fallback. TOTP seeds must be encrypted at rest, replay-protected and rate-limited. Recovery codes must be single-use and stored as verifiers.
 - Sensitive actions require recent authentication and MFA step-up. Authorization is deny-by-default and enforced server-side at service/policy boundaries.
