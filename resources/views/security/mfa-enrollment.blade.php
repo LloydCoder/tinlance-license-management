@@ -55,16 +55,18 @@
             </form>
         @else
             <p class="status">Authenticator app is enabled.</p>
-            <p>Store these recovery codes in a secure password manager. Each code can be used once.</p>
-            <div class="stack">
-                @foreach ($user->recoveryCodes() as $recoveryCode)
-                    <code>{{ $recoveryCode }}</code>
-                @endforeach
+            <p>Recovery codes are sensitive backup credentials. Reveal them only when needed, store them in a secure password manager, and regenerate them immediately if exposed. Each code can be used once.</p>
+            <div
+                class="stack"
+                data-recovery-codes
+                data-view-url="{{ route('two-factor.recovery-codes') }}"
+                data-regenerate-url="{{ route('two-factor.regenerate-recovery-codes') }}"
+            >
+                <button type="button" class="secondary" data-recovery-codes-action="view">Reveal recovery codes</button>
+                <button type="button" class="secondary" data-recovery-codes-action="regenerate">Regenerate recovery codes</button>
+                <p class="muted" data-recovery-codes-status role="status" aria-live="polite"></p>
+                <div class="stack" data-recovery-codes-output hidden></div>
             </div>
-            <form method="post" action="{{ route('two-factor.regenerate-recovery-codes') }}">
-                @csrf
-                <button type="submit" class="secondary">Generate new recovery codes</button>
-            </form>
             <form method="post" action="{{ route('two-factor.disable') }}">
                 @csrf
                 @method('DELETE')
