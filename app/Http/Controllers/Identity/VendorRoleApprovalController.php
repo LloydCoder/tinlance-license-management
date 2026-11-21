@@ -129,13 +129,15 @@ final class VendorRoleApprovalController
      */
     private function data(ApprovalRequest $approval): array
     {
-        $approval->loadMissing('role');
+        $approval->loadMissing(['role', 'targetMembership.user']);
 
         return [
             'id' => $approval->getKey(),
             'status' => $approval->status,
             'action' => $approval->action,
             'membership_id' => $approval->target_vendor_membership_id,
+            'target_user_id' => $approval->targetMembership?->user?->getKey(),
+            'target_user_name' => $approval->targetMembership?->user?->name,
             'role_id' => $approval->role_id,
             'role_slug' => $approval->role?->slug,
             'requested_by_user_id' => $approval->requested_by_user_id,
