@@ -1,0 +1,355 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Models\CustomerMembership;
+use App\Models\CustomerOrganization;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+final class MembershipRoleApiTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(AuthorizationCatalogSeeder::class);
+    }
+
+    public function test_vendor_admin_can_assign_a_scoped_role_and_the_change_is_audited(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Approved access for the assigned engineer.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.action', 'assigned')
+            ->assertJsonPath('data.changed', true);
+
+        $this->assertTrue($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $target->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'action' => 'assigned',
+            'reason' => 'Approved access for the assigned engineer.',
+        ]);
+    }
+
+    public function test_vendor_admin_can_revoke_a_scoped_role_and_the_change_is_audited(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+        $target->roles()->attach($role);
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $role).'/revoke', [
+                'reason' => 'Engineer access is no longer required.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.action', 'revoked')
+            ->assertJsonPath('data.changed', true);
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $target->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'action' => 'revoked',
+            'reason' => 'Engineer access is no longer required.',
+        ]);
+    }
+
+    public function test_customer_owner_can_assign_a_role_only_within_its_organization(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_owner');
+        $target = $this->customerMembership($organization, $this->createUser());
+        $role = $this->role('customer', 'customer_technical_admin');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->customerRolePath($organization, $target, $role), [
+                'reason' => 'Approved technical administrator appointment.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.action', 'assigned')
+            ->assertJsonPath('data.changed', true);
+
+        $this->assertTrue($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertDatabaseHas('customer_membership_role_events', [
+            'customer_membership_id' => $target->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'action' => 'assigned',
+        ]);
+    }
+
+    public function test_customer_owner_can_revoke_a_role_and_the_change_is_audited(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_owner');
+        $target = $this->customerMembership($organization, $this->createUser());
+        $role = $this->role('customer', 'customer_technical_admin');
+        $target->roles()->attach($role);
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->customerRolePath($organization, $target, $role).'/revoke', [
+                'reason' => 'Customer administrator access removed.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.action', 'revoked')
+            ->assertJsonPath('data.changed', true);
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertDatabaseHas('customer_membership_role_events', [
+            'customer_membership_id' => $target->getKey(),
+            'role_id' => $role->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'action' => 'revoked',
+        ]);
+    }
+
+    public function test_vendor_route_cannot_be_used_with_a_membership_from_another_vendor(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $otherVendor = $this->createVendor();
+        $target = $this->vendorMembership($otherVendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Cross-vendor attempt.',
+            ])
+            ->assertNotFound();
+    }
+
+    public function test_customer_route_cannot_be_used_with_a_membership_from_another_organization(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_owner');
+        $otherOrganization = $this->createOrganization($organization->vendorAccount()->firstOrFail());
+        $target = $this->customerMembership($otherOrganization, $this->createUser());
+        $role = $this->role('customer', 'customer_member');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->customerRolePath($organization, $target, $role), [
+                'reason' => 'Cross-organization attempt.',
+            ])
+            ->assertNotFound();
+    }
+
+    public function test_vendor_without_admin_permission_cannot_assign_roles(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('vendor_developer');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'support_agent');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Unauthorized attempt.',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_customer_member_cannot_assign_roles(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer_member');
+        $target = $this->customerMembership($organization, $this->createUser());
+        $role = $this->role('customer', 'customer_technical_admin');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->customerRolePath($organization, $target, $role), [
+                'reason' => 'Unauthorized attempt.',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_wrong_scope_role_is_rejected_without_mutation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $customerRole = $this->role('customer', 'customer_member');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $customerRole), [
+                'reason' => 'Wrong scope role.',
+            ])
+            ->assertForbidden();
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($customerRole->getKey())->exists());
+    }
+
+    public function test_role_change_requires_a_reason(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->authenticatedJson($actor)
+            ->postJson($this->vendorRolePath($vendor, $target, $role), ['reason' => ''])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reason');
+    }
+
+    public function test_unauthenticated_actor_cannot_assign_membership_roles(): void
+    {
+        $vendor = $this->createVendor();
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->postJson($this->vendorRolePath($vendor, $target, $role), [
+            'reason' => 'No actor session.',
+        ])->assertUnauthorized();
+    }
+
+    public function test_actor_without_an_enrolled_mfa_factor_is_denied_json_access(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $actor->forceFill([
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => time(),
+            ])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'MFA must be required.',
+            ])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'MFA_REQUIRED');
+    }
+
+    private function authenticatedJson(User $user): static
+    {
+        return $this->actingAs($user)->withSession([
+            'auth_session_version' => $user->session_version,
+            'auth.password_confirmed_at' => time(),
+        ]);
+    }
+
+    private function createUser(): User
+    {
+        $user = User::query()->create([
+            'name' => 'Membership API Actor',
+            'email' => 'membership-api-'.str()->random(12).'@example.test',
+            'password' => str()->random(32),
+            'status' => 'active',
+        ]);
+
+        $user->forceFill([
+            'email_verified_at' => now(),
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code'], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        return $user;
+    }
+
+    /** @return array{User, VendorAccount} */
+    private function vendorActor(string $roleSlug): array
+    {
+        $actor = $this->createUser();
+        $vendor = $this->createVendor();
+        $membership = $this->vendorMembership($vendor, $actor);
+        $membership->roles()->attach($this->role('vendor', $roleSlug));
+
+        return [$actor, $vendor];
+    }
+
+    /** @return array{User, CustomerOrganization} */
+    private function customerActor(string $roleSlug): array
+    {
+        $actor = $this->createUser();
+        $vendor = $this->createVendor();
+        $organization = $this->createOrganization($vendor);
+        $membership = $this->customerMembership($organization, $actor);
+        $membership->roles()->attach($this->role('customer', $roleSlug));
+
+        return [$actor, $organization];
+    }
+
+    private function createVendor(): VendorAccount
+    {
+        return VendorAccount::query()->create([
+            'installation_key' => 'vendor-'.str()->random(12),
+            'legal_name' => 'Membership API Vendor Limited',
+            'display_name' => 'Membership API Vendor',
+            'status' => 'active',
+            'default_currency' => 'NGN',
+            'timezone' => 'Africa/Lagos',
+        ]);
+    }
+
+    private function createOrganization(VendorAccount $vendor): CustomerOrganization
+    {
+        return CustomerOrganization::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'external_reference' => 'customer-'.str()->random(12),
+            'legal_name' => 'Membership API Customer Limited',
+            'display_name' => 'Membership API Customer',
+            'status' => 'active',
+        ]);
+    }
+
+    private function vendorMembership(
+        VendorAccount $vendor,
+        User $user,
+        string $status = 'active',
+    ): VendorMembership {
+        return VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $user->getKey(),
+            'status' => $status,
+            'joined_at' => $status === 'active' ? now() : null,
+        ]);
+    }
+
+    private function customerMembership(
+        CustomerOrganization $organization,
+        User $user,
+        string $status = 'active',
+    ): CustomerMembership {
+        return CustomerMembership::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'user_id' => $user->getKey(),
+            'status' => $status,
+            'joined_at' => $status === 'active' ? now() : null,
+        ]);
+    }
+
+    private function role(string $scope, string $slug): Role
+    {
+        return Role::query()->where('scope', $scope)->where('slug', $slug)->firstOrFail();
+    }
+
+    private function vendorRolePath(VendorAccount $vendor, VendorMembership $membership, Role $role): string
+    {
+        return '/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/roles/'.$role->getKey();
+    }
+
+    private function customerRolePath(
+        CustomerOrganization $organization,
+        CustomerMembership $membership,
+        Role $role,
+    ): string {
+        return '/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$membership->getKey().'/roles/'.$role->getKey();
+    }
+}
