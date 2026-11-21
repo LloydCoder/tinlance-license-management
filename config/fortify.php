@@ -1,11 +1,12 @@
 <?php
 
+use App\Http\Middleware\EnsureSessionVersionCurrent;
 use App\Http\Middleware\RequireSecureSetupTransport;
 use Laravel\Fortify\Features;
 
 return [
     'guard' => 'web',
-    'middleware' => ['web', RequireSecureSetupTransport::class],
+    'middleware' => ['web', RequireSecureSetupTransport::class, EnsureSessionVersionCurrent::class],
     'auth_middleware' => 'auth',
     'passwords' => 'users',
     'username' => 'email',
@@ -18,6 +19,8 @@ return [
     'limiters' => [
         'login' => 'login',
         'passkeys' => 'passkeys',
+        'two-factor' => 'two-factor',
+        'verification' => '6,1',
     ],
     'paths' => [
         'login' => null,
