@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 final class EnsureMfaEnrolled
@@ -25,7 +26,7 @@ final class EnsureMfaEnrolled
                     'title' => 'MFA enrollment required',
                     'status' => 403,
                     'code' => 'MFA_REQUIRED',
-                    'request_id' => $request->headers->get('X-Request-ID') ?? (string) \\Illuminate\\Support\\Str::uuid(),
+                    'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
                 ], 403);
             }
 
