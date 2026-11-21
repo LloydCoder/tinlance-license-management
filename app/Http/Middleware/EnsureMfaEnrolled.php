@@ -20,7 +20,7 @@ final class EnsureMfaEnrolled
         }
 
         if (! $user->hasEnabledTwoFactorAuthentication() && ! $user->hasPasskeysEnabled()) {
-            if ($request->expectsJson()) {
+            if ($request->is('api/*') && $request->expectsJson()) {
                 return response()->json([
                     'type' => 'about:blank',
                     'title' => 'MFA enrollment required',
