@@ -133,7 +133,7 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->vendorRolePath($vendor, $target, $role), [
                 'reason' => 'Cross-vendor attempt.',
             ])
-            ->assertNotFound();
+            ->assertNotFound()\n            ->assertHeader('Content-Type', 'application/problem+json')\n            ->assertJsonPath('code', 'NOT_FOUND');
     }
 
     public function test_customer_route_cannot_be_used_with_a_membership_from_another_organization(): void
@@ -160,7 +160,7 @@ final class MembershipRoleApiTest extends TestCase
             ->postJson($this->vendorRolePath($vendor, $target, $role), [
                 'reason' => 'Unauthorized attempt.',
             ])
-            ->assertForbidden();
+            ->assertForbidden()\n            ->assertHeader('Content-Type', 'application/problem+json')\n            ->assertJsonPath('code', 'FORBIDDEN');
     }
 
     public function test_customer_member_cannot_assign_roles(): void
