@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -20,7 +21,7 @@ final class VendorAccountPolicyTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\AuthorizationCatalogSeeder::class);
+        $this->seed(AuthorizationCatalogSeeder::class);
     }
 
     public function test_vendor_member_with_vendor_account_read_permission_can_view_its_vendor_only(): void
