@@ -1,0 +1,53 @@
+name: Resolve Larastan Composer lockfile
+
+on:
+  push:
+    branches:
+      - chore/larastan-application-analysis
+
+permissions:
+  contents: write
+
+jobs:
+  resolve-lock:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout analysis branch
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: true
+      - name: Set up minimum supported PHP and Composer
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.3"
+          extensions: intl, pdo_mysql, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+      - name: Resolve only the pinned static-analysis dependencies
+        run: |
+          composer update larastan/larastan phpstan/phpstan \
+            --with-all-dependencies \
+            --no-interaction \
+            --prefer-dist \
+            --no-progress \
+            --no-scripts \
+            --no-plugins
+      - name: Validate and audit the resolved lock
+        run: |
+          composer validate --strict
+          composer audit --locked --no-interaction
+      - name: Commit the reproducible lockfile
+        env:
+          BRANCH_NAME: chore/larastan-application-analysis
+        run: |
+          git add composer.lock
+          if git diff --cached --quiet; then
+            echo "Expected Composer lockfile changes were not produced."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: lock Larastan and PHPStan analysis dependencies for PHP 8.3+"
+          git push origin "HEAD:${BRANCH_NAME}"
