@@ -53,7 +53,7 @@ An earlier PR #9 candidate head `248fb37b85d27f6c0360efea49464686b83b4aaf` passe
 The earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
 - PHP 8.3, 8.4 and 8.5 jobs passed.
 - 25 framework-independent domain test methods passed.
-- 47 Laravel feature tests passed (91 assertions).
+- 48 Laravel feature tests passed (94 assertions) against each supported database integration target.
 - The same 47 Laravel feature tests passed against MySQL 8.4.13; the integration job asserts that MySQL is the active driver.
 - Composer validation, locked installation and `composer audit --locked` passed with no advisories.
 - Laravel Pint passed across 49 PHP files.
