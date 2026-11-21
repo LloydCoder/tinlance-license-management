@@ -18,6 +18,7 @@ use App\Models\VendorMembershipInvitation;
 use App\Models\VendorMembershipLifecycleEvent;
 use App\Services\Identity\SessionRevocationService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -394,6 +395,10 @@ final readonly class MembershipInvitationService
                 ? User::query()->whereKey($membership->user_id)->where('status', 'active')->first()
                 : null;
 
+            if (! $membership instanceof VendorMembership || ! $user instanceof User) {
+                throw new GoneHttpException('This invitation is invalid or no longer available.');
+            }
+
             $this->assertPending($vendorInvitation, $membership, $user);
 
             if (! $vendor instanceof VendorAccount) {
@@ -409,7 +414,7 @@ final readonly class MembershipInvitationService
                 'tenant_name' => $vendor->display_name,
                 'role_name' => $membership->roles()->orderBy('slug')->value('name') ?? 'vendor member',
                 'requires_account_setup' => $user->email_verified_at === null,
-                'expires_at' => $vendorInvitation->expires_at->toIso8601String(),
+                'expires_at' => Carbon::parse($vendorInvitation->expires_at)->toIso8601String(),
             ];
         }
 
@@ -428,6 +433,10 @@ final readonly class MembershipInvitationService
                 ? User::query()->whereKey($membership->user_id)->where('status', 'active')->first()
                 : null;
 
+            if (! $membership instanceof CustomerMembership || ! $user instanceof User) {
+                throw new GoneHttpException('This invitation is invalid or no longer available.');
+            }
+
             $this->assertPending($customerInvitation, $membership, $user);
 
             if (! $organization instanceof CustomerOrganization || ! $organization->vendorAccount instanceof VendorAccount
@@ -444,7 +453,7 @@ final readonly class MembershipInvitationService
                 'tenant_name' => $organization->display_name,
                 'role_name' => $membership->roles()->orderBy('slug')->value('name') ?? 'customer member',
                 'requires_account_setup' => $user->email_verified_at === null,
-                'expires_at' => $customerInvitation->expires_at->toIso8601String(),
+                'expires_at' => Carbon::parse($customerInvitation->expires_at)->toIso8601String(),
             ];
         }
 
@@ -676,7 +685,7 @@ final readonly class MembershipInvitationService
         if (
             $invitation->accepted_at !== null
             || $invitation->revoked_at !== null
-            || $invitation->expires_at->isPast()
+            || Carbon::parse($invitation->expires_at)->isPast()
             || $membership === null
             || $membership->status !== 'invited'
             || $user === null
@@ -711,7 +720,7 @@ final readonly class MembershipInvitationService
                 $payload['tenant_name'],
                 $payload['role_name'],
                 $payload['type'],
-                $invitation->expires_at->toDayDateTimeString(),
+                Carbon::parse($invitation->expires_at)->toDayDateTimeString(),
             ));
 
             $invitation->forceFill([
