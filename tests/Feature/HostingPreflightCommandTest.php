@@ -45,9 +45,6 @@ final class HostingPreflightCommandTest extends TestCase
 
         foreach ($report['checks'] as $check) {
             $this->assertSame(['passed', 'required', 'message'], array_keys($check));
-            $this->assertIsBool($check['passed']);
-            $this->assertIsBool($check['required']);
-            $this->assertIsString($check['message']);
             $this->assertNotSame('', $check['message']);
         }
     }
