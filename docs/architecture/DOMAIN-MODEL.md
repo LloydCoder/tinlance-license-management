@@ -70,7 +70,7 @@ The diagram is conceptual; exact cardinalities, join entities, and deletion rule
 - Soft deletion only where legally and operationally appropriate; financial/audit references must remain.
 
 ### Membership role assignment events
-- Separate vendor/customer membership-role event tables record target membership, role, actor, action, reason and creation time in the same transaction as role assignment/revocation.
+- Separate vendor/customer membership-role event tables record target membership, role, `actor_type` (`user` or `system`), nullable human actor ID for system events, action, reason and creation time in the same transaction as role assignment/revocation.
 - Generic assignment is allowlisted; self-assignment and privileged role grants are blocked until dedicated bootstrap/approval workflows exist.
 - Eloquent model instance updates/deletes are rejected. These events are not a substitute for the global hash-chained AuditEvent ledger or database-level tamper evidence.
 
