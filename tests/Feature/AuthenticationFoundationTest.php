@@ -86,6 +86,22 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertFalse(Passkeys::allowsLogin(request(), $verified->passkeys()->firstOrFail()));
     }
 
+    public function test_verified_non_super_admin_can_access_their_own_mfa_enrollment_page(): void
+    {
+        $user = $this->createUser();
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => (int) $user->session_version,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->get('/security/mfa')
+            ->assertOk()
+            ->assertSee('Secure your account')
+            ->assertSee('protected TLMS features');
+    }
+
     public function test_active_super_admin_without_a_confirmed_factor_is_redirected_to_mfa_enrollment(): void
     {
         $user = $this->createSuperAdmin();

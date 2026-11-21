@@ -4,7 +4,7 @@
 
 @section('content')
     <h1>Secure your account</h1>
-    <p>Register a phishing-resistant passkey or configure an authenticator app before using the administration workspace.</p>
+    <p>Register a phishing-resistant passkey or configure an authenticator app before using protected TLMS features.</p>
     @if (session('status'))
         <p class="status" role="status">{{ session('status') }}</p>
     @endif
