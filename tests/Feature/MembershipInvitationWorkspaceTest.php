@@ -13,9 +13,11 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipInvitation;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
+use App\Services\Authorization\MembershipRoleAssignmentService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 final class MembershipInvitationWorkspaceTest extends TestCase
@@ -129,7 +131,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
 
     public function test_assignable_role_catalogue_excludes_maker_checker_only_vendor_roles(): void
     {
-        $service = app(\App\Services\Authorization\MembershipRoleAssignmentService::class);
+        $service = app(MembershipRoleAssignmentService::class);
 
         $vendorSlugs = $service->assignableVendorRoles()->pluck('slug')->all();
         $customerSlugs = $service->assignableCustomerRoles()->pluck('slug')->all();
@@ -202,10 +204,10 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         VendorAccount $vendor,
         string $label,
         string $deliveryStatus,
-        \Illuminate\Support\Carbon $expiresAt,
+        Carbon $expiresAt,
         string $membershipStatus = 'invited',
-        ?\Illuminate\Support\Carbon $acceptedAt = null,
-        ?\Illuminate\Support\Carbon $revokedAt = null,
+        ?Carbon $acceptedAt = null,
+        ?Carbon $revokedAt = null,
     ): VendorMembershipInvitation {
         $user = $this->createUser($label);
         $membership = VendorMembership::query()->create([
@@ -236,7 +238,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         CustomerOrganization $organization,
         string $label,
         string $deliveryStatus,
-        \Illuminate\Support\Carbon $expiresAt,
+        Carbon $expiresAt,
     ): CustomerMembershipInvitation {
         $user = $this->createUser($label);
         $membership = CustomerMembership::query()->create([
