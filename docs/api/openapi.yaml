@@ -91,12 +91,260 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /vendor-accounts/{vendorId}/memberships/{membershipId}/role-approval-requests:
+    post:
+      tags: [Identity]
+      operationId: requestVendorRoleApproval
+      summary: Request a maker-checker approval for a high-risk vendor role grant
+      description: Creates a pending approval request for finance_admin, vendor_product_manager or reseller_manager. The role is not assigned until a different active vendor super administrator with approvals.review and admins.manage approves it. Requires fresh MFA step-up and an Idempotency-Key header.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 128
+            pattern: '^[A-Za-z0-9._:-]{16,128}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorRoleApprovalRequest'
+      responses:
+        '202':
+          description: Approval request created; no membership role mutation has occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestResult'
+        '200':
+          description: Idempotent replay of an existing request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Idempotency key conflict or an existing pending request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /vendor-accounts/{vendorId}/role-approval-requests:
+    get:
+      tags: [Identity]
+      operationId: listVendorRoleApprovalRequests
+      summary: List vendor role approval requests
+      description: Checkers with approvals.review and admins.manage can view all vendor requests. An admin without approval-review permission can view only requests they created. Results are vendor-scoped and paginated at 25 items.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected, expired, all]
+            default: pending
+      responses:
+        '200':
+          description: Vendor-scoped approval inbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestListResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /vendor-accounts/{vendorId}/role-approval-requests/{approvalRequestId}:
+    get:
+      tags: [Identity]
+      operationId: showVendorRoleApprovalRequest
+      summary: Show a vendor role approval request
+      description: The maker may view their own request; other viewers require approval-review and admin permissions in the same vendor scope. Expired pending requests are transitioned to expired when read.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: approvalRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Approval request detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /vendor-accounts/{vendorId}/role-approval-requests/{approvalRequestId}/approve:
+    post:
+      tags: [Identity]
+      operationId: approveVendorRoleApprovalRequest
+      summary: Approve a high-risk vendor role grant
+      description: Requires a different active user in the same vendor with approvals.review and admins.manage, a fresh MFA step-up, and an unexpired pending request whose payload hash is intact. The checker is recorded as the role-change actor.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: approvalRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      responses:
+        '200':
+          description: Request approved and role grant applied, or idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Request is no longer pending or payload integrity failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '410':
+          description: Approval request expired before decision
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /vendor-accounts/{vendorId}/role-approval-requests/{approvalRequestId}/reject:
+    post:
+      tags: [Identity]
+      operationId: rejectVendorRoleApprovalRequest
+      summary: Reject a high-risk vendor role grant
+      description: Requires a different active user in the same vendor with approvals.review and admins.manage and a fresh MFA step-up. Rejection never mutates the target membership.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: approvalRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      responses:
+        '200':
+          description: Request rejected, or idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRequestResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Request is no longer pending
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '410':
+          description: Approval request expired before decision
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
       operationId: assignVendorMembershipRole
       summary: Assign an allowlisted role to a vendor member
-      description: Requires a verified browser session, current session version, recent password confirmation, fresh MFA step-up within five minutes and the vendor-scoped admins.manage permission. The target membership must belong to the vendor in the path.
+      description: Requires a verified browser session, current session version, recent password confirmation, fresh MFA step-up within five minutes and the vendor-scoped admins.manage permission. Direct assignment is limited to low-risk roles; finance_admin, vendor_product_manager and reseller_manager grants must use the maker-checker approval flow. The target membership must belong to the vendor in the path.
       security:
         - AdminSession: []
       parameters:
@@ -910,6 +1158,102 @@ components:
             expires_in:
               type: integer
               minimum: 1
+        request_id:
+          type: string
+    VendorRoleApprovalRequest:
+      type: object
+      additionalProperties: false
+      required: [role_id, reason]
+      properties:
+        role_id:
+          type: string
+          description: ULID for finance_admin, vendor_product_manager or reseller_manager.
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    ApprovalDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Human-readable checker decision rationale.
+    ApprovalRequest:
+      type: object
+      additionalProperties: false
+      required: [id, status, action, membership_id, target_user_id, target_user_name, role_id, role_slug, requested_by_user_id, reason, expires_at, decisions]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired]
+        action:
+          type: string
+          enum: [vendor_role.assign]
+        membership_id:
+          type: string
+        target_user_id:
+          type: string
+        target_user_name:
+          type: string
+        role_id:
+          type: string
+        role_slug:
+          type: string
+          enum: [finance_admin, vendor_product_manager, reseller_manager]
+        requested_by_user_id:
+          type: string
+        decided_by_user_id:
+          type: string
+          nullable: true
+        reason:
+          type: string
+        decision_reason:
+          type: string
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+    ApprovalRequestResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: '#/components/schemas/ApprovalRequest'
+        request_id:
+          type: string
+    ApprovalRequestListResult:
+      type: object
+      additionalProperties: false
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalRequest'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [current_page, last_page, per_page, total]
+          properties:
+            current_page:
+              type: integer
+            last_page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
         request_id:
           type: string
     MembershipRoleChangeRequest:
