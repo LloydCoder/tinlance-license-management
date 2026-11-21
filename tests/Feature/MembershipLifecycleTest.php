@@ -178,7 +178,7 @@ final class MembershipLifecycleTest extends TestCase
             $event->update(['reason' => 'tampered']);
             $this->fail('Lifecycle event updates must be rejected.');
         } catch (LogicException) {
-            $this->assertSame('Preserve immutable lifecycle evidence.', $event->fresh()->reason);
+            $this->assertSame('Preserve immutable lifecycle evidence.', $target->lifecycleEvents()->firstOrFail()->reason);
         }
 
         try {
