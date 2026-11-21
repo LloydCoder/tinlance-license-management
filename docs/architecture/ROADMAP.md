@@ -12,7 +12,7 @@ PRD; customer/vendor personas; deployment model; domain model; lifecycle/state m
 Select candidate annual cPanel providers only after validating PHP/Sodium/cURL/OpenSSL/PDO, MySQL 8.4 or MariaDB 10.11, HTTPS egress, webhook reachability, cron behavior, document root, resource limits, backups, restore and commercial API policy. The `tlms:hosting-preflight --json` command automates local runtime/database/security/filesystem checks; it does not replace a real provider PoC. Prove deployment on a real test account before annual purchase.
 
 ## Phase 3 — Engineering foundation and CI/CD
-Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; OSV-Scanner lockfile scanning; Dependabot; pinned GitHub Actions; deterministic production-only cPanel artifact packaging with checksum/provenance and explicit manual retrieval.
+Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; OSV-Scanner lockfile scanning; Dependabot; pinned GitHub Actions; deterministic production-only cPanel artifact packaging; SPDX SBOM generation; tag-triggered GitHub/Sigstore SLSA provenance and SBOM attestations; checksum and attestation verification; explicit release asset retrieval.
 
 ## Phase 4 — Identity, organizations and portals
 Admin and customer identity; MFA; recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
@@ -31,7 +31,7 @@ Products, versions, release channels, plans, price versions, feature/seat/usage/
 ## Phase 6 — Licence engine
 Secure key generation and storage; lifecycle state machine; idempotent issuance; activation; domain/site/user/seat/usage limits; transfer, replacement, renewal, suspension, revocation and reinstatement; atomic concurrency control.
 
-## Phase 7 — Cryptographic signing and key management
+## Phase 7 — Cryptographic signing and key managemen
 Versioned signed claims; canonical JSON; Ed25519/Sodium; offline root; delegated operational keys; rotation; revocation; key distribution; audit; compromise recovery; independent verifier and cross-language vectors.
 
 ## Phase 8 — Activation, domain binding and offline operation
@@ -60,7 +60,7 @@ Functional and regression suites; shared-host acceptance; concurrency/performanc
 
 ## Current Phase 3 evidence and residual work
 
-The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, Larastan 3.15.0/PHPStan 2.3.7 level 8 across application, domain, migrations, routes, bootstrap, config and tests, Gitleaks full-history scanning, OSV-Scanner dependency scanning and weekly Composer/GitHub Actions Dependabot configuration. This does not complete Phase 3: GitHub native secret scanning/push protection, dependency graph/Dependabot alerts, required branch rulesets, independent cross-host reproducibility, signed release artifacts, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. The current ZIP is byte-for-byte reproducible within its pinned CI toolchain but is not signed. See `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
+The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 integration, Composer audit, Pint, OpenAPI validation, Semgrep Community Edition, Larastan 3.15.0/PHPStan 2.3.7 level 8 across application, domain, migrations, routes, bootstrap, config and tests, Gitleaks full-history scanning, OSV-Scanner dependency scanning and weekly Composer/GitHub Actions Dependabot configuration. This does not complete Phase 3: GitHub native secret scanning/push protection, dependency graph/Dependabot alerts, required branch rulesets, independent cross-host reproducibility, install/upgrade/rollback automation, backup/restore automation and real-provider qualification remain release gates. The tag-triggered release workflow is PR-tested for deterministic artifact and SPDX SBOM generation; signed SLSA provenance and SBOM attestations, external verification and release publication remain unproven until a real protected version tag is released. CI ZIP artifacts remain unsigned. See `docs/operations/RELEASE-ATTESTATION.md`, `docs/security/SECURITY-ANALYSIS.md` and `IMPLEMENTATION-STATUS.md`.
 
 ## Cross-phase engineering gates
 

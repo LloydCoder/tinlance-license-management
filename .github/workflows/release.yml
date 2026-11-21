@@ -1,0 +1,225 @@
+name: TLMS signed cPanel release
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tlms-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-verify:
+    name: Build cPanel artifact and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      COMPOSER_NO_INTERACTION: "1"
+      COMPOSER_PROCESS_TIMEOUT: "600"
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP 8.5 and pinned Composer toolchain
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: "8.5"
+          extensions: intl, pdo_mysql, sodium
+          coverage: none
+          tools: composer:v2
+
+      - name: Resolve and validate release version
+        id: release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]]; then
+              echo "Release tags must use vMAJOR.MINOR.PATCH with an optional prerelease suffix." >&2
+              exit 1
+            fi
+          else
+            version="0.0.0-ci"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "TLMS_RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Build deterministic production-only cPanel package
+        run: bash scripts/release/build-cpanel-artifact.sh
+        env:
+          TLMS_ARTIFACT_DIR: dist # artifact output
+
+      - name: Verify artifact checksum and expected output file
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          artifact="dist/tlms-${TLMS_RELEASE_VERSION}-cpanel.zip"
+          checksum="$artifact.sha256"
+          [[ -s "$artifact" && -s "$checksum" ]]
+          (cd dist && sha256sum -c "$(basename "$checksum")")
+          unzip -t "$artifact" >/dev/null
+          printf 'artifact=%s\n' "$artifact" >> "$GITHUB_OUTPUT"
+        id: package
+
+      - name: Extract production artifact for installed-package inventory
+        id: sbom_source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          artifact="dist/tlms-${TLMS_RELEASE_VERSION}-cpanel.zip"
+          mkdir -p dist/sbom-source
+          unzip -q "$artifact" -d dist/sbom-source
+          source_root="$(find dist/sbom-source -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          [[ -n "$source_root" && -f "$source_root/vendor/composer/installed.json" ]]
+          echo "path=$source_root/vendor" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SPDX 2.3 SBOM from the extracted production package
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: ${{ steps.sbom_source.outputs.path }}
+          format: spdx-json
+          output-file: ${{ github.workspace }}/dist/tlms-${{ steps.release.outputs.version }}-cpanel.spdx.json
+          syft-version: v1.57.2
+          config: .github/syft-runtime-config.yaml
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Validate SBOM structure and dependency inventory
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sbom="dist/tlms-${TLMS_RELEASE_VERSION}-cpanel.spdx.json"
+          [[ -s "$sbom" ]]
+          php -r '
+          $sbom = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
+          if (($sbom["spdxVersion"] ?? null) !== "SPDX-2.3") {
+              fwrite(STDERR, "SBOM must use SPDX-2.3.".PHP_EOL);
+              exit(1);
+          }
+          if (! is_array($sbom["packages"] ?? null) || count($sbom["packages"]) < 1) {
+              fwrite(STDERR, "SBOM package inventory is empty.".PHP_EOL);
+              exit(1);
+          }
+          $names = array_map(
+              static fn (array $package): string => strtolower((string) ($package["name"] ?? "")),
+              $sbom["packages"],
+          );
+          if (! in_array("laravel/framework", $names, true)) {
+              fwrite(STDERR, "SBOM does not identify the Laravel framework dependency.".PHP_EOL);
+              exit(1);
+          }
+          $developmentPackages = [
+              "fakerphp/faker",
+              "laravel/pint",
+              "mockery/mockery",
+              "nunomaduro/collision",
+              "phpunit/phpunit",
+          ];
+          $unexpected = array_values(array_intersect($developmentPackages, $names));
+          if ($unexpected !== []) {
+              fwrite(STDERR, "Development-only packages leaked into the production SBOM: ".implode(", ", $unexpected).PHP_EOL);
+              exit(1);
+          }
+          $frameworkPackages = array_values(array_filter(
+              $sbom["packages"],
+              static fn (array $package): bool => strtolower((string) ($package["name"] ?? "")) === "laravel/framework",
+          ));
+          $frameworkPurls = array_map(
+              static fn (array $reference): string => (string) ($reference["referenceLocator"] ?? ""),
+              array_filter(
+                  $frameworkPackages[0]["externalRefs"] ?? [],
+                  static fn (array $reference): bool => ($reference["referenceType"] ?? null) === "purl",
+              ),
+          );
+          if (! array_filter($frameworkPurls, static fn (string $purl): bool => str_starts_with($purl, "pkg:composer/laravel/framework@"))) {
+              fwrite(STDERR, "Laravel framework SBOM entry is missing its Composer package URL.".PHP_EOL);
+              exit(1);
+          }
+          ' "$sbom"
+          sha256sum "$sbom" > "$sbom.sha256"
+
+      - name: Upload release candidate files for the tag-publish job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tlms-cpanel-release-candidate
+          path: |
+            dist/tlms-${{ steps.release.outputs.version }}-cpanel.zip
+            dist/tlms-${{ steps.release.outputs.version }}-cpanel.zip.sha256
+            dist/tlms-${{ steps.release.outputs.version }}-cpanel.spdx.json
+            dist/tlms-${{ steps.release.outputs.version }}-cpanel.spdx.json.sha256
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  publish-and-attest:
+    name: Attest and publish tagged release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build-and-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download verified release candidate files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tlms-cpanel-release-candidate
+          path: dist # download target
+
+      - name: Verify release candidate checksums
+        id: files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          artifact="dist/tlms-${version}-cpanel.zip"
+          checksum="$artifact.sha256"
+          sbom="dist/tlms-${version}-cpanel.spdx.json"
+          sbom_checksum="$sbom.sha256"
+          [[ -s "$artifact" && -s "$checksum" && -s "$sbom" && -s "$sbom_checksum" ]]
+          (cd dist && sha256sum -c "$(basename "$checksum")")
+          (cd dist && sha256sum -c "$(basename "$sbom_checksum")")
+          echo "artifact=$artifact" >> "$GITHUB_OUTPUT"
+          echo "checksum=$checksum" >> "$GITHUB_OUTPUT"
+          echo "sbom=$sbom" >> "$GITHUB_OUTPUT"
+
+      - name: Generate signed SLSA build provenance attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ steps.files.outputs.artifact }}
+
+      - name: Generate signed SPDX SBOM attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ steps.files.outputs.artifact }}
+          sbom-path: ${{ steps.files.outputs.sbom }}
+
+      - name: Verify provenance and SBOM attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh attestation verify "${{ steps.files.outputs.artifact }}" --repo "$GITHUB_REPOSITORY"
+          gh attestation verify "${{ steps.files.outputs.artifact }}" --repo "$GITHUB_REPOSITORY" --predicate-type https://spdx.dev/Document/v2.3
+
+      - name: Publish immutable release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          gh release create "$GITHUB_REF_NAME" "${{ steps.files.outputs.artifact }}" "${{ steps.files.outputs.checksum }}" "${{ steps.files.outputs.sbom }}" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes

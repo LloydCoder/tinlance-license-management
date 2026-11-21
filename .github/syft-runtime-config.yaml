@@ -1,0 +1,4 @@
+# Restrict the runtime SBOM to packages actually installed by Composer
+# in the production-only cPanel artifact. The artifact is built with --no-dev.
+default-catalogers:
+  - php-composer-installed-cataloger
