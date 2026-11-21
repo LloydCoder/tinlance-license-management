@@ -8,6 +8,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 final class EnsureSessionVersionCurrent
@@ -27,6 +28,16 @@ final class EnsureSessionVersionCurrent
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'type' => 'about:blank',
+                    'title' => 'Session is no longer valid',
+                    'status' => 401,
+                    'code' => 'SESSION_EXPIRED',
+                    'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
+                ], 401, ['Content-Type' => 'application/problem+json']);
+            }
 
             return redirect()
                 ->route('login')

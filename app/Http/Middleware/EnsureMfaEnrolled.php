@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 final class EnsureMfaEnrolled
@@ -19,6 +20,16 @@ final class EnsureMfaEnrolled
         }
 
         if (! $user->hasEnabledTwoFactorAuthentication() && ! $user->hasPasskeysEnabled()) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'type' => 'about:blank',
+                    'title' => 'MFA enrollment required',
+                    'status' => 403,
+                    'code' => 'MFA_REQUIRED',
+                    'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
+                ], 403, ['Content-Type' => 'application/problem+json']);
+            }
+
             return redirect()->route('security.mfa.enroll');
         }
 

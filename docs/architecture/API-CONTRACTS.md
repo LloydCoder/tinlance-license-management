@@ -1,6 +1,6 @@
 # TLMS API contracts — v1 baseline
 
-**Status:** Phase 1 contract baseline. Exact schemas will be maintained in `docs/api/openapi.yaml`; implementation is pending.
+**Status:** Phase 1 contract baseline with the first implemented identity-management operations. Membership role assignment/revocation endpoints are implemented under `routes/web.php` and specified in `docs/api/openapi.yaml`; remaining endpoint groups are contracts only until each receives policy, service and test coverage.
 
 ## 1. API principles
 
@@ -35,6 +35,10 @@
 | POST | /auth/logout | End session | Admin session + CSRF |
 | POST | /auth/mfa/challenge | Complete MFA challenge | Pending authenticated session |
 | GET | /me | Current actor and permission summary | Admin session/token |
+| POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId} | Assign allowlisted vendor membership role with immutable reason event | Verified vendor session + current session + password confirmation + MFA + admins.manage |
+| POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke | Revoke vendor membership role with immutable reason event | Same as assignment |
+| POST | /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId} | Assign allowlisted customer membership role with immutable reason event | Verified customer session + current session + password confirmation + MFA + customer.members.manage |
+| POST | /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}/revoke | Revoke customer membership role with immutable reason event | Same as assignment |
 | GET/POST | /admin/integrations/{provider}/credentials | Read metadata / stage credential version | Super Admin |
 | POST | /admin/integrations/{provider}/credentials/{id}/test | Test staged credential | Super Admin + step-up |
 | POST | /admin/integrations/{provider}/credentials/{id}/activate | Activate validated version | Super Admin + step-up |
@@ -56,7 +60,7 @@
 | GET | /health/live | Process liveness | Public/minimal |
 | GET | /health/ready | Dependency readiness | Restricted/monitor token |
 
-This is an initial resource map, not permission to expose all routes at once. Every operation needs a concrete schema, policy and test before implementation.
+This is an initial resource map. The four membership-role operations above are implemented; all other operations remain contract-only until their concrete schema, policy, service and tests are implemented.
 
 ## 4. Common request/response conventions
 
