@@ -47,7 +47,7 @@ final class FortifyServiceProvider extends ServiceProvider
                 'argon' => 2,
                 'argon2id' => 3,
             ];
-            $activeDriver = (string) config('hash.driver');
+            $activeDriver = (string) config('hashing.driver');
             $storedStrength = $driverStrength[$storedDriver];
             $activeStrength = $driverStrength[$activeDriver] ?? 0;
 
