@@ -880,7 +880,34 @@ components:
       properties:
         code:
           type: string
-          pattern: '^\\d{6}      type: object
+          pattern: '^[0-9]{6}$'
+          description: Current six-digit TOTP code. Recovery codes are not accepted for step-up.
+    MfaStepUpResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [method, stepped_up_at, expires_at, expires_in]
+          properties:
+            method:
+              type: string
+              enum: [totp]
+            stepped_up_at:
+              type: integer
+              format: int64
+            expires_at:
+              type: integer
+              format: int64
+            expires_in:
+              type: integer
+              minimum: 1
+        request_id:
+          type: string
+    MembershipRoleChangeRequest:
+      type: object
       additionalProperties: false
       required: [reason]
       properties:
@@ -968,6 +995,12 @@ components:
             $ref: '#/components/schemas/Problem'
     ValidationError:
       description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Locked:
+      description: Recent password confirmation or fresh MFA step-up is missing or expired
       content:
         application/problem+json:
           schema:
