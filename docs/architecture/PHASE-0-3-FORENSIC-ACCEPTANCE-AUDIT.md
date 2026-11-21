@@ -1,7 +1,7 @@
-# Phase 0–3 forensic engineering acceptance audi
+# Phase 0–3 forensic engineering acceptance audit
 
 **Audit date:** 2026-11-21
-**Audited baseline:** `main` at `4e7d45c129594f60df50b1aeb108a2cfe633f786`
+**Audited baseline:** `main` at `19dc1f801eba43f30140cc0007795bf4ba224778`
 **Repository:** [LloydCoder/tinlance-license-management](https://github.com/LloydCoder/tinlance-license-management)
 **Result:** The current mainline CI and Security workflows are green. Phases 0–3 are **not accepted as complete**. Each has implementation evidence and outstanding acceptance gates below.
 
@@ -10,10 +10,10 @@ This audit distinguishes repository evidence from owner, legal, provider and pro
 ## 1. Current repository and workflow state
 
 - Repository is public, non-archived and uses `main` as its default branch.
-- Current audited main head: `4e7d45c129594f60df50b1aeb108a2cfe633f786`.
-- [Main CI run 44880367359](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880367359): **8/8 jobs passed** — PHP 8.3, 8.4 and 8.5; MySQL 8.4; MariaDB 10.11; cPanel artifact verification; documentation governance; OpenAPI validation.
-- [Main Security analysis run 44880367355](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880367355): **4/4 jobs passed** — Larastan, Semgrep, Gitleaks full-history scan and OSV-Scanner.
-- No open pull requests and no open issues were returned by the repository searches at audit time.
+- Current audited main head: `19dc1f801eba43f30140cc0007795bf4ba224778`.
+- [Post-merge main CI run 44890659672](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890659672): **8/8 jobs passed** — PHP 8.3, 8.4 and 8.5; MySQL 8.4; MariaDB 10.11; cPanel artifact verification; documentation governance; OpenAPI validation.
+- [Post-merge main Security analysis run 44890659694](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44890659694): **4/4 jobs passed** — Larastan, Semgrep, Gitleaks full-history scan and OSV-Scanner.
+- PR #47 is merged. PR #48 is the current documentation reconciliation. PR #43 is a stale, divergent documentation branch from the older `d483e104...` baseline; its valid PR #36/#38 release and vendor-policy notes are reconciled into current documentation here and the stale branch should not be merged.
 - PR #34 was closed without merge because its branch diverged from current main (65 commits ahead, 8 behind) and reintroduced an older authentication implementation with known CI/SAST issues. The current mainline already contains the authentication work through PR #23 and subsequent fixes. PR #34's failed checks included SQLite migration/session setup errors, two synthetic test-password findings in Gitleaks, and a nullable session-version access finding in Larastan. Do not merge or revive that stale branch; current mainline is authoritative.
 
 ## 2. Phase 0 — Repository governance and project control
@@ -110,20 +110,21 @@ This audit distinguishes repository evidence from owner, legal, provider and pro
 - Dependabot configuration for Composer and GitHub Actions.
 - GitHub Actions and security container references are pinned to immutable SHAs/digests.
 - A production-only cPanel ZIP builder and verifier check required/forbidden package contents, dependency exclusions, checksum, source/lock manifest metadata and byte-for-byte repeatability within the pinned CI toolchain.
+- PR #36 adds a tag-triggered release workflow that generates and validates an SPDX 2.3 SBOM and, on a pushed version tag, creates/verifies GitHub/Sigstore SLSA provenance and SBOM attestations before publishing the ZIP, checksum and SBOM release assets. PR CI exercises artifact/SBOM build only; tagged release publication is not exercised by ordinary PR runs.
 
 ### Unresolved mandatory gates
 
 1. Native repository governance/security settings in Phase 0 must be verified.
-2. The current ZIP is **not cryptographically signed**. Its source commit and lockfile digest manifest are useful traceability, not independently authenticated build provenance.
-3. SBOM generation, provenance attestation, artifact signature and independent signature verification are not implemented as a complete release trust chain.
+2. The tag-triggered signed release path is implemented but has not been exercised with a real protected version tag; no production release is claimed.
+3. Independent consumer verification of published GitHub/Sigstore attestations and downloaded release assets remains outstanding.
 4. Install, upgrade, rollback and interrupted-upgrade recovery procedures are not automated or tested on a real cPanel account.
 5. Backup/restore automation and recovery exercises remain open.
-6. Production artifact retrieval is manual/explicit; no release publication or deployment is claimed.
+6. Production artifact retrieval remains manual/explicit until a real version-tag release is published; no deployment is claimed.
 7. The cPanel package workflow is a CI artifact-content/reproducibility check, not proof that a real provider can run the application.
 
 ### Acceptance evidence still required
 
-- Signed artifact, SBOM, provenance and independent verification tests.
+- A real protected version-tag release, published ZIP/checksum/SBOM and verified GitHub/Sigstore attestations, followed by independent consumer verification.
 - Repeatable install/upgrade/rollback/recovery automation compatible with cPanel File Manager/FTP and without mandatory SSH.
 - Automated backup/restore plus a real restore drill.
 - End-to-end provider qualification from Phase 2.
@@ -140,7 +141,7 @@ This audit distinguishes repository evidence from owner, legal, provider and pro
 | Final retention/controller/processor decisions | 1 | No | Counsel/privacy owner; jurisdictional decision |
 | Production signing trust model and key ceremony | 1, 7, 10 | Partly | Security owner; ADR, ceremony and recovery drill |
 | Real annual cPanel provider qualification | 2 | No | Operations owner; actual account evidence |
-| Signed release, SBOM/provenance and install/rollback | 3, 10, 11 | Partly | Engineering/release owner; reproducible verification |
+| Real signed release, SBOM/provenance verification and install/rollback | 3, 10, 11 | Partly | Release owner; protected tag, published assets, independent consumer verification and cPanel recovery tests |
 | Backup/restore automation and measured RPO/RTO | 2, 3, 14 | No | Operations owner; restore-drill evidence |
 
 ## 7. Research references checked on 2026-11-21
@@ -153,12 +154,12 @@ This audit distinguishes repository evidence from owner, legal, provider and pro
 
 ## 8. Audit conclusion
 
-The current codebase has a substantial and green engineering foundation. It is not accurate to declare Phases 0, 1, 2 or 3 complete. Phase 0 has owner/legal configuration blockers; Phase 1 has architecture approval and semantic/API/privacy closure gaps; Phase 2 lacks a real provider account proof-of-concept; Phase 3 lacks a signed/provenanced release chain, automated install/upgrade/rollback and tested backup/restore.
+The current codebase has a substantial and green engineering foundation. PR #36 implements the tag-triggered signed release workflow and PR #47 adds narrow Phase 4 maker-checker controls, but it is not accurate to declare Phases 0, 1, 2 or 3 complete. Phase 0 has owner/legal configuration blockers; Phase 1 has architecture approval and semantic/API/privacy closure gaps; Phase 2 lacks a real provider account proof-of-concept; Phase 3 still requires a real protected-tag release, independent consumer verification, automated install/upgrade/rollback and tested backup/restore.
 
 No production readiness, legal compliance, cPanel qualification, SLA, cryptographic trust ceremony or 100% completion is claimed by this audit. Downstream implementation must continue only against the accepted requirements and preserve the shared-hosting constraints.
 
 
-## 9. Repository-owner configuration checklis
+## 9. Repository-owner configuration checklist
 
 These settings cannot be completed by a documentation or CI change. The repository owner must apply them in GitHub and retain evidence:
 
