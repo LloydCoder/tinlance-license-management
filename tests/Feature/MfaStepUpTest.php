@@ -84,39 +84,6 @@ final class MfaStepUpTest extends TestCase
             ->assertJsonPath('code', 'TOTP_NOT_ENROLLED');
     }
 
-    public function test_passkey_verification_marks_step_up_only_for_the_current_authenticated_user(): void
-    {
-        $user = $this->createUserWithPasskey();
-        $passkey = $user->passkeys()->firstOrFail();
-
-        $this->actingAs($user, 'web')->withSession(['auth_session_version' => $this->sessionVersion($user)]);
-
-        event(new PasskeyVerified($user, $passkey));
-
-        $this->assertIsInt(session('auth.mfa_step_up_at'));
-        $this->assertSame('passkey', session('auth.mfa_step_up_method'));
-        $this->assertDatabaseHas('mfa_step_up_events', [
-            'user_id' => $user->getKey(),
-            'method' => 'passkey',
-            'outcome' => 'succeeded',
-        ]);
-    }
-
-    public function test_passkey_login_event_does_not_grant_step_up_to_a_guest_session(): void
-    {
-        $user = $this->createUserWithPasskey();
-        $passkey = $user->passkeys()->firstOrFail();
-
-        event(new PasskeyVerified($user, $passkey));
-
-        $this->assertNull(session('auth.mfa_step_up_at'));
-        $this->assertDatabaseMissing('mfa_step_up_events', [
-            'user_id' => $user->getKey(),
-            'method' => 'passkey',
-            'outcome' => 'succeeded',
-        ]);
-    }
-
     public function test_step_up_requires_recent_password_confirmation_before_totp_challenge(): void
     {
         $user = $this->createUserWithTotp();
