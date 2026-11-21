@@ -14,6 +14,7 @@ final class HostingPreflightCommandTest extends TestCase
     {
         $exitCode = Artisan::call('tlms:hosting-preflight', ['--json' => true]);
         $output = Artisan::output();
+        /** @var array{ready: bool, checks: array<string, array{passed: bool, required: bool, message: string}>} $report */
         $report = json_decode($output, true, flags: JSON_THROW_ON_ERROR);
 
         $this->assertSame(1, $exitCode, 'The SQLite-only test runtime must not be qualified as a production hosting environment.');
@@ -39,6 +40,7 @@ final class HostingPreflightCommandTest extends TestCase
     public function test_preflight_json_report_has_stable_check_shape(): void
     {
         Artisan::call('tlms:hosting-preflight', ['--json' => true]);
+        /** @var array{ready: bool, checks: array<string, array{passed: bool, required: bool, message: string}>} $report */
         $report = json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR);
 
         foreach ($report['checks'] as $check) {
