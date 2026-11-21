@@ -380,6 +380,55 @@ final class MembershipRoleApiTest extends TestCase
         $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
     }
 
+    public function test_expired_mfa_step_up_cannot_authorize_role_mutation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor, 'web')
+            ->withSession([
+                'auth_session_version' => (int) User::query()->whereKey($actor->getKey())->value('session_version'),
+                'auth.password_confirmed_at' => time(),
+                'auth.mfa_step_up_at' => time() - 301,
+                'auth.mfa_step_up_method' => 'totp',
+            ])
+            ->postJson($this->vendorRolePath($vendor, $target, $role), [
+                'reason' => 'Expired step-up must be rejected.',
+            ])
+            ->assertStatus(423)
+            ->assertJsonPath('code', 'MFA_STEP_UP_REQUIRED');
+
+        $this->assertFalse($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertNull(session('auth.mfa_step_up_at'));
+    }
+
+    public function test_passkey_assertion_satisfies_fresh_step_up_for_membership_role_change(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $passkey = $actor->passkeys()->create([
+            'name' => 'Privileged action passkey',
+            'credential_id' => 'membership-step-up-'.str()->random(12),
+            'credential' => ['publicKey' => 'test-public-key'],
+        ]);
+        $target = $this->vendorMembership($vendor, $this->createUser());
+        $role = $this->role('vendor', 'vendor_developer');
+
+        $this->actingAs($actor, 'web')->withSession([
+            'auth_session_version' => (int) User::query()->whereKey($actor->getKey())->value('session_version'),
+            'auth.password_confirmed_at' => time(),
+        ]);
+
+        event(new PasskeyVerified($actor, $passkey));
+
+        $this->postJson($this->vendorRolePath($vendor, $target, $role), [
+            'reason' => 'Fresh passkey step-up authorizes the role change.',
+        ])->assertCreated();
+
+        $this->assertTrue($target->refresh()->roles()->whereKey($role->getKey())->exists());
+        $this->assertSame('passkey', session('auth.mfa_step_up_method'));
+    }
+
     private function authenticatedJson(User $user): static
     {
         $sessionVersion = (int) User::query()->whereKey($user->getKey())->value('session_version');
