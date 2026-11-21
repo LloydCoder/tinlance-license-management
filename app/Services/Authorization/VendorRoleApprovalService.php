@@ -124,6 +124,10 @@ final readonly class VendorRoleApprovalService
                     throw new ConflictHttpException('The idempotency key was already used for a different approval request.');
                 }
 
+                if ($existing->status === 'pending' && $existing->expires_at->isPast()) {
+                    return $this->expire($existing);
+                }
+
                 return $existing;
             }
 
@@ -141,7 +145,11 @@ final readonly class VendorRoleApprovalService
                 ->first();
 
             if ($pending instanceof ApprovalRequest) {
-                throw new ConflictHttpException('A pending approval already exists for this membership and role.');
+                if ($pending->expires_at->isPast()) {
+                    $this->expire($pending);
+                } else {
+                    throw new ConflictHttpException('A pending approval already exists for this membership and role.');
+                }
             }
 
             return ApprovalRequest::query()->create([
@@ -283,19 +291,22 @@ final readonly class VendorRoleApprovalService
         VendorAccount $vendor,
         ApprovalRequest $approvalRequest,
     ): ApprovalRequest {
-        $request = ApprovalRequest::query()
-            ->whereKey($approvalRequest->getKey())
-            ->where('vendor_account_id', $vendor->getKey())
-            ->firstOrFail();
+        return DB::transaction(function () use ($viewer, $vendor, $approvalRequest): ApprovalRequest {
+            $request = $this->lockedRequest($vendor, $approvalRequest);
 
-        if (
-            $request->requested_by_user_id !== $viewer->getKey()
-            && ! $this->authorization->vendorCan($viewer, $vendor, 'approvals.review')
-        ) {
-            throw new AuthorizationException('The approval request is not visible to this actor.');
-        }
+            if ($request->status === 'pending' && $request->expires_at->isPast()) {
+                $request = $this->expire($request);
+            }
 
-        return $request->load(['targetMembership.user', 'role', 'requester', 'decider', 'decisions.actor']);
+            if (
+                $request->requested_by_user_id !== $viewer->getKey()
+                && ! $this->authorization->vendorCan($viewer, $vendor, 'approvals.review')
+            ) {
+                throw new AuthorizationException('The approval request is not visible to this actor.');
+            }
+
+            return $request->load(['targetMembership.user', 'role', 'requester', 'decider', 'decisions.actor']);
+        }, 3);
     }
 
     private function lockedRequest(VendorAccount $vendor, ApprovalRequest $approvalRequest): ApprovalRequest
