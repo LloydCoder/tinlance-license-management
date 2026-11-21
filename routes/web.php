@@ -6,6 +6,7 @@ use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
 use App\Http\Middleware\EnsureMfaEnrolled;
+use App\Http\Middleware\EnsureRecentPasswordConfirmation;
 use App\Http\Middleware\EnsureSessionVersionCurrent;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\RequireSecureSetupTransport;
@@ -43,7 +44,7 @@ Route::middleware([
     'auth',
     'verified',
     EnsureSessionVersionCurrent::class,
-    'password.confirm',
+    EnsureRecentPasswordConfirmation::class,
     EnsureMfaEnrolled::class,
 ])->prefix('/api/v1')->group(function (): void {
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/roles/{role}', [MembershipRoleController::class, 'assignVendor'])
