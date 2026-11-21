@@ -24,5 +24,6 @@
     <div class="muted">TINLANCE LICENSE MANAGEMENT SYSTEM</div>
     @yield('content')
 </main>
+    <script type="module" src="{{ asset('build/passkeys.js') }}"></script>
 </body>
 </html>
