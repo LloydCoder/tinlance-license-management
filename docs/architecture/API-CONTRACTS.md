@@ -35,6 +35,7 @@
 | POST | /auth/logout | End session | Admin session + CSRF |
 | POST | /auth/mfa/challenge | Complete MFA challenge | Pending authenticated session |
 | GET | /me | Current actor and permission summary | Admin session/token |
+| POST | /security/step-up/totp | Verify a fresh TOTP factor and establish a five-minute session step-up marker; recovery codes are not accepted | Verified current session + recent password confirmation + enrolled TOTP + rate limit |
 | POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId} | Assign allowlisted vendor membership role with immutable reason event | Verified vendor session + current session + password confirmation + MFA + admins.manage |
 | POST | /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}/revoke | Revoke vendor membership role with immutable reason event | Same as assignment |
 | POST | /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId} | Assign allowlisted customer membership role with immutable reason event | Verified customer session + current session + password confirmation + MFA + customer.members.manage |
