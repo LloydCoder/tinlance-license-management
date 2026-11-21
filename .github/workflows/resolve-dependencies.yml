@@ -30,7 +30,7 @@ jobs:
       - name: Set up the pinned Node toolchain
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: \"22.16.0\"
+          node-version: "22.16.0"
       - name: Resolve locked authentication dependencies without running package scripts or plugins
         run: composer update laravel/fortify laravel/passkeys --with-dependencies --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins
       - name: Validate Composer manifest and lock
