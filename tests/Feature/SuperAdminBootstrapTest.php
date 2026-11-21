@@ -63,7 +63,7 @@ final class SuperAdminBootstrapTest extends TestCase
     public function test_invalid_bootstrap_secret_cannot_create_an_administrator(): void
     {
         $this->postJson('/setup/super-admin', [
-            'bootstrap_token' => 'incorrect-bootstrap-token',
+            'bootstrap_token' => 'not-the-configured-bootstrap-secret-256-bit-value',
             'name' => 'Initial Administrator',
             'email' => 'admin@example.test',
             'password' => 'Correct-Horse-Battery-2026!',
