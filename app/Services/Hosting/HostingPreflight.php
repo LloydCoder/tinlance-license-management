@@ -95,7 +95,6 @@ final class HostingPreflight
         );
     }
 
-
     /**
      * @return array{passed: bool, required: bool, message: string}
      */
@@ -195,8 +194,8 @@ final class HostingPreflight
             : $key;
 
         return $this->check(
-            is_string($material) && strlen($material) === 32,
-            'APP_KEY must resolve to exactly 32 bytes for the configured AES-256 application cipher.',
+            config('app.cipher') === 'AES-256-CBC' && is_string($material) && strlen($material) === 32,
+            'APP_KEY must resolve to exactly 32 bytes and use the configured AES-256-CBC application cipher.',
         );
     }
 
