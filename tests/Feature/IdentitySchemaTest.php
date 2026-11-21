@@ -34,7 +34,9 @@ final class IdentitySchemaTest extends TestCase
     public function test_database_server_vendor_matches_the_explicit_ci_expectation(): void
     {
         if (config('database.default') !== 'mysql') {
-            $this->markTestSkipped('Database server vendor assertion runs only for MySQL-compatible integration jobs.');
+            $this->assertSame('sqlite', config('database.default'));
+
+            return;
         }
 
         $version = DB::scalar('SELECT VERSION()');
