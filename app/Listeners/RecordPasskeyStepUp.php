@@ -32,9 +32,13 @@ final class RecordPasskeyStepUp
             return;
         }
 
-        $request->session()->put('auth.mfa_step_up_at', now()->timestamp);
-        $request->session()->put('auth.mfa_step_up_method', 'passkey');
-
         app(MfaStepUpAuditService::class)->record($user, 'passkey', 'succeeded', $request);
+
+        $steppedUpAt = (int) now()->getTimestamp();
+
+        DB::afterCommit(static function () use ($request, $steppedUpAt): void {
+            $request->session()->put('auth.mfa_step_up_at', $steppedUpAt);
+            $request->session()->put('auth.mfa_step_up_method', 'passkey');
+        });
     }
 }
