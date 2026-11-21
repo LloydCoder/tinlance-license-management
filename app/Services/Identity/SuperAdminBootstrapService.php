@@ -61,7 +61,7 @@ final class SuperAdminBootstrapService
     }
 
     /**
-     * @param array{name: string, email: string, password: string} $attributes
+     * @param  array{name: string, email: string, password: string}  $attributes
      */
     public function bootstrap(string $providedToken, array $attributes): User
     {
