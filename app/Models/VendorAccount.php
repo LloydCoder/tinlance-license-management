@@ -17,11 +17,13 @@ final class VendorAccount extends BaseModel
         'timezone',
     ];
 
+    /** @return HasMany<VendorMembership, $this> */
     public function memberships(): HasMany
     {
         return $this->hasMany(VendorMembership::class);
     }
 
+    /** @return HasMany<CustomerOrganization, $this> */
     public function customerOrganizations(): HasMany
     {
         return $this->hasMany(CustomerOrganization::class);

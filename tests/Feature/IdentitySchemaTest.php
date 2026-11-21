@@ -25,7 +25,7 @@ final class IdentitySchemaTest extends TestCase
     public function test_database_driver_matches_the_explicit_ci_expectation(): void
     {
         $this->assertSame(
-            env('TLMS_EXPECTED_DB_CONNECTION', 'sqlite'),
+            config('tlms.expected_db_connection'),
             config('database.default'),
         );
     }

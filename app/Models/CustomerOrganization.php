@@ -18,11 +18,13 @@ final class CustomerOrganization extends BaseModel
         'billing_email',
     ];
 
+    /** @return BelongsTo<VendorAccount, $this> */
     public function vendorAccount(): BelongsTo
     {
         return $this->belongsTo(VendorAccount::class);
     }
 
+    /** @return HasMany<CustomerMembership, $this> */
     public function memberships(): HasMany
     {
         return $this->hasMany(CustomerMembership::class);

@@ -6,7 +6,7 @@ TLMS is being built by Tinlance Limited as a commercially licensable platform fo
 
 ## Project status
 
-**Development status:** Phase 4 identity/authorization foundation. Laravel 13, a committed Composer lockfile, licensing-key/domain primitives, ULID-backed user/vendor/customer schema, scoped permissions, deny-by-default membership authorization and transactional allowlisted membership role assignment/revocation with immutable membership-role event models are implemented. Argon2id is the default password hashing algorithm. CI includes Semgrep, PHPStan domain analysis, full-history Gitleaks scanning, OSV-Scanner dependency scanning and weekly Dependabot updates. GitHub native push protection/rulesets, Larastan application analysis, login/MFA flows, one-time Super Admin bootstrap, resource-level ABAC, portals, licence lifecycle APIs, payments, SDKs, secure updates and production deployment remain unimplemented.
+**Development status:** Phase 4 identity/authorization foundation. Laravel 13, a committed Composer lockfile, licensing-key/domain primitives, ULID-backed user/vendor/customer schema, scoped permissions, deny-by-default membership authorization and transactional allowlisted membership role assignment/revocation with immutable membership-role event models are implemented. Argon2id is the default password hashing algorithm. CI includes Semgrep, Larastan 3.15.0 with PHPStan 2.3.7 at level 8 across the Laravel application, full-history Gitleaks scanning, OSV-Scanner dependency scanning and weekly Dependabot updates. GitHub native push protection/rulesets, login/MFA flows, one-time Super Admin bootstrap, resource-level ABAC, portals, licence lifecycle APIs, payments, SDKs, secure updates and production deployment remain unimplemented.
 
 This repository is public by deliberate strategy. Public visibility does not mean the project is open source or grant general commercial, production, white-label or redistribution rights. Read [LICENSE](LICENSE), [Commercial Licensing](COMMERCIAL-LICENSING.md) and [Trademarks](TRADEMARKS.md).
 
@@ -42,11 +42,13 @@ composer audit --locked
 composer test
 composer test:framework
 composer format:check
+composer analyse
 ~~~
 
 - `composer test` runs the dependency-free domain suite (25 test methods).
 - `composer test:framework` runs the Laravel PHPUnit feature suite (47 test methods).
 - `composer format:check` enforces Laravel Pint formatting.
+- `composer analyse` runs Larastan/PHPStan level 8 across app, domain, database, routes, bootstrap, config and tests; no baseline or ignored-error file is used.
 - CI exercises PHP 8.3, 8.4 and 8.5, plus the same feature suite against MySQL 8.4.13. Local SQLite is a fast secondary test driver, not a substitute for MySQL integration.
 
 ## Hosting and security boundaries

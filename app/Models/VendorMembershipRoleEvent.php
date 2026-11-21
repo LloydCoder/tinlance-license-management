@@ -36,16 +36,19 @@ final class VendorMembershipRoleEvent extends BaseModel
         });
     }
 
+    /** @return BelongsTo<VendorMembership, $this> */
     public function membership(): BelongsTo
     {
         return $this->belongsTo(VendorMembership::class, 'vendor_membership_id');
     }
 
+    /** @return BelongsTo<Role, $this> */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_user_id');

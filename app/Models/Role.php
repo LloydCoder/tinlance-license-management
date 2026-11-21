@@ -20,16 +20,19 @@ final class Role extends BaseModel
         return ['is_system' => 'boolean'];
     }
 
+    /** @return BelongsToMany<Permission, $this> */
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(Permission::class, 'role_permissions');
     }
 
+    /** @return BelongsToMany<VendorMembership, $this> */
     public function vendorMemberships(): BelongsToMany
     {
         return $this->belongsToMany(VendorMembership::class, 'vendor_membership_roles');
     }
 
+    /** @return BelongsToMany<CustomerMembership, $this> */
     public function customerMemberships(): BelongsToMany
     {
         return $this->belongsToMany(CustomerMembership::class, 'customer_membership_roles');

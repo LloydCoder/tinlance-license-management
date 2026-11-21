@@ -23,21 +23,25 @@ final class VendorMembership extends BaseModel
         return ['joined_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<VendorAccount, $this> */
     public function vendorAccount(): BelongsTo
     {
         return $this->belongsTo(VendorAccount::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<VendorMembershipRoleEvent, $this> */
     public function roleEvents(): HasMany
     {
         return $this->hasMany(VendorMembershipRoleEvent::class);
     }
 
+    /** @return BelongsToMany<Role, $this> */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'vendor_membership_roles');
