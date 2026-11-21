@@ -12,7 +12,7 @@ PRD; customer/vendor personas; deployment model; domain model; lifecycle/state m
 Select candidate annual cPanel providers only after validating PHP/Sodium/cURL/OpenSSL/PDO, MySQL 8.4 or MariaDB 10.11, HTTPS egress, webhook reachability, cron behavior, document root, resource limits, backups, restore and commercial API policy. The `tlms:hosting-preflight --json` command automates local runtime/database/security/filesystem checks; it does not replace a real provider PoC. Prove deployment on a real test account before annual purchase.
 
 ## Phase 3 — Engineering foundation and CI/CD
-Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; OSV-Scanner lockfile scanning; Dependabot; pinned GitHub Actions; prebuilt deployment artifacts.
+Laravel bootstrap; supported PHP matrix; MySQL 8.4 and MariaDB 10.11 integration matrix; migrations; environment validation; structured logging; health checks; Pint; Larastan/PHPStan; PHPUnit/Pest; Composer audit; Semgrep; full-history secret scanning; OSV-Scanner lockfile scanning; Dependabot; pinned GitHub Actions; deterministic production-only cPanel artifact packaging with checksum/provenance and explicit manual retrieval.
 
 ## Phase 4 — Identity, organizations and portals
 Admin and customer identity; MFA; recovery; organizations; membership; roles; RBAC; tenant/object-level authorization; customer and administrator portals; session revocation; audit events; Super Admin Control Center shell and platform-wide authorization.
