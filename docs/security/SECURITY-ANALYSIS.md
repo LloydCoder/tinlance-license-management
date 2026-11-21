@@ -7,7 +7,7 @@
 | Control | Workflow behavior | Coverage and limitation |
 |---|---|---|
 | Semgrep Community Edition | `p/security-audit` runs on pushes, pull requests, weekly schedule and manual dispatch. Container image is pinned by digest. | SAST coverage depends on the Community ruleset; it is not equivalent to interprocedural commercial analysis or a penetration test. |
-| PHPStan | PHPStan 2.3.7 PHAR is downloaded from the official release and SHA-256 verified. Level 6 analysis currently covers `src/`. | It does not yet analyze Laravel application models, services, providers, controllers or migrations with Larastan. |
+| Larastan/PHPStan | Larastan 3.15.0 and PHPStan 2.3.7 are exact-pinned in `composer.json` and `composer.lock`. `composer analyse` runs PHPStan level 8 with the Larastan Laravel extension across `app/`, `src/`, `database/`, `routes/`, `bootstrap/`, `config/` and `tests/`. | Static analysis is not runtime proof, penetration testing or a substitute for integration/security testing. No baseline or ignored-error file is used. |
 | Gitleaks | Gitleaks Action is pinned to a full commit SHA, runs Gitleaks 8.30.1 and checks the full Git history (`fetch-depth: 0`). | A finding must be treated as a credential compromise: revoke/rotate first. Removing a string or rewriting history does not invalidate a leaked credential. |
 | OSV-Scanner | OSV-Scanner 2.7.1 scans repository dependencies and the committed Composer lockfile on pushes, pull requests and the weekly schedule. | Uses OSV's public advisory database. It is independent of GitHub's dependency graph; it does not replace Composer audit or licensing review. |
 | Composer audit | Existing CI runs `composer audit --locked`. | Covers known Composer advisories for the committed lockfile at scan time. |
@@ -20,7 +20,7 @@
 - Workflow permissions default to read-only; OSV-Scanner receives only `contents: read` and does not require GitHub dependency-graph or security-event write access.
 - OSV-Scanner runs against the repository's resolved dependency lockfile and fails when known vulnerabilities are found.
 - Gitleaks scans the complete available Git history and does not upload a SARIF artifact or post PR comments.
-- Semgrep and PHPStan fail the workflow on findings.
+- Semgrep and Larastan/PHPStan level 8 fail the workflow on findings; no baseline or ignored-error suppression is configured.
 - Security jobs are not treated as proof of production readiness.
 
 ## Owner-controlled GitHub settings still required
@@ -39,7 +39,6 @@ Gitleaks in CI is useful detection, but it is not a substitute for native push p
 
 ## Release gates not yet satisfied
 
-- Larastan analysis of `app/` and the Eloquent/migration layer, installed through a reproducible committed Composer dependency lock.
 - Secret scanning and push protection enabled in GitHub repository settings.
 - Branch ruleset and required checks enforced on `main`.
 - Dependency graph and Dependabot alert/security-update settings verified.
@@ -47,7 +46,7 @@ Gitleaks in CI is useful detection, but it is not a substitute for native push p
 
 ## Research references
 
-- Larastan 3.15.0 supports PHPStan 2.3.5+ and Illuminate 13; its package metadata lists PHP ^8.2 and Laravel 13 support. The project must still commit a Composer lock update before treating Larastan as a reproducible project dependency.
+- Larastan 3.15.0 supports PHPStan 2.3.5+ and Illuminate 13; its package metadata lists PHP ^8.2 and Laravel 13 support. TLMS pins Larastan 3.15.0 and PHPStan 2.3.7 in the committed Composer lock and sets `config.platform.php` to `8.3.0` so resolution respects the minimum supported runtime.
 - OSV-Scanner supports Composer lockfiles and can scan resolved package versions without GitHub's dependency graph.
 - GitHub rulesets support required pull requests, status checks, blocked force pushes, code scanning and secret-alert rules, but creating or editing them requires repository administration rights.
 
