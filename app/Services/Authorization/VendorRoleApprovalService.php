@@ -57,23 +57,6 @@ final readonly class VendorRoleApprovalService
                 $reason,
             );
 
-            $existing = ApprovalRequest::query()
-                ->where('vendor_account_id', $vendor->getKey())
-                ->where('idempotency_key', $idempotencyKey)
-                ->lockForUpdate()
-                ->first();
-
-            if ($existing instanceof ApprovalRequest) {
-                if (
-                    $existing->requested_by_user_id !== $maker->getKey()
-                    || ! hash_equals($existing->payload_hash, $payloadHash)
-                ) {
-                    throw new ConflictHttpException('The idempotency key was already used for a different approval request.');
-                }
-
-                return $existing;
-            }
-
             $activeMaker = User::query()
                 ->whereKey($maker->getKey())
                 ->where('status', 'active')
@@ -128,6 +111,23 @@ final readonly class VendorRoleApprovalService
                 throw new AuthorizationException('The requested privileged role approval is not permitted.');
             }
 
+            $existing = ApprovalRequest::query()
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('idempotency_key', $idempotencyKey)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing instanceof ApprovalRequest) {
+                if (
+                    $existing->requested_by_user_id !== $maker->getKey()
+                    || ! hash_equals($existing->payload_hash, $payloadHash)
+                ) {
+                    throw new ConflictHttpException('The idempotency key was already used for a different approval request.');
+                }
+
+                return $existing;
+            }
+
             if ($target->roles()->whereKey($currentRole->getKey())->exists()) {
                 throw new ConflictHttpException('The target membership already has this role.');
             }
@@ -171,6 +171,9 @@ final readonly class VendorRoleApprovalService
         return DB::transaction(function () use ($checker, $vendor, $approvalRequest, $decisionReason): ApprovalRequest {
             $request = $this->lockedRequest($vendor, $approvalRequest);
 
+            $this->authorizeChecker($checker, $vendor, $request);
+            $this->assertPayloadIntegrity($request);
+
             if ($request->status === 'approved') {
                 return $request;
             }
@@ -182,8 +185,6 @@ final readonly class VendorRoleApprovalService
             if ($request->expires_at->isPast()) {
                 return $this->expire($request);
             }
-
-            $this->authorizeChecker($checker, $vendor, $request);
 
             $target = VendorMembership::query()
                 ->whereKey($request->target_vendor_membership_id)
@@ -258,6 +259,9 @@ final readonly class VendorRoleApprovalService
         return DB::transaction(function () use ($checker, $vendor, $approvalRequest, $decisionReason): ApprovalRequest {
             $request = $this->lockedRequest($vendor, $approvalRequest);
 
+            $this->authorizeChecker($checker, $vendor, $request);
+            $this->assertPayloadIntegrity($request);
+
             if ($request->status === 'rejected') {
                 return $request;
             }
@@ -269,8 +273,6 @@ final readonly class VendorRoleApprovalService
             if ($request->expires_at->isPast()) {
                 return $this->expire($request);
             }
-
-            $this->authorizeChecker($checker, $vendor, $request);
 
             $request->transitionTo('rejected', $checker->getKey(), $decisionReason);
             ApprovalDecision::query()->create([
@@ -343,6 +345,21 @@ final readonly class VendorRoleApprovalService
             || ! $this->authorization->vendorCan($checker, $vendor, 'approvals.review')
         ) {
             throw new AuthorizationException('The actor is not an authorized approval checker for this vendor.');
+        }
+    }
+
+    private function assertPayloadIntegrity(ApprovalRequest $request): void
+    {
+        $expectedHash = $this->payloadHash(
+            $request->requested_by_user_id,
+            $request->vendor_account_id,
+            $request->target_vendor_membership_id,
+            $request->role_id,
+            $request->reason,
+        );
+
+        if ($request->action !== 'vendor_role.assign' || ! hash_equals($request->payload_hash, $expectedHash)) {
+            throw new ConflictHttpException('Approval request integrity verification failed.');
         }
     }
 
