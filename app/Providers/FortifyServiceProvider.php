@@ -31,7 +31,7 @@ final class FortifyServiceProvider extends ServiceProvider
                 return null;
             }
 
-            $storedDriver = match (password_get_info($user->password)['algoName'] ?? null) {
+            $storedDriver = match (password_get_info($user->password)['algoName']) {
                 'bcrypt' => 'bcrypt',
                 'argon2i' => 'argon',
                 'argon2id' => 'argon2id',
