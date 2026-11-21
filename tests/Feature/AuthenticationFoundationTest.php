@@ -210,7 +210,7 @@ final class AuthenticationFoundationTest extends TestCase
     public function test_successful_login_rehashes_legacy_passwords_to_the_active_driver(): void
     {
         $user = $this->createUser();
-        $password = 'A-long-test-passphrase-123';
+        $password = str_repeat('long-test-passphrase-', 2).'123';
         $legacyHash = Hash::driver('bcrypt')->make($password);
 
         DB::table('users')
