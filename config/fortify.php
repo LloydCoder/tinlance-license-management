@@ -12,7 +12,7 @@ return [
     'username' => 'email',
     'email' => 'email',
     'views' => true,
-    'home' => '/admin',
+    'home' => '/workspace',
     'prefix' => '',
     'domain' => null,
     'lowercase_usernames' => true,
@@ -65,7 +65,7 @@ return [
         ],
     ],
     'redirects' => [
-        'login' => '/admin',
+        'login' => '/workspace',
         'logout' => '/login',
         'password-confirmation' => '/admin',
         'register' => '/login',
