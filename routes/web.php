@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Identity\MembershipRoleController;
+use App\Http\Controllers\Identity\VendorRoleApprovalController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
@@ -49,6 +50,22 @@ Route::middleware([
     EnsureRecentPasswordConfirmation::class,
     EnsureMfaEnrolled::class,
 ])->prefix('/api/v1')->group(function (): void {
+    Route::post('/vendor-accounts/{vendor}/memberships/{membership}/role-approval-requests', [VendorRoleApprovalController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.vendor.role-approvals.store');
+    Route::get('/vendor-accounts/{vendor}/role-approval-requests', [VendorRoleApprovalController::class, 'index'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:30,1'])
+        ->name('api.vendor.role-approvals.index');
+    Route::get('/vendor-accounts/{vendor}/role-approval-requests/{approvalRequest}', [VendorRoleApprovalController::class, 'show'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:30,1'])
+        ->name('api.vendor.role-approvals.show');
+    Route::post('/vendor-accounts/{vendor}/role-approval-requests/{approvalRequest}/approve', [VendorRoleApprovalController::class, 'approve'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.vendor.role-approvals.approve');
+    Route::post('/vendor-accounts/{vendor}/role-approval-requests/{approvalRequest}/reject', [VendorRoleApprovalController::class, 'reject'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.vendor.role-approvals.reject');
+
     Route::post('/security/step-up/totp', [MfaStepUpController::class, 'store'])
         ->middleware('throttle:5,1')
         ->name('api.security.step-up.totp');

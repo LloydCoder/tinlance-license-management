@@ -12,4 +12,7 @@ return [
     'security' => [
         'step_up_ttl_seconds' => max(1, (int) env('TLMS_STEP_UP_TTL_SECONDS', 300)),
     ],
+    'approvals' => [
+        'ttl_seconds' => max(300, (int) env('TLMS_APPROVAL_TTL_SECONDS', 86400)),
+    ],
 ];

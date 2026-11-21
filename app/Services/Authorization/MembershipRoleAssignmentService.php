@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Authorization;
 
+use App\Models\ApprovalDecision;
+use App\Models\ApprovalRequest;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipRoleEvent;
 use App\Models\CustomerOrganization;
@@ -21,6 +23,12 @@ final readonly class MembershipRoleAssignmentService
         'support_agent',
         'security_auditor',
         'vendor_developer',
+    ];
+
+    private const APPROVAL_REQUIRED_VENDOR_ROLES = [
+        'finance_admin',
+        'vendor_product_manager',
+        'reseller_manager',
     ];
 
     private const ASSIGNABLE_CUSTOMER_ROLES = [
@@ -51,6 +59,44 @@ final readonly class MembershipRoleAssignmentService
         return $this->mutateVendorRole($actor, $vendor, $membership, $role, $reason, 'revoked');
     }
 
+    public function assignVendorRoleAfterApproval(
+        User $checker,
+        VendorAccount $vendor,
+        VendorMembership $membership,
+        Role $role,
+        string $reason,
+        ApprovalRequest $approvalRequest,
+    ): bool {
+        $persistedApproval = ApprovalRequest::query()
+            ->whereKey($approvalRequest->getKey())
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('target_vendor_membership_id', $membership->getKey())
+            ->where('role_id', $role->getKey())
+            ->where('action', 'vendor_role.assign')
+            ->where('status', 'approved')
+            ->where('requested_by_user_id', '<>', $checker->getKey())
+            ->where('decided_by_user_id', $checker->getKey())
+            ->lockForUpdate()
+            ->first();
+
+        $hasRecordedDecision = $persistedApproval instanceof ApprovalRequest
+            && ApprovalDecision::query()
+                ->where('approval_request_id', $persistedApproval->getKey())
+                ->where('actor_user_id', $checker->getKey())
+                ->where('decision', 'approved')
+                ->exists();
+
+        if (
+            ! $hasRecordedDecision
+            || ! in_array($role->slug, self::APPROVAL_REQUIRED_VENDOR_ROLES, true)
+            || ! $this->authorization->vendorCan($checker, $vendor, 'approvals.review')
+        ) {
+            throw new AuthorizationException('The approved vendor role grant is not permitted.');
+        }
+
+        return $this->mutateVendorRole($checker, $vendor, $membership, $role, $reason, 'assigned', true);
+    }
+
     public function assignCustomerRole(
         User $actor,
         CustomerOrganization $organization,
@@ -78,14 +124,18 @@ final readonly class MembershipRoleAssignmentService
         Role $role,
         string $reason,
         string $action,
+        bool $approvedGrant = false,
     ): bool {
         $reason = trim($reason);
+        $allowedRoleSlugs = $action === 'revoked'
+            ? array_merge(self::ASSIGNABLE_VENDOR_ROLES, self::APPROVAL_REQUIRED_VENDOR_ROLES)
+            : ($approvedGrant ? self::APPROVAL_REQUIRED_VENDOR_ROLES : self::ASSIGNABLE_VENDOR_ROLES);
 
-        if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, self::ASSIGNABLE_VENDOR_ROLES, true)) {
+        if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, $allowedRoleSlugs, true)) {
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
-        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action): bool {
+        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs): bool {
             $activeActor = User::query()
                 ->whereKey($actor->getKey())
                 ->where('status', 'active')
@@ -123,7 +173,7 @@ final readonly class MembershipRoleAssignmentService
             $currentRole = Role::query()
                 ->whereKey($role->getKey())
                 ->where('scope', 'vendor')
-                ->whereIn('slug', self::ASSIGNABLE_VENDOR_ROLES)
+                ->whereIn('slug', $allowedRoleSlugs)
                 ->lockForUpdate()
                 ->first();
 
