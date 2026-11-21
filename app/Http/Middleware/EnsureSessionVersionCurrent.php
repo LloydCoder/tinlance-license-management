@@ -35,7 +35,7 @@ final class EnsureSessionVersionCurrent
                     'status' => 401,
                     'code' => 'SESSION_EXPIRED',
                     'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
-                ], 401);
+                ], 401, ['Content-Type' => 'application/problem+json']);
             }
 
             return redirect()
