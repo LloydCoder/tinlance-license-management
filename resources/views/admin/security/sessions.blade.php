@@ -4,7 +4,7 @@
 
 @section('content')
     <h1>Active sessions</h1>
-    <p>These are the database-backed sessions associated with your account.</p>
+    <p>These are the database-backed sessions associated with your account. Viewing or revoking them requires a recent password confirmation.</p>
     @if (session('status'))
         <p class="status" role="status">{{ session('status') }}</p>
     @endif
