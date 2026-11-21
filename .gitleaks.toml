@@ -1,12 +1,15 @@
 title = "TLMS secret scanning configuration"
+minVersion = "8.25.0"
 
 [extend]
 useDefault = true
 
-[[allowlists]]
-description = "A known non-secret password fixture from historical authentication tests; narrowly scoped to that exact literal, test file, and generic-api-key rule."
-condition = "AND"
-targetRules = ["generic-api-key"]
-regexTarget = "line"
-paths = ['''tests/Feature/AuthenticationFoundationTest\.php$''']
-regexes = ['''Correct-Horse-Battery-2026!''']
+[[rules]]
+id = "generic-api-key"
+
+    [[rules.allowlists]]
+    description = "Historical non-secret authentication-test fixture; scoped to its exact test path and exact fixture literal."
+    condition = "AND"
+    regexTarget = "match"
+    paths = ['''(^|/)tests/Feature/AuthenticationFoundationTest\.php$''']
+    regexes = ['''Correct-Horse-Battery-2026!''']
