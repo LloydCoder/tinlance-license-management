@@ -14,6 +14,7 @@ use App\Services\Authorization\MembershipRoleAssignmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 final class MembershipRoleController
 {
@@ -79,7 +80,7 @@ final class MembershipRoleController
             ? $service->assignVendorRole($actor, $vendor, $membership, $role, $validated['reason'])
             : $service->revokeVendorRole($actor, $vendor, $membership, $role, $validated['reason']);
 
-        return $this->result($membership->getKey(), $role->getKey(), $action, $changed);
+        return $this->result($request, $membership->getKey(), $role->getKey(), $action, $changed);
     }
 
     private function changeCustomerRole(
@@ -104,10 +105,10 @@ final class MembershipRoleController
             ? $service->assignCustomerRole($actor, $organization, $membership, $role, $validated['reason'])
             : $service->revokeCustomerRole($actor, $organization, $membership, $role, $validated['reason']);
 
-        return $this->result($membership->getKey(), $role->getKey(), $action, $changed);
+        return $this->result($request, $membership->getKey(), $role->getKey(), $action, $changed);
     }
 
-    private function result(string $membershipId, string $roleId, string $action, bool $changed): JsonResponse
+    private function result(Request $request, string $membershipId, string $roleId, string $action, bool $changed): JsonResponse
     {
         return response()->json([
             'data' => [
@@ -116,6 +117,7 @@ final class MembershipRoleController
                 'action' => $action,
                 'changed' => $changed,
             ],
+            'request_id' => $request->headers->get('X-Request-ID') ?? (string) Str::uuid(),
         ], $action === 'assigned' && $changed ? 201 : 200);
     }
 }
