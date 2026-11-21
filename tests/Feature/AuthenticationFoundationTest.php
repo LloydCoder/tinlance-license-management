@@ -13,9 +13,8 @@ use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 use Laravel\Fortify\Contracts\PasskeyUser as FortifyPasskeyUser;
-use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Fortify\Features;
 use Laravel\Passkeys\Passkeys;
 use Tests\TestCase;
 
@@ -56,7 +55,6 @@ final class AuthenticationFoundationTest extends TestCase
         $user = $this->createUser();
 
         $this->assertInstanceOf(MustVerifyEmail::class, $user);
-        $this->assertInstanceOf(PasskeyUser::class, $user);
         $this->assertInstanceOf(FortifyPasskeyUser::class, $user);
         $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $user->getPasskeyUserHandle());
         $this->assertNotSame($user->email, $user->getPasskeyUserHandle());
