@@ -385,6 +385,99 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /vendor-accounts/{vendorId}/memberships/invitations:
+    post:
+      tags: [Identity]
+      operationId: inviteVendorMember
+      summary: Invite a user to a vendor account
+      description: Requires vendor-scoped admins.manage, recent password confirmation, enrolled MFA and fresh five-minute TOTP/passkey step-up. Creates an unverified account when the email is new, or binds an existing active account to the exact invited email. Only directly assignable low-risk roles are accepted; privileged roles remain behind maker-checker. The 256-bit invitation secret is stored as SHA-256, delivered in a URL fragment, single-use and expires after the configured lifetime. Public registration remains disabled.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipInvitationRequest'
+      responses:
+        '201':
+          description: Invited membership created and email delivery completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipInvitationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: A membership already exists for this account and vendor
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Invitation record was created but email delivery failed; retry with the resend operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /vendor-accounts/{vendorId}/memberships/{membershipId}/invitation/resend:
+    post:
+      tags: [Identity]
+      operationId: resendVendorMembershipInvitation
+      summary: Rotate and resend a pending vendor membership invitation
+      description: Requires vendor-scoped admins.manage and fresh MFA step-up. Only an invited membership can be resent. All previous pending tokens are revoked before a new token is issued; accepted or revoked memberships cannot be resent.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipInvitationResendRequest'
+      responses:
+        '200':
+          description: A new invitation token was issued and delivered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipInvitationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -535,6 +628,99 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /customer-organizations/{organizationId}/memberships/invitations:
+    post:
+      tags: [Identity]
+      operationId: inviteCustomerMember
+      summary: Invite a user to a customer organization
+      description: Requires customer.members.manage, recent password confirmation, enrolled MFA and fresh five-minute TOTP/passkey step-up. Creates an unverified account when the email is new, or binds an existing active account to the exact invited email. Direct role assignment is limited to customer roles allowed by the authorization service. The 256-bit invitation secret is stored as SHA-256, delivered in a URL fragment, single-use and expires after the configured lifetime.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipInvitationRequest'
+      responses:
+        '201':
+          description: Invited membership created and email delivery completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipInvitationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: A membership already exists for this account and organization
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Invitation record was created but email delivery failed; retry with the resend operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /customer-organizations/{organizationId}/memberships/{membershipId}/invitation/resend:
+    post:
+      tags: [Identity]
+      operationId: resendCustomerMembershipInvitation
+      summary: Rotate and resend a pending customer membership invitation
+      description: Requires customer.members.manage and fresh MFA step-up. Only an invited membership can be resent. All previous pending tokens are revoked before a new token is issued; accepted or revoked memberships cannot be resent.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipInvitationResendRequest'
+      responses:
+        '200':
+          description: A new invitation token was issued and delivered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipInvitationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -1345,6 +1531,53 @@ components:
               type: integer
         request_id:
           type: string
+    MembershipInvitationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, role_slug, reason]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        name:
+          type: [string, 'null']
+          minLength: 2
+          maxLength: 160
+        role_slug:
+          type: string
+          maxLength: 100
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    MembershipInvitationResendRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    MembershipInvitationResult:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [membership_id, status, invitation_expires_at]
+          properties:
+            membership_id:
+              type: string
+            status:
+              type: string
+              enum: [invited]
+            invitation_expires_at:
+              type: [string, 'null']
+              format: date-time
     MembershipLifecycleChangeRequest:
       type: object
       additionalProperties: false
