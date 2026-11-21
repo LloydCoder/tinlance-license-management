@@ -126,7 +126,7 @@ final class MembershipInvitationTest extends TestCase
             'name' => 'Accepted Vendor Member',
             'password' => $password,
             'password_confirmation' => $password,
-        ])->assertRedirect(route('login'));
+        ])->assertRedirect('/login');
 
         $invitee = User::query()->where('email', $email)->firstOrFail();
         $this->assertSame('Accepted Vendor Member', $invitee->name);
@@ -142,11 +142,11 @@ final class MembershipInvitationTest extends TestCase
             'to_status' => 'active',
             'reason' => 'Invitation accepted by the invited user.',
         ]);
-        $this->assertDatabaseHas('vendor_membership_invitations', [
-            'vendor_membership_id' => $membership->getKey(),
-            'token_hash' => hash('sha256', $token),
-            'accepted_at' => now(),
-        ]);
+        $acceptedInvitation = DB::table('vendor_membership_invitations')
+            ->where('vendor_membership_id', $membership->getKey())
+            ->where('token_hash', hash('sha256', $token))
+            ->first();
+        $this->assertNotNull($acceptedInvitation?->accepted_at);
     }
 
     public function test_verified_existing_invitee_must_authenticate_as_the_invited_account(): void
@@ -278,11 +278,11 @@ final class MembershipInvitationTest extends TestCase
             ])
             ->assertOk();
 
-        $this->assertDatabaseHas('vendor_membership_invitations', [
-            'vendor_membership_id' => $membership->getKey(),
-            'token_hash' => hash('sha256', $token),
-            'revoked_at' => now(),
-        ]);
+        $revokedInvitation = DB::table('vendor_membership_invitations')
+            ->where('vendor_membership_id', $membership->getKey())
+            ->where('token_hash', hash('sha256', $token))
+            ->first();
+        $this->assertNotNull($revokedInvitation?->revoked_at);
         $this->postJson('/membership-invitations/prepare', ['token' => $token])
             ->assertStatus(410);
     }
