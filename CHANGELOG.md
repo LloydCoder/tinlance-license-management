@@ -12,6 +12,9 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Vendor-account read policy with a dedicated vendor-scoped permission, upgrade migration for existing system roles and cross-vendor/stale-membership regression coverage (PR #38).
 - Tag-triggered release workflow that builds an SPDX 2.3 SBOM and creates/verifies GitHub/Sigstore SLSA provenance and SBOM attestations before publishing a version-tagged cPanel artifact (PR #36).
 - Tenant-scoped maker-checker approvals for high-risk vendor role grants with fresh MFA, idempotency, expiry, beneficiary conflict-of-interest protection and atomic decision/role evidence (PR #47).
+- Recent password confirmation for Super Admin session listing and global session revocation; protected-session invalidation for inactive accounts (PRs #49 and #51).
+- Self-only vendor/customer membership reads without granting collection listing or membership mutations (PR #50).
+- Persisted customer-organization/vendor binding checks for vendor-support authorization; suspended organizations and stale tenant bindings are denied (PR #52).
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).

@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, and fresh TOTP/passkey step-up for those role mutations are implemented and tested. Complete resource-level ABAC, non-membership mutation policies, maker-checker and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, fresh TOTP/passkey step-up for those role mutations, and maker-checker for high-risk vendor role grants are implemented and tested. Self-only membership reads and persisted tenant-binding checks are covered. Complete resource-level ABAC, membership lifecycle/invitations, non-membership mutation policies, generalized step-up/approval and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
@@ -132,3 +132,11 @@ Any future dual-control workflow must prohibit both maker/checker identity confl
 - Revoked/suspended actors and tokens lose access immediately according to documented session/token revocation semantics.
 - Background jobs reject stale, malformed or out-of-scope actor context.
 - Super Admin actions remain audited and sensitive data stays redacted.
+
+
+## 3B. Additional Phase 4 hardening (PRs #49–#52)
+
+- Super Admin session listing and global session revocation require Laravel recent password confirmation. Revocation remains self-scoped and invalidates all of the actor's sessions.
+- Session-version middleware reloads persisted account status on every protected request and fails closed for missing or non-active users, so account suspension invalidates existing web/API sessions.
+- Active users may view their own active/invited vendor or customer membership without administrator permissions. Viewing another member remains subject to the relevant tenant-scoped administrator permission; no `viewAny`, update or delete ability is granted.
+- Customer organization reads reload the persisted active organization and parent vendor before evaluating customer-member or vendor-support access. In-memory relationship state is not an authorization source; suspended organizations and stale/tampered tenant foreign keys are denied.
