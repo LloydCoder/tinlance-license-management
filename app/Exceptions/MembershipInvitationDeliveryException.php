@@ -6,6 +6,4 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-final class MembershipInvitationDeliveryException extends RuntimeException
-{
-}
+final class MembershipInvitationDeliveryException extends RuntimeException {}
