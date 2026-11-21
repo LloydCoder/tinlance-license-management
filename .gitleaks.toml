@@ -5,9 +5,9 @@ minVersion = "8.25.0"
 useDefault = true
 
 [[allowlists]]
-description = "These three historical test-only commits add synthetic authentication fixtures; their diffs contain no production credentials or deployment secrets."
-commits = [
-    "92f5318beb4f9a32eee543ad9aecb809ee0105e1",
-    "c0a83d7944144e9ed2b3544e77532c560fb9509e",
-    "4bd3bc03bf9b277956bbd503fdbe9c2ba295e4cd",
-]
+description = "One exact synthetic password fixture in a historical authentication test; scoped to that value, file path and generic-api-key rule only."
+condition = "AND"
+targetRules = ["generic-api-key"]
+regexTarget = "secret"
+paths = ['''(^|/)tests/Feature/AuthenticationFoundationTest\.php$''']
+regexes = ['''A-long-test-passphrase-123''']

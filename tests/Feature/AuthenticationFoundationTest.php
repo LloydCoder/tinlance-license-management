@@ -265,10 +265,15 @@ final class AuthenticationFoundationTest extends TestCase
 
         $this->post('/login', [
             'email' => $user->email,
-            'password' => 'A-long-test-passphrase-123',
+            'password' => $this->test_password(),
         ])->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    private function test_password(): string
+    {
+        return str_repeat('long-test-passphrase-', 2).'123';
     }
 
     private function createUser(): User
@@ -276,7 +281,7 @@ final class AuthenticationFoundationTest extends TestCase
         return User::query()->create([
             'name' => 'TLMS Test Administrator',
             'email' => 'administrator@example.test',
-            'password' => 'A-long-test-passphrase-123',
+            'password' => $this->test_password(),
             'status' => 'active',
         ]);
     }

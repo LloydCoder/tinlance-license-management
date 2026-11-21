@@ -51,14 +51,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Scan repository history for secrets
-        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_VERSION: 8.30.1
-          GITLEAKS_ENABLE_COMMENTS: "false"
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
-          GITLEAKS_ENABLE_SUMMARY: "true"
+      - name: Scan all reachable Git history for secrets
+        run: |
+          docker run --rm \
+            --volume "${GITHUB_WORKSPACE}:/repo" \
+            --workdir /repo \
+            ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb \
+            git --redact --exit-code=2 --log-opts="--all" .
 
   osv-scan:
     name: OSV dependency vulnerability scan
