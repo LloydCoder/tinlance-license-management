@@ -115,6 +115,7 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: root
       TLMS_EXPECTED_DB_CONNECTION: mysql
+      TLMS_EXPECTED_DB_VENDOR: mysql
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
