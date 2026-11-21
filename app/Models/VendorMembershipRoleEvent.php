@@ -15,6 +15,7 @@ final class VendorMembershipRoleEvent extends BaseModel
         'vendor_membership_id',
         'role_id',
         'actor_user_id',
+        'actor_type',
         'action',
         'reason',
         'created_at',
