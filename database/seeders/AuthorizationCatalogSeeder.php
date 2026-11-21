@@ -46,6 +46,17 @@ final class AuthorizationCatalogSeeder extends Seeder
     }
 
     /**
+     * @return list<string>
+     */
+    public function expectedVendorPermissionNames(): array
+    {
+        return array_values(array_filter(
+            array_keys($this->permissions()),
+            static fn (string $name): bool => ! str_starts_with($name, 'customer.'),
+        ));
+    }
+
+    /**
      * @return array<string, string>
      */
     private function permissions(): array
