@@ -21,8 +21,9 @@ final class EnsureSessionVersionCurrent
         }
 
         $sessionVersion = $request->session()->get('auth_session_version');
+        $storedSessionVersion = $user->getAttribute('session_version');
 
-        if (! is_int($sessionVersion) || $sessionVersion !== (int) $user->session_version) {
+        if (! is_int($sessionVersion) || ! is_numeric($storedSessionVersion) || $sessionVersion !== (int) $storedSessionVersion) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
