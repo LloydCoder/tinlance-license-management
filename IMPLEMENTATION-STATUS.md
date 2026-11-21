@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-20 (PR #6 merged; identity and authorization baseline)
+**Last reviewed:** 2026-11-21 (PR #7 merged; initial SAST and domain static-analysis gates)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -11,7 +11,7 @@
 | 0 | Repository governance and project control | Initial governance documentation merged. Main branch currently reports `protected=false`; the connected GitHub integration cannot read admin-only protection settings. | Owner must enable PR-only changes, required CI checks, prevent force-push/deletion, resolve conversations, enable secret scanning/push protection and dependency review; counsel/contributor rights review. |
 | 1 | Requirements and architecture freeze | Initial ADRs, threat model, OpenAPI, authorization matrix, state machines, traceability and 31 decision records are present. | Complete semantic API authorization, lifecycle contracts, privacy/controller-processor/legal review, decision owners and explicit closure evidence. |
 | 2 | Shared-hosting qualification | Requirements and candidate shortlist documented; no provider approved. | Real annual cPanel provider PoC: PHP 8.5, intl, Sodium, Argon2id, MySQL 8.4, outbound HTTPS, cron, webhooks, document-root isolation, permissions, resource limits and restore drill. |
-| 3 | Engineering foundation and CI/CD | Laravel 13, locked Composer dependencies, domain primitives, PHP 8.3–8.5 CI, Pint, Composer audit, OpenAPI lint and MySQL 8.4.13 integration are verified. | Larastan/PHPStan, Semgrep/CodeQL and secret/dependency scanning; reproducible production artifact, install/upgrade/rollback scripts, backup/restore automation and host PoC. |
+| 3 | Engineering foundation and CI/CD | Laravel 13, locked Composer dependencies, domain primitives, PHP 8.3–8.5 CI, Pint, Composer audit, OpenAPI lint, MySQL 8.4.13 integration, Semgrep Community Edition (`p/security-audit`, image pinned by digest) and PHPStan 2.3.7 (verified PHAR, level 6 on `src/`) are verified. | Laravel-aware analysis (Larastan), secret scanning/push protection and dependency review via repository settings; reproducible production artifact, install/upgrade/rollback scripts, backup/restore automation and host PoC. |
 | 4 | Identity, organizations and portals | ULID-backed user/vendor/customer schema, scoped permission catalogue, deny-by-default membership authorization, transactional allowlisted role assignment/revocation and immutable membership-role event models implemented. | One-time Super Admin bootstrap; login/logout, email verification, password recovery, session revocation, WebAuthn/TOTP/recovery, rate limits, step-up/MFA, maker-checker, resource-level ABAC, portals and cross-customer IDOR/concurrency tests. |
 | 5 | Product, plans and entitlements | Not started. | Product registry, immutable plan versions, entitlement definitions/snapshots, upgrades/downgrades and entitlement contract tests. |
 | 6 | Licence engine | Initial 256-bit licence-key and pepper-ring primitives plus domain normalization only. | Persisted issuance/verification, atomic activation allocation, lifecycle state machine, transfers, renewals, suspensions, revocation, trials, quotas, concurrency and recovery tests. |
@@ -37,11 +37,14 @@ No phase is declared 100% complete. Phase 0 and Phase 1 remain partially complet
 - PR #4 — Laravel 13 foundation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/4), merge commit `f7f2ed5fa71ad7bbffc406e5736f42b7db5ce093`.
 - PR #5 — Phase 1 API security/contract documentation: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/5), merge commit `2ed9198098d9ba2ae6ce030dbada46fb2f52bb29`.
 - PR #6 — identity and membership authorization: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/6), merge commit `282e526aa4e6395d95621965a732a630022f9505`.
+- PR #7 — Semgrep Community Edition and PHPStan security analysis gates: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/7), merge commit `1bf3f8bad7b8d9ffdf67a9323952482aa9e7bc55`.
 - No pull requests remain open. The next implementation increment should be a new PR with a narrowly scoped acceptance gate.
 
 ## Latest verified engineering evidence
 
-CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
+PR #7 exact-head CI run [44864721250](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721250) and security-analysis run [44864721221](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44864721221) both passed on `5fc895ffc0066a3c5d49f6ae5b733f1b08c6e180` before merge. CI passed all six jobs (PHP 8.3/8.4/8.5, MySQL 8.4 integration, documentation governance and OpenAPI validation); Semgrep and PHPStan both passed. The post-merge main CI run was cancelled by GitHub and is not counted as a passing run.
+
+The earlier identity baseline CI run [44826085608](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44826085608) passed on PR #6 exact head `85010d60d49a1df7f1c1b8916f10fb674ea424e6`:
 - PHP 8.3, 8.4 and 8.5 jobs passed.
 - 25 framework-independent domain test methods passed.
 - 47 Laravel feature tests passed (91 assertions).
