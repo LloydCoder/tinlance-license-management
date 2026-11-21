@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Services\Hosting\HostingPreflight;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
@@ -48,9 +49,10 @@ final class HostingPreflightCommandTest extends TestCase
             $this->assertNotSame('', $check['message']);
         }
     }
+
     public function test_database_vendor_check_requires_a_qualified_live_database_server(): void
     {
-        $report = app(\\App\\Services\\Hosting\\HostingPreflight::class)->report();
+        $report = app(HostingPreflight::class)->report();
 
         if (config('database.default') !== 'mysql') {
             $this->assertFalse($report['checks']['database.vendor']['passed']);
@@ -60,5 +62,4 @@ final class HostingPreflightCommandTest extends TestCase
 
         $this->assertTrue($report['checks']['database.vendor']['passed']);
     }
-
 }
