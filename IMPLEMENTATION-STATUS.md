@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-21 (PR #29 customer-organization resource policy merged; post-merge main CI and Security workflows green)
+**Last reviewed:** 2026-11-21 (PR #32 stale customer-membership and role-revocation regression coverage merged; exact-head CI and Security workflows green)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -103,3 +103,10 @@ PR #29 exact head `b809c43dba7bfbeba424cf0cc54b6964a8ffd036` passed [CI](https:/
 PR #29 was merged as `393b30c9242c69efcee9afebe4b275432b593c94`. Post-merge [main CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44879026686) passed all eight jobs and post-merge [main Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44879026634) passed all four jobs.
 
 The policy currently supports only `view`. It intentionally does not define `viewAny`, create, update, delete or mutation abilities. Resource-level ABAC across the complete product, licence, reseller, payment and administrative domain remains outstanding.
+
+
+## PR #32 stale authorization-state regression evidence
+
+PR #32 exact head `63026dfa51f2f30624a50fdd36609be382ac6ca5` passed [CI](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880034445) and [Security analysis](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880034388). CI passed all eight jobs: PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, cPanel production artifact verification, OpenAPI validation and documentation governance. Security passed all four jobs: Larastan/PHPStan, Semgrep, Gitleaks full-history scanning and OSV-Scanner. The added feature tests establish that a customer organization view decision is denied after the customer's membership is revoked or the customer's role is detached, even when the request context began with an authorized state. PR #32 was merged as `d1a729b4a50c86066f6c9044ff09797d8cff14ee`.
+
+The exact-head PR workflows are green. A separate post-merge mainline workflow run has not yet been verified in this status update; do not treat PR checks as post-merge deployment evidence.
