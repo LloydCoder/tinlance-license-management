@@ -47,8 +47,6 @@ Route::middleware(RequireSecureSetupTransport::class)->group(function (): void {
             'auth',
             'verified',
             EnsureSessionVersionCurrent::class,
-            EnsureMfaEnrolled::class,
-            'password.confirm',
             'throttle:5,1',
         ])
         ->name('membership-invitations.accept.authenticated');
