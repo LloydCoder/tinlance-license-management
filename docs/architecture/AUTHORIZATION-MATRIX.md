@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, and scoped vendor/customer membership role assignment/revocation APIs are implemented and tested. Complete resource-level ABAC, non-membership mutation policies, fresh MFA step-up, maker-checker and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, and fresh TOTP/passkey step-up for those role mutations are implemented and tested. Complete resource-level ABAC, non-membership mutation policies, maker-checker and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
@@ -78,7 +78,8 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 - PR #38 adds `VendorAccountPolicy::view`, backed by the dedicated vendor-scoped `vendor.account.read` permission. The permission is granted to the defined vendor staff roles, never customer roles; authorization reloads current user, vendor and membership state. The policy exposes no collection listing or mutation abilities.
 - PR #40 adds `VendorMembershipPolicy::view` and `CustomerMembershipPolicy::view`. Each policy reloads the target membership and parent resource, permits active/invited targets while rejecting revoked/suspended/deleted targets, and requires `admins.manage` or `customer.members.manage` in the matching vendor/customer scope. The existing authorization service reloads actor and role/permission state; cross-vendor and cross-organization access is denied.
 - PR #42 adds four vendor/customer membership role assignment and revocation endpoints. Parent IDs are bound to the target membership, the existing transactional service enforces allowlisted role changes and immutable reasoned audit events, and the endpoints require a verified current session, recent password confirmation, MFA enrollment and the matching tenant-scoped management permission. RFC 9457 errors and OpenAPI contracts are included.
-- PR #42 does not provide fresh MFA challenge/freshness enforcement. An enrolled TOTP/passkey factor plus recent password confirmation is not equivalent to a new MFA challenge; privileged step-up remains pending.
+- PR #45 adds fresh TOTP/passkey step-up for those four membership role mutation endpoints. TOTP uses Fortify's single-use cache-backed provider; passkey confirmation uses the existing WebAuthn assertion event and is bound to the authenticated session. A five-minute server-side marker is required and stale markers are cleared. Step-up successes/failures are audited without storing factor secrets.
+- Fresh step-up is not yet applied to refunds, ledger adjustments, release publication, signing-key rotation, backup restore, ownership transfer or other privileged resources; those integrations and maker-checker remain pending.
 - These resource policies define no `viewAny`, create, update or delete abilities for the membership resource itself. Product, reseller, licence, payment and other business-resource policies remain pending; this is not complete ABAC.
 
 ## 4. Super Admin authority
@@ -106,7 +107,7 @@ Destructive or high-impact actions require explicit confirmation, recent authent
 
 ## 6. Step-up and approval policy
 
-PR #42 role mutations require a current verified session, recent password confirmation and MFA enrollment. They do not yet re-challenge TOTP/passkey at mutation time; this is an interim gate, not fresh MFA step-up. Fresh MFA challenge/freshness enforcement remains required for privileged operations.
+PR #45 role mutations require a current verified session, recent password confirmation and a fresh TOTP or passkey assertion within five minutes. TOTP codes are single-use through Fortify's cache-backed provider; passkey assertions use the existing WebAuthn verifier. A session-bound marker is granted only after successful verification and step-up audit persistence. Recovery codes are not accepted. This gate currently protects membership role changes only; the following high-impact operations still require step-up integration:
 
 Require recent authentication + MFA for:
 - credential create/replace/activate/disable;
