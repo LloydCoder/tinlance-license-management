@@ -170,7 +170,7 @@ final class AuthenticationFoundationTest extends TestCase
         $revoked = app(SessionRevocationService::class)->revokeAll($user);
 
         $this->assertSame(2, $revoked);
-        $this->assertSame(1, $user->fresh()->session_version);
+        $this->assertSame(1, (int) User::query()->whereKey($user->getKey())->value('session_version'));
         $this->assertDatabaseMissing('sessions', ['user_id' => $user->getKey()]);
     }
 
