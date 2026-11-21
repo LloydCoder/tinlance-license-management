@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace App\\Http\\Controllers\\Setup;
 
-use App\\Http\\Controllers\\Controller;
 use App\\Services\\Identity\\SuperAdminBootstrapService;
 use Illuminate\\Http\\JsonResponse;
 use Illuminate\\Http\\RedirectResponse;
 use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\View;
+use Illuminate\\Support\\Facades\\Validator;
 use Illuminate\\Support\\Str;
-use Illuminate\\Validation\\Rules\\Password;
 use Illuminate\\Validation\\Rule;
-use Illuminate\\View\\View as ViewResponse;
+use Illuminate\\Validation\\Rules\\Password;
+use Illuminate\\View\\View;
 
-final class SuperAdminBootstrapController extends Controller
+final class SuperAdminBootstrapController
 {
-    public function show(SuperAdminBootstrapService $bootstrap): ViewResponse
+    public function show(SuperAdminBootstrapService $bootstrap): View
     {
         abort_unless($bootstrap->isAvailable(), 404);
 
@@ -30,18 +29,38 @@ final class SuperAdminBootstrapController extends Controller
     ): JsonResponse|RedirectResponse {
         abort_unless($bootstrap->isAvailable(), 404);
 
-        $validated = $request->validate([
+        $request->merge([
+            'name' => is_string($request->input('name')) ? trim($request->input('name')) : $request->input('name'),
+            'email' => is_string($request->input('email')) ? Str::lower(trim($request->input('email'))) : $request->input('email'),
+        ]);
+
+        $validator = Validator::make($request->all(), [
             'bootstrap_token' => ['required', 'string', 'min:43', 'max:128'],
             'name' => ['required', 'string', 'min:2', 'max:160'],
             'email' => ['required', 'string', 'email:rfc', 'max:254', Rule::unique('users', 'email')],
             'password' => ['required', 'string', Password::min(16)->mixedCase()->numbers()->symbols(), 'confirmed'],
         ]);
 
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'The submitted data is invalid.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput($request->except(['bootstrap_token', 'password', 'password_confirmation']));
+        }
+
+        $validated = $validator->validated();
+
         $bootstrap->bootstrap(
             $validated['bootstrap_token'],
             [
-                'name' => trim($validated['name']),
-                'email' => Str::lower(trim($validated['email'])),
+                'name' => $validated['name'],
+                'email' => $validated['email'],
                 'password' => $validated['password'],
             ],
         );
@@ -56,9 +75,9 @@ final class SuperAdminBootstrapController extends Controller
         return redirect()->route('setup.super-admin.complete');
     }
 
-    public function complete(SuperAdminBootstrapService $bootstrap): ViewResponse
+    public function complete(SuperAdminBootstrapService $bootstrap): View
     {
-        abort_if($bootstrap->isAvailable(), 404);
+        abort_unless($bootstrap->isBootstrapped(), 404);
 
         return view('setup.super-admin-complete');
     }
