@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Authorization;
 
-use App\Mail\MembershipInvitationMail;
 use App\Exceptions\MembershipInvitationDeliveryException;
+use App\Mail\MembershipInvitationMail;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerMembershipLifecycleEvent;
@@ -26,7 +26,6 @@ use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 final readonly class MembershipInvitationService
@@ -707,7 +706,7 @@ final readonly class MembershipInvitationService
     }
 
     /**
-     * @param array{type: 'vendor'|'customer', membership: VendorMembership|CustomerMembership, invitation: VendorMembershipInvitation|CustomerMembershipInvitation, email: string, tenant_name: string, role_name: string, token: string} $payload
+     * @param  array{type: 'vendor'|'customer', membership: VendorMembership|CustomerMembership, invitation: VendorMembershipInvitation|CustomerMembershipInvitation, email: string, tenant_name: string, role_name: string, token: string}  $payload
      */
     private function deliver(array $payload): void
     {
