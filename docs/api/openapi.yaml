@@ -339,6 +339,52 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /vendor-accounts/{vendorId}/memberships/{membershipId}/revoke:
+    post:
+      tags: [Identity]
+      operationId: revokeVendorMembership
+      summary: Revoke a vendor membership
+      description: Revokes an active or invited membership in the vendor path. Requires a verified current session, recent password confirmation, enrolled MFA, fresh five-minute TOTP/passkey step-up and vendor-scoped admins.manage permission. Actors cannot revoke their own membership. Role grants and history are retained; authorization immediately denies the revoked membership.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipLifecycleChangeRequest'
+      responses:
+        '200':
+          description: Membership revocation result; repeated requests do not create duplicate lifecycle events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipLifecycleChangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          description: Fresh MFA step-up is required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -443,6 +489,52 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /customer-organizations/{organizationId}/memberships/{membershipId}/revoke:
+    post:
+      tags: [Identity]
+      operationId: revokeCustomerMembership
+      summary: Revoke a customer organization membership
+      description: Revokes an active or invited membership in the organization path. Requires a verified current session, recent password confirmation, enrolled MFA, fresh five-minute TOTP/passkey step-up and customer.members.manage permission. Actors cannot revoke their own membership. Role grants and history are retained; authorization immediately denies the revoked membership.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipLifecycleChangeRequest'
+      responses:
+        '200':
+          description: Membership revocation result; repeated requests do not create duplicate lifecycle events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipLifecycleChangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          description: Fresh MFA step-up is required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /customer-organizations/{organizationId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -1251,6 +1343,35 @@ components:
               type: integer
             total:
               type: integer
+        request_id:
+          type: string
+    MembershipLifecycleChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Human-readable reason stored in immutable membership lifecycle evidence.
+    MembershipLifecycleChangeResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [membership_id, status, changed]
+          properties:
+            membership_id:
+              type: string
+            status:
+              type: string
+              enum: [revoked]
+            changed:
+              type: boolean
         request_id:
           type: string
     MembershipRoleChangeRequest:
