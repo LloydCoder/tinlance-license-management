@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\MembershipRoleAssignmentService;
+use App\Services\Authorization\VendorRoleApprovalService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -404,6 +405,26 @@ final class VendorRoleApprovalTest extends TestCase
         $this->assertDatabaseMissing('approval_decisions', [
             'approval_request_id' => $requestId,
         ]);
+
+        $pendingRequest = ApprovalRequest::query()->whereKey($requestId)->firstOrFail();
+
+        try {
+            app(VendorRoleApprovalService::class)->rejectVendorRoleGrant(
+                $checker,
+                $vendor,
+                $pendingRequest,
+                '   ',
+            );
+        } catch (AuthorizationException) {
+            $this->assertDatabaseHas('approval_requests', [
+                'id' => $requestId,
+                'status' => 'pending',
+            ]);
+
+            return;
+        }
+
+        $this->fail('The approval service must reject a whitespace-only decision reason.');
     }
 
     public function test_pending_request_cannot_be_used_as_direct_authority_to_assign_a_high_risk_role(): void
