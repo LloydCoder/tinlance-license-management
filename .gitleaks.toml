@@ -5,5 +5,8 @@ minVersion = "8.25.0"
 useDefault = true
 
 [[allowlists]]
-description = "This single historical test-only commit adds synthetic authentication fixtures; its diff contains no production credentials or deployment secrets."
-commits = ["92f5318beb4f9a32eee543ad9aecb809ee0105e1"]
+description = "These two historical test-only commits add synthetic authentication fixtures; their diffs contain no production credentials or deployment secrets."
+commits = [
+    "92f5318beb4f9a32eee543ad9aecb809ee0105e1",
+    "c0a83d7944144e9ed2b3544e77532c560fb9509e",
+]
