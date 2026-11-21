@@ -270,12 +270,14 @@ final class SuperAdminBootstrapTest extends TestCase
 
     public function test_user_attributed_membership_events_require_a_human_actor(): void
     {
-        $this->postJson('/setup/super-admin', [
+        $password = str_repeat('correct horse ', 4).'battery staple';
+
+        $this->postJson('/setup/super-admin',
             'bootstrap_token' => self::BOOTSTRAP_TOKEN,
             'name' => 'Initial Administrator',
             'email' => 'admin@example.test',
-            'password' => 'Correct-Horse-Battery-2026!',
-            'password_confirmation' => 'Correct-Horse-Battery-2026!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertCreated();
 
         $membership = VendorMembership::query()->firstOrFail();
