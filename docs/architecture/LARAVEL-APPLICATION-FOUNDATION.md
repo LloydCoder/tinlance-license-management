@@ -21,7 +21,7 @@
 - Sessions are file-backed by default for shared-hosting compatibility, encrypted, Secure by default, HttpOnly, SameSite=Lax, and use JSON serialization. Production must preserve SESSION_SECURE_COOKIE=true; only local HTTP development may explicitly disable it.
 - Cache uses the file driver and queue uses the synchronous driver at this bootstrap stage. Durable DB-backed outbox and cron processing are separate implementation work.
 - No default user, organization or tenant migration is introduced before identity and authorization invariants are implemented.
-- MySQL 8.4 is the canonical production database. The identity schema and feature suite are exercised against a MySQL 8.4.13 CI service with an explicit driver assertion; SQLite remains a fast secondary test driver.
+- MySQL 8.4 is the primary reference database and MariaDB 10.11 is the supported cPanel/shared-hosting compatibility database. CI runs the identity migrations and feature suite against both engines, with explicit server-vendor assertions; SQLite remains a fast secondary test driver. Other database versions are not declared compatible until separately qualified.
 
 ## Password hashing
 
