@@ -89,7 +89,7 @@ final class MembershipInvitationController
                 $validated['reason'],
                 $validated['name'] ?? null,
             );
-        } catch (RuntimeException) {
+        } catch (MembershipInvitationDeliveryException) {
             return $this->deliveryFailure();
         }
 
@@ -122,7 +122,7 @@ final class MembershipInvitationController
         abort_unless($actor instanceof User, 401);
         try {
             $invitations->resendVendor($actor, $vendor, $membership, $validated['reason']);
-        } catch (RuntimeException) {
+        } catch (MembershipInvitationDeliveryException) {
             return $this->deliveryFailure();
         }
 
@@ -155,7 +155,7 @@ final class MembershipInvitationController
         abort_unless($actor instanceof User, 401);
         try {
             $invitations->resendCustomer($actor, $organization, $membership, $validated['reason']);
-        } catch (RuntimeException) {
+        } catch (MembershipInvitationDeliveryException) {
             return $this->deliveryFailure();
         }
 
@@ -304,6 +304,6 @@ final class MembershipInvitationController
         $timeout = max(1, (int) config('auth.password_timeout', 10800));
         $timestamp = is_numeric($confirmedAt) ? (int) $confirmedAt : null;
 
-        return $timestamp !== null && $timestamp >= now()->timestamp - $timeout;
+        return $timestamp !== null && $timestamp >= (int) now()->timestamp - $timeout;
     }
 }
