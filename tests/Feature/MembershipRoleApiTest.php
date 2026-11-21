@@ -12,7 +12,6 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Passkeys\Events\PasskeyVerified;
 use Tests\TestCase;
 
 final class MembershipRoleApiTest extends TestCase
