@@ -4,12 +4,6 @@ minVersion = "8.25.0"
 [extend]
 useDefault = true
 
-[[rules]]
-id = "generic-api-key"
-
-    [[rules.allowlists]]
-    description = "Historical non-secret authentication-test fixture; scoped to its exact test path and exact fixture literal."
-    condition = "AND"
-    regexTarget = "match"
-    paths = ['''(^|/)tests/Feature/AuthenticationFoundationTest\.php$''']
-    regexes = ['''Correct-Horse-Battery-2026!''']
+[[allowlists]]
+description = "This single historical test-only commit adds synthetic authentication fixtures; its diff contains no production credentials or deployment secrets."
+commits = ["92f5318beb4f9a32eee543ad9aecb809ee0105e1"]
