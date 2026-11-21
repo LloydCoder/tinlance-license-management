@@ -12,6 +12,7 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
+- Pinned Gitleaks 8.30.1 scanning all reachable Git history and removed high-entropy synthetic password literals from authentication tests (PR #27).
 - Semgrep, Larastan/PHPStan, Gitleaks and OSV-Scanner security gates; weekly Composer and GitHub Actions Dependabot update configuration.
 
 ### Security
