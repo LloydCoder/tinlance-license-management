@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\MfaStepUpEvent;
 use App\Models\User;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use LogicException;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 final class MfaStepUpTest extends TestCase
