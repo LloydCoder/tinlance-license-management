@@ -19,6 +19,7 @@ required_files=(
   "docs/architecture/STATE-MACHINES.md"
   "docs/security/PRIVACY-AND-DATA-GOVERNANCE.md"
   "docs/operations/SHARED-HOSTING-OPERATIONS.md"
+  "docs/operations/CPANEL-PROVIDER-QUALIFICATION.md"
   "docs/security/SECURITY-ANALYSIS.md"
   "docs/security/THREAT-MODEL.md"
   "docs/adr/0004-initial-deployment-and-tenancy-model.md"
