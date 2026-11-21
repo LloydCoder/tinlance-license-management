@@ -130,4 +130,4 @@ PR #33 — documentation reconciliation and PR #32 evidence: [merged](https://gi
 
 A tag-triggered release workflow is being added in PR #36. It builds the deterministic production-only cPanel ZIP, generates and validates an SPDX 2.3 SBOM from the packaged artifact, and on a pushed version tag creates GitHub/Sigstore SLSA provenance and SBOM attestations. The workflow verifies both attestations before publishing the ZIP, checksum and SBOM as release assets. Pull requests exercise the build/SBOM path without requesting OIDC signing authority. See [RELEASE-ATTESTATION.md](docs/operations/RELEASE-ATTESTATION.md).
 
-This is not release certification: a real protected version tag, attestation publication, independent GitHub CLI verification and clean external consumer verification remain mandatory. The current CI artifact remains unsigned.
+This is not release certification: a real protected version tag, attestation publication, independent GitHub CLI verification and clean external consumer verification remain mandatory. The current CI artifact remains unsigned; the signed release path has not yet been exercised by a real tag.
