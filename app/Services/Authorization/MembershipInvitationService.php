@@ -452,37 +452,41 @@ final readonly class MembershipInvitationService
 
     public function acceptNewAccount(string $tokenHash, string $name, string $password): void
     {
-        $context = $this->lockInvitationContext($tokenHash);
-        $user = $context['user'];
+        DB::transaction(function () use ($tokenHash, $name, $password): void {
+            $context = $this->lockInvitationContext($tokenHash);
+            $user = $context['user'];
 
-        if ($user->email_verified_at !== null) {
-            throw new AuthorizationException('This account must sign in to accept its invitation.');
-        }
+            if ($user->email_verified_at !== null) {
+                throw new AuthorizationException('This account must sign in to accept its invitation.');
+            }
 
-        $user->forceFill([
-            'name' => trim($name),
-            'password' => $password,
-        ])->save();
-        $user->markEmailAsVerified();
-        $this->sessionRevocation->revokeAll($user);
+            $user->forceFill([
+                'name' => trim($name),
+                'password' => $password,
+            ])->save();
+            $user->markEmailAsVerified();
+            $this->sessionRevocation->revokeAll($user);
 
-        $this->acceptLockedInvitation($context, $user);
+            $this->acceptLockedInvitation($context, $user);
+        }, 3);
     }
 
     public function acceptAuthenticated(string $tokenHash, User $authenticatedUser): void
     {
-        $context = $this->lockInvitationContext($tokenHash);
-        $user = $context['user'];
+        DB::transaction(function () use ($tokenHash, $authenticatedUser): void {
+            $context = $this->lockInvitationContext($tokenHash);
+            $user = $context['user'];
 
-        if (
-            $user->email_verified_at === null
-            || $user->getKey() !== $authenticatedUser->getKey()
-            || ! hash_equals($this->normalizeEmail($context['invitation']->invited_email), $this->normalizeEmail($user->email))
-        ) {
-            throw new AuthorizationException('This invitation belongs to a different account.');
-        }
+            if (
+                $user->email_verified_at === null
+                || $user->getKey() !== $authenticatedUser->getKey()
+                || ! hash_equals($this->normalizeEmail($context['invitation']->invited_email), $this->normalizeEmail($user->email))
+            ) {
+                throw new AuthorizationException('This invitation belongs to a different account.');
+            }
 
-        $this->acceptLockedInvitation($context, $user);
+            $this->acceptLockedInvitation($context, $user);
+        }, 3);
     }
 
     /**
