@@ -1,8 +1,8 @@
 # Phase 0–3 forensic engineering acceptance audit
 
-**Audit date:** 2026-11-21  
-**Audited baseline:** `main` at `4e7d45c129594f60df50b1aeb108a2cfe633f786`  
-**Repository:** [LloydCoder/tinlance-license-management](https://github.com/LloydCoder/tinlance-license-management)  
+**Audit date:** 2026-11-21
+**Audited baseline:** `main` at `4e7d45c129594f60df50b1aeb108a2cfe633f786`
+**Repository:** [LloydCoder/tinlance-license-management](https://github.com/LloydCoder/tinlance-license-management)
 **Result:** The current mainline CI and Security workflows are green. Phases 0–3 are **not accepted as complete**. Each has implementation evidence and outstanding acceptance gates below.
 
 This audit distinguishes repository evidence from owner, legal, provider and production-environment evidence. A document, CI simulation, public plan page or passing workflow is not a substitute for the real-world acceptance test it describes.
