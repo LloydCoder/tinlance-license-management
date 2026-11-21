@@ -20,15 +20,27 @@ final readonly class CustomerMembershipPolicy
             ->whereIn('status', ['active', 'invited'])
             ->first();
 
-        if ($currentMembership === null) {
+        if (
+            $currentMembership === null
+            || ! User::query()->whereKey($user->getKey())->where('status', 'active')->exists()
+        ) {
             return false;
         }
 
         $organization = CustomerOrganization::query()
             ->whereKey($currentMembership->customer_organization_id)
+            ->where('status', 'active')
+            ->whereHas('vendorAccount', static fn ($query) => $query->where('status', 'active'))
             ->first();
 
-        return $organization instanceof CustomerOrganization
-            && $this->authorization->customerCan($user, $organization, 'customer.members.manage');
+        if (! $organization instanceof CustomerOrganization) {
+            return false;
+        }
+
+        if ($currentMembership->user_id === $user->getKey()) {
+            return true;
+        }
+
+        return $this->authorization->customerCan($user, $organization, 'customer.members.manage');
     }
 }
