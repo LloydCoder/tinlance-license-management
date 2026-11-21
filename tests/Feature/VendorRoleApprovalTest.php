@@ -6,12 +6,12 @@ namespace Tests\Feature;
 
 use App\Models\ApprovalDecision;
 use App\Models\ApprovalRequest;
-use App\Services\Authorization\MembershipRoleAssignmentService;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\MembershipRoleAssignmentService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
