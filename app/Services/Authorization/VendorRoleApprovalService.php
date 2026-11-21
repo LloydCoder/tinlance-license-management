@@ -348,7 +348,7 @@ final readonly class VendorRoleApprovalService
 
             if (
                 $request->requested_by_user_id !== $viewer->getKey()
-                && ! (\$this->authorization->vendorCan($viewer, $vendor, 'approvals.review') && \$this->authorization->vendorCan($viewer, $vendor, 'admins.manage'))
+                && ! ($this->authorization->vendorCan($viewer, $vendor, 'approvals.review') && $this->authorization->vendorCan($viewer, $vendor, 'admins.manage'))
             ) {
                 throw new AuthorizationException('The approval request is not visible to this actor.');
             }
