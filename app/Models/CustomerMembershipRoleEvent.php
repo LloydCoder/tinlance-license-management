@@ -36,16 +36,19 @@ final class CustomerMembershipRoleEvent extends BaseModel
         });
     }
 
+    /** @return BelongsTo<CustomerMembership, $this> */
     public function membership(): BelongsTo
     {
         return $this->belongsTo(CustomerMembership::class, 'customer_membership_id');
     }
 
+    /** @return BelongsTo<Role, $this> */
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_user_id');
