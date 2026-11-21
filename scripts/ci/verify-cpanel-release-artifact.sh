@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 builder="$repo_root/scripts/release/build-cpanel-artifact.sh"
 
 if [[ ! -f "$builder" ]]; then
-    printf 'Required cPanel artifact builder is missing or not executable: %s\n' "$builder" >&2
+    printf 'Required cPanel artifact builder is missing: %s\n' "$builder" >&2
     exit 1
 fi
 
