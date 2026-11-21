@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ final class EnsureSessionVersionCurrent
     {
         $user = $request->user();
 
-        if ($user === null) {
+        if (! $user instanceof User) {
             return $next($request);
         }
 
