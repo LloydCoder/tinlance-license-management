@@ -77,7 +77,24 @@ A published artifact is immutable. Rollback is a new signed metadata version tha
 
 Initial states: trialing, active, past_due, paused, cancelled, expired. Define grace, dunning, entitlement suspension, proration, cancellation timing and renewal rules per versioned plan policy. Subscription state and licence state remain separate aggregates; one subscription can grant multiple licences, and a licence can have perpetual terms independent of subscription.
 
-## 7. Required transition test matrix
+## 7. Membership lifecycle
+
+Membership status is tenant-scoped and independent from the global user account status.
+
+| From | To | Initiator | Preconditions / controls |
+|---|---|---|---|
+| invited | active | Invited user (future acceptance endpoint) | Authenticated account matches the membership user, verified email, active user and active parent tenant; invitation validity and role assurance checks must pass |
+| invited | revoked | Vendor Super Admin / Customer Organization Owner | Active actor and tenant, matching tenant-scoped management permission, fresh password confirmation and MFA step-up, reason, no self-revocation; immutable lifecycle event |
+| active | revoked | Vendor Super Admin / Customer Organization Owner | Same controls as invitation cancellation; role pivots and historical events are retained; tenant authorization immediately denies the revoked membership |
+| revoked | — | None | Terminal in the initial model; re-entry requires a separately designed invitation/reinstatement flow and new evidence |
+
+The first lifecycle implementation provides the two tenant-admin revocation operations. Invitation creation, delivery, acceptance, expiry, resend and reinstatement remain unimplemented. Current membership rows are already bound to a concrete user ID; an email-only invitation must not be treated as an authenticated membership until a verified account-bound acceptance flow exists.
+
+Revocation is performed only by `MembershipLifecycleService` inside a transaction. The service locks the actor, parent tenant and target membership, revalidates current tenant-scoped authority, rejects self-revocation, changes only `invited|active -> revoked`, and appends an immutable lifecycle event in the same transaction. Repeated revocation is idempotent and creates no second event. Role pivots are retained as historical evidence, but the revoked membership cannot authorize any tenant operation. The actor must retain the relevant administrator permission, which prevents removing the last effective administrator through this operation.
+
+A membership revocation does not globally invalidate the user's sessions: the user may hold other vendor or customer memberships. Every tenant-scoped operation must therefore re-evaluate the relevant membership and permission from persisted state.
+
+## 8. Required transition test matrix
 
 - Every allowed transition succeeds with required actor and preconditions.
 - Every disallowed transition fails without partial writes.
