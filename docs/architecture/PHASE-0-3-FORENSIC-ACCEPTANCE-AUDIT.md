@@ -1,4 +1,4 @@
-# Phase 0–3 forensic engineering acceptance audit
+# Phase 0–3 forensic engineering acceptance audi
 
 **Audit date:** 2026-11-21
 **Audited baseline:** `main` at `4e7d45c129594f60df50b1aeb108a2cfe633f786`
@@ -156,3 +156,14 @@ This audit distinguishes repository evidence from owner, legal, provider and pro
 The current codebase has a substantial and green engineering foundation. It is not accurate to declare Phases 0, 1, 2 or 3 complete. Phase 0 has owner/legal configuration blockers; Phase 1 has architecture approval and semantic/API/privacy closure gaps; Phase 2 lacks a real provider account proof-of-concept; Phase 3 lacks a signed/provenanced release chain, automated install/upgrade/rollback and tested backup/restore.
 
 No production readiness, legal compliance, cPanel qualification, SLA, cryptographic trust ceremony or 100% completion is claimed by this audit. Downstream implementation must continue only against the accepted requirements and preserve the shared-hosting constraints.
+
+
+## 9. Repository-owner configuration checklis
+
+These settings cannot be completed by a documentation or CI change. The repository owner must apply them in GitHub and retain evidence:
+
+1. Open **Repository Settings → Rules → Rulesets → New branch ruleset**. Target `main`, set enforcement to **Active**, require a pull request, require the current successful CI and Security checks, require the branch to be up to date, block force pushes and deletion, and resolve conversations before merging. Select the exact check-run names displayed by GitHub from the latest successful PR workflows; do not guess names. Keep bypass narrowly restricted and auditable.
+2. Open **Repository Settings → Advanced Security**. Verify the dependency graph, Dependabot alerts and security updates, secret scanning and push protection where offered for this public repository. Save evidence of each effective setting.
+3. Complete counsel review of the commercial/reserved-rights licence, contribution rights, customer agreement, white-label/redistribution schedule, privacy notice, DPA and target-market legal obligations.
+4. Complete trademark clearance and record the result.
+5. Do not close Phase 0 until the settings and legal evidence are attached to the project record and the ruleset has been tested by opening a normal PR and observing that merge is blocked until required checks pass.
