@@ -60,12 +60,41 @@ paths:
                 $ref: '#/components/schemas/CurrentActor'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /security/step-up/totp:
+    post:
+      tags: [Identity]
+      operationId: createTotpStepUp
+      summary: Verify a fresh TOTP factor for privileged session assurance
+      description: Requires an authenticated, email-verified current browser session, recent password confirmation and an enrolled TOTP factor. Successful codes are verified by Fortify's provider, which applies its single-use code cache. Passkey users complete the existing /passkeys/confirm WebAuthn ceremony; successful authenticated passkey verification also establishes the step-up session marker.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaTotpStepUpRequest'
+      responses:
+        '200':
+          description: Fresh TOTP assurance recorded for the configured five-minute window
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaStepUpResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
       operationId: assignVendorMembershipRole
       summary: Assign an allowlisted role to a vendor member
-      description: Requires a verified browser session, current session version, recent password confirmation, enrolled MFA and the vendor-scoped admins.manage permission. The target membership must belong to the vendor in the path.
+      description: Requires a verified browser session, current session version, recent password confirmation, a fresh MFA step-up within five minutes and the vendor-scoped admins.manage permission. The target membership must belong to the vendor in the path.
       security:
         - AdminSession: []
       parameters:
@@ -118,7 +147,7 @@ paths:
       tags: [Identity]
       operationId: revokeVendorMembershipRole
       summary: Revoke an allowlisted role from a vendor member
-      description: Requires the same verified, current, password-confirmed and MFA-enrolled vendor administrator session as assignment. The target membership must belong to the vendor in the path.
+      description: Requires the same verified, current, password-confirmed vendor administrator session and fresh MFA step-up as assignment. The target membership must belong to the vendor in the path.
       security:
         - AdminSession: []
       parameters:
@@ -165,7 +194,7 @@ paths:
       tags: [Identity]
       operationId: assignCustomerMembershipRole
       summary: Assign an allowlisted role to a customer organization member
-      description: Requires a verified browser session, current session version, recent password confirmation, enrolled MFA and the customer.members.manage permission. The target membership must belong to the organization in the path.
+      description: Requires a verified browser session, current session version, recent password confirmation, a fresh MFA step-up within five minutes and the customer.members.manage permission. The target membership must belong to the organization in the path.
       security:
         - AdminSession: []
       parameters:
@@ -218,7 +247,7 @@ paths:
       tags: [Identity]
       operationId: revokeCustomerMembershipRole
       summary: Revoke an allowlisted role from a customer organization member
-      description: Requires the same verified, current, password-confirmed and MFA-enrolled customer owner session as assignment. The target membership must belong to the organization in the path.
+      description: Requires the same verified, current, password-confirmed customer owner session and fresh MFA step-up as assignment. The target membership must belong to the organization in the path.
       security:
         - AdminSession: []
       parameters:
@@ -842,6 +871,147 @@ components:
             $ref: '#/components/schemas/AuditEvent'
         meta:
           $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+    MfaTotpStepUpRequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: '^\\d{6}      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Human-readable business justification stored in immutable role-event evidence.
+    MembershipRoleChangeResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [membership_id, role_id, action, changed]
+          properties:
+            membership_id:
+              type: string
+            role_id:
+              type: string
+            action:
+              type: string
+              enum: [assigned, revoked]
+            changed:
+              type: boolean
+        request_id:
+          type: string
+    Problem:
+      type: object
+      required: [type, title, status, code, request_id]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        request_id:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Authentication required or invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated actor is not authorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found in caller scope
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: State or idempotency conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    RateLimited:
+      description: Request rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: Service is not ready
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+          description: Current six-digit TOTP code. Recovery codes are not accepted for step-up.
+    MfaStepUpResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [method, stepped_up_at, expires_at, expires_in]
+          properties:
+            method:
+              type: string
+              enum: [totp]
+            stepped_up_at:
+              type: integer
+              format: int64
+            expires_at:
+              type: integer
+              format: int64
+            expires_in:
+              type: integer
+              minimum: 1
         request_id:
           type: string
     MembershipRoleChangeRequest:
