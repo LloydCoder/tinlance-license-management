@@ -66,13 +66,27 @@ final readonly class MembershipRoleAssignmentService
         string $reason,
         ApprovalRequest $approvalRequest,
     ): bool {
+        $persistedApproval = ApprovalRequest::query()
+            ->whereKey($approvalRequest->getKey())
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('target_vendor_membership_id', $membership->getKey())
+            ->where('role_id', $role->getKey())
+            ->where('action', 'vendor_role.assign')
+            ->where('status', 'approved')
+            ->where('requested_by_user_id', '<>', $checker->getKey())
+            ->where('decided_by_user_id', $checker->getKey())
+            ->lockForUpdate()
+            ->first();
+
+        $hasRecordedDecision = $persistedApproval instanceof ApprovalRequest
+            && ApprovalDecision::query()
+                ->where('approval_request_id', $persistedApproval->getKey())
+                ->where('actor_user_id', $checker->getKey())
+                ->where('decision', 'approved')
+                ->exists();
+
         if (
-            $approvalRequest->status !== 'pending'
-            || $approvalRequest->action !== 'vendor_role.assign'
-            || $approvalRequest->vendor_account_id !== $vendor->getKey()
-            || $approvalRequest->target_vendor_membership_id !== $membership->getKey()
-            || $approvalRequest->role_id !== $role->getKey()
-            || $approvalRequest->requested_by_user_id === $checker->getKey()
+            ! $hasRecordedDecision
             || ! in_array($role->slug, self::APPROVAL_REQUIRED_VENDOR_ROLES, true)
             || ! $this->authorization->vendorCan($checker, $vendor, 'approvals.review')
         ) {
