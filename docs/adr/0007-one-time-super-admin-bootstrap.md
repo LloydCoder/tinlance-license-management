@@ -18,7 +18,7 @@ Use a one-time browser setup route protected by a deployment-provided random boo
 4. Compare the supplied token using `hash_equals`; never persist it or return it.
 5. In one database transaction, lock the singleton installation row, refuse an already completed bootstrap, create the primary vendor account if absent, initialize the authorization catalogue only when empty, create the initial user and vendor membership, attach the system Super Admin role, and persist the consumed bootstrap state.
 6. Do not automatically create an authenticated session after bootstrap. Authentication, mandatory MFA enrollment, recovery and step-up controls must be implemented before privileged dashboard access is exposed.
-7. The operator must remove `TLMS_BOOTSTRAP_TOKEN` from the environment after successful setup. The persisted consumed state keeps the route closed even if the token is accidentally left configured.
+7. The operator must remove `TLMS_BOOTSTRAP_TOKEN` from the environment and clear the cached Laravel configuration (`php artisan config:clear`, or remove `bootstrap/cache/config.php` through cPanel File Manager) after successful setup. The persisted consumed state keeps the route closed even if the token is accidentally left configured.
 
 ## Security properties and limitations
 
