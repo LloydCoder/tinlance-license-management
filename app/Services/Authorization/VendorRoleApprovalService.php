@@ -259,6 +259,10 @@ final readonly class VendorRoleApprovalService
     ): ApprovalRequest {
         $decisionReason = trim($decisionReason);
 
+        if ($decisionReason === '' || mb_strlen($decisionReason) > 500) {
+            throw new AuthorizationException('A valid approval decision reason is required.');
+        }
+
         return DB::transaction(function () use ($checker, $vendor, $approvalRequest, $decisionReason): ApprovalRequest {
             $request = $this->lockedRequest($vendor, $approvalRequest);
 
