@@ -62,6 +62,8 @@ git -C "$repo_root" archive --format=tar --prefix=tlms/ HEAD | tar -xf - -C "$st
     composer install         --no-dev         --no-interaction         --prefer-dist         --no-progress         --optimize-autoloader         --classmap-authoritative
 )
 
+rm -f "$app_root/auth.json"
+
 rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     "$app_root/tests"     "$app_root/node_modules"     "$app_root/phpstan.neon"     "$app_root/phpunit.xml"     "$app_root/composer.json"     "$app_root/composer.lock"
 
 find "$app_root" -type f -name '.env*' ! -name '.env.example' -delete
