@@ -107,17 +107,19 @@ Destructive or high-impact actions require explicit confirmation, recent authent
 
 ## 6. Step-up and approval policy
 
-PR #45 role mutations require a current verified session, recent password confirmation and a fresh TOTP or passkey assertion within five minutes. TOTP codes are single-use through Fortify's cache-backed provider; passkey assertions use the existing WebAuthn verifier. A session-bound marker is granted only after successful verification and step-up audit persistence. Recovery codes are not accepted. This gate currently protects membership role changes only; the following high-impact operations still require step-up integration:
+PR #45 membership role mutations require a current verified session, recent password confirmation and a fresh TOTP or passkey assertion within five minutes. TOTP codes are single-use through Fortify's cache-backed provider; passkey assertions use the existing WebAuthn verifier. A session-bound marker is granted only after successful verification and step-up audit persistence. Recovery codes are not accepted.
 
-Require recent authentication + MFA for:
+PR #47 implements a narrowly scoped maker-checker workflow for high-risk vendor role grants only: `finance_admin`, `vendor_product_manager` and `reseller_manager`. Both request and decision operations require fresh step-up. The maker and checker must be distinct active users in the same vendor scope; the checker requires `admins.manage` and `approvals.review`; the role beneficiary cannot approve or reject their own grant. Requests are bound to a vendor, target membership, role and action; use an idempotency key and payload hash; and expire. An immutable approval-decision record must match the persisted approved request and checker before the role-assignment service can grant the role. Approval state, decision evidence and role mutation are atomic. Direct assignment of these high-risk roles is denied; revocation remains immediate.
+
+This is not a generalized approval engine. Fresh step-up and typed approval policies remain to be integrated for:
 - credential create/replace/activate/disable;
-- admin role and Super Admin account changes;
+- admin role and Super Admin account changes outside the implemented vendor-role workflow;
 - refund, ledger adjustment and high-value manual issuance;
 - mass licence revoke/suspend/transfer;
 - production release publication and signing-key rotation;
 - backup restore, encryption-key rotation and maintenance actions.
 
-Maker-checker must prohibit the same human from initiating and approving a transaction where dual approval is required. The policy must define amount/risk thresholds in configuration and audit the policy version used.
+Any future dual-control workflow must prohibit both maker/checker identity conflicts and beneficiary self-review, define amount/risk thresholds in configuration, bind the exact typed action payload, and audit the policy version used.
 
 ## 7. Authorization test requirements
 
