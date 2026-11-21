@@ -120,18 +120,18 @@ The exact-head PR workflows are green. A separate post-merge mainline workflow r
 
 The full evidence and owner-gated acceptance matrix is maintained in [PHASE-0-3-FORENSIC-ACCEPTANCE-AUDIT.md](docs/architecture/PHASE-0-3-FORENSIC-ACCEPTANCE-AUDIT.md).
 
-- **Main baseline:** `4e7d45c129594f60df50b1aeb108a2cfe633f786`.
-- **Post-merge main CI:** [44880367359](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880367359) — all 8 jobs passed.
-- **Post-merge main Security:** [44880367355](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44880367355) — all 4 jobs passed.
-- **Open PRs/issues at audit time:** none.
+- **Original audit baseline:** `4e7d45c129594f60df50b1aeb108a2cfe633f786`; subsequent accepted mainline baseline is `9c42f731c4a14445fc60e384ea6cf66b83aa3590`.
+- **Latest post-merge main CI:** [44883415742](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44883415742) — all 8 jobs passed.
+- **Latest post-merge main Security:** [44883415861](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44883415861) — all 4 jobs passed.
+- **PR #38:** merged; its implementation adds vendor-account read isolation. PR inventory should be rechecked after documentation reconciliation.
 
-Phase 0 remains partial: the repository rulesets endpoint returned no rulesets; branch-protection details remain unreadable to the connected integration (403); native secret scanning/push protection/Dependabot alert settings and legal/trademark review require owner/counsel evidence. Phase 1 remains a documented architecture baseline but still needs operation-by-operation API authorization mapping, executable semantic contract tests and legal/privacy decisions. Phase 2 has preflight and operational documentation but no real annual cPanel provider account PoC. Phase 3 has green CI and reproducible production-only packaging but still lacks signed artifacts/SBOM/provenance, install/upgrade/rollback automation and tested backup/restore. None of Phases 0–3 is accepted as complete.
+Phase 0 remains partial: the repository rulesets endpoint returned no rulesets; branch-protection details remain unreadable to the connected integration (403); native secret scanning/push protection/Dependabot alert settings and legal/trademark review require owner/counsel evidence. Phase 1 remains a documented architecture baseline but still needs operation-by-operation API authorization mapping, executable semantic contract tests and legal/privacy decisions. Phase 2 has preflight and operational documentation but no real annual cPanel provider account PoC. Phase 3 has green CI, reproducible production-only packaging and a merged tag-triggered SBOM/provenance attestation workflow; a real protected-tag release, independent consumer verification, install/upgrade/rollback automation and tested backup/restore remain outstanding. None of Phases 0–3 is accepted as complete.
 
 PR #33 — documentation reconciliation and PR #32 evidence: [merged](https://github.com/LloydCoder/tinlance-license-management/pull/33), merge commit `4e7d45c129594f60df50b1aeb108a2cfe633f786`. PR #34 — stale authentication CI branch: [closed without merge](https://github.com/LloydCoder/tinlance-license-management/pull/34) because the current mainline already contains the corrected authentication implementation; its older divergent branch failed tests, Gitleaks and Larastan and would have reintroduced superseded code.
 
 
-## Phase 3 signed release pipeline incremen
+## Phase 3 signed release pipeline (PR #36 merged)
 
-A tag-triggered release workflow is being added in PR #36. It builds the deterministic production-only cPanel ZIP, generates and validates an SPDX 2.3 SBOM from the packaged artifact, and on a pushed version tag creates GitHub/Sigstore SLSA provenance and SBOM attestations. The workflow verifies both attestations before publishing the ZIP, checksum and SBOM as release assets. Pull requests exercise the build/SBOM path without requesting OIDC signing authority. See [RELEASE-ATTESTATION.md](docs/operations/RELEASE-ATTESTATION.md).
+The merged PR #36 adds a tag-triggered release workflow. It builds the deterministic production-only cPanel ZIP, generates and validates an SPDX 2.3 SBOM from the packaged artifact, and on a pushed version tag creates GitHub/Sigstore SLSA provenance and SBOM attestations. The workflow verifies both attestations before publishing the ZIP, checksum and SBOM as release assets. Pull requests exercise the build/SBOM path without requesting OIDC signing authority. See [RELEASE-ATTESTATION.md](docs/operations/RELEASE-ATTESTATION.md).
 
-This is not release certification: a real protected version tag, attestation publication, independent GitHub CLI verification and clean external consumer verification remain mandatory. The current CI artifact remains unsigned; the signed release path has not yet been exercised by a real tag.
+This is not release certification: a real protected version tag, attestation publication, independent GitHub CLI verification and clean external consumer verification remain mandatory. The pull-request CI artifact remains unsigned; the tag-triggered signed release path has not yet been exercised by a real protected version tag.
