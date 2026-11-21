@@ -148,6 +148,49 @@ final class CustomerOrganizationPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
     }
 
+    public function test_revoked_customer_membership_is_denied_even_when_the_caller_holds_a_stale_model(): void
+    {
+        $user = $this->createUser();
+        $vendor = $this->createVendor();
+        $organization = $this->createOrganization($vendor, 'revoked-membership');
+        $membership = CustomerMembership::create([
+            'customer_organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail(),
+        );
+
+        $this->assertTrue(Gate::forUser($user)->allows('view', $organization));
+
+        CustomerMembership::query()->whereKey($membership->getKey())->update(['status' => 'revoked']);
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
+    public function test_removed_customer_role_is_denied_even_when_the_caller_holds_a_stale_model(): void
+    {
+        $user = $this->createUser();
+        $vendor = $this->createVendor();
+        $organization = $this->createOrganization($vendor, 'removed-role');
+        $membership = CustomerMembership::create([
+            'customer_organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $role = Role::query()->where('scope', 'customer')->where('slug', 'customer_member')->firstOrFail();
+        $membership->roles()->attach($role);
+
+        $this->assertTrue(Gate::forUser($user)->allows('view', $organization));
+
+        $membership->roles()->detach($role);
+
+        $this->assertFalse(Gate::forUser($user)->allows('view', $organization));
+    }
+
     private function createUser(string $status = 'active'): User
     {
         return User::create([
