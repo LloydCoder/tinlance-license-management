@@ -6,20 +6,24 @@ namespace App\Policies;
 
 use App\Models\CustomerOrganization;
 use App\Models\User;
+use App\Models\VendorAccount;
 use App\Services\Authorization\MembershipAuthorization;
 
 final class CustomerOrganizationPolicy
 {
-    public function view(
-        User $user,
-        CustomerOrganization $organization,
-        MembershipAuthorization $authorization,
-    ): bool {
-        return $authorization->customerCan($user, $organization, 'customer.licences.read')
-            || $authorization->vendorCan(
-                $user,
-                $organization->vendorAccount,
-                'customers.support.read',
-            );
+    public function __construct(
+        private readonly MembershipAuthorization $authorization,
+    ) {}
+
+    public function view(User $user, CustomerOrganization $organization): bool
+    {
+        if ($this->authorization->customerCan($user, $organization, 'customer.licences.read')) {
+            return true;
+        }
+
+        $vendor = $organization->vendorAccount;
+
+        return $vendor instanceof VendorAccount
+            && $this->authorization->vendorCan($user, $vendor, 'customers.support.read');
     }
 }
