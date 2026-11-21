@@ -29,9 +29,9 @@ On the PR #15 candidate head:
 - PHP 8.3, 8.4 and 8.5 CI matrix passed.
 - Larastan/PHPStan level 8, Semgrep, Gitleaks, OSV-Scanner, documentation governance and OpenAPI validation passed.
 
-Exact-head CI: https://github.com/LloydCoder/tinlance-license-management/actions/runs/44868612133
+Final exact-head CI (`6cac99608ad08768f5e51f0bf62984fade7827c3`): https://github.com/LloydCoder/tinlance-license-management/actions/runs/44868884337
 
-Exact-head Security analysis: https://github.com/LloydCoder/tinlance-license-management/actions/runs/44868612148
+Final exact-head Security analysis: https://github.com/LloydCoder/tinlance-license-management/actions/runs/44868884325
 
 The pinned MariaDB 10.11 image resolves to 10.11.19 in the test run. The image digest is committed in the CI workflow.
 
@@ -40,7 +40,7 @@ The pinned MariaDB 10.11 image resolves to 10.11.19 in the test run. The image d
 - cPanel providers using the MariaDB 10.11 default can proceed to a live proof-of-concept instead of being excluded by a MySQL-only rule.
 - Application migrations and SQL must remain compatible with both tested engines; future vendor-specific behavior requires a dedicated repository/query boundary and tests.
 - Backups, restores, transaction isolation, locking, collation and performance must still be tested on the selected provider.
-- MariaDB 11.4/11.8 and MySQL 8.0 require separate CI jobs before being advertised as supported.
+- MariaDB 10.11 community maintenance is scheduled to end on 2028-02-16. Before that date, evaluate MariaDB 11.4 as the forward cPanel compatibility target (community maintenance currently scheduled through 2029-05-29); add a dedicated CI matrix and provider qualification before any upgrade or support claim. MariaDB 11.8 and MySQL 8.0 likewise require separate CI jobs before being advertised as supported.
 - The shared-hosting provider remains unselected. No annual plan purchase is authorized by this ADR.
 
 ## 5. Alternatives considered
