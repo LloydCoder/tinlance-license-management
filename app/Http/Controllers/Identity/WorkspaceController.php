@@ -66,6 +66,7 @@ final class WorkspaceController
                 'invitations' => $invitations->vendorInvitations($user, $vendor),
                 'revokedMemberships' => $invitations->vendorRevokedMemberships($user, $vendor),
                 'roles' => $roles->assignableVendorRoles(),
+                'revocableRoles' => $roles->revocableVendorRoles(),
             ];
         }
 
@@ -82,6 +83,7 @@ final class WorkspaceController
                 'invitations' => $invitations->customerInvitations($user, $organization),
                 'revokedMemberships' => $invitations->customerRevokedMemberships($user, $organization),
                 'roles' => $roles->assignableCustomerRoles(),
+                'revocableRoles' => $roles->revocableCustomerRoles(),
             ];
         }
 
