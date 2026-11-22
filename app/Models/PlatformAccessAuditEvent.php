@@ -103,9 +103,9 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'customer_organization.profile_updated',
                 ], true)
                     || ! is_string($event->details_ref_id)
-                    || preg_match('/\\A[0-9A-HJKMNP-TV-Z]{26}\\z/D', $event->details_ref_id) !== 1
+                    || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', $event->details_ref_id) !== 1
                     || ! is_string($event->details_hash)
-                    || preg_match('/\\A[a-f0-9]{64}\\z/D', $event->details_hash) !== 1,
+                    || preg_match('/\A[a-f0-9]{64}\z/D', $event->details_hash) !== 1,
                 default => true,
             };
 
