@@ -257,6 +257,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('support_agent');
         $response->assertSee('security_auditor');
         $response->assertSee('vendor_developer');
+        $response->assertDontSee('vendor_admin');
         $response->assertDontSee('finance_admin');
         $response->assertDontSee('vendor_product_manager');
         $response->assertDontSee('reseller_manager');
