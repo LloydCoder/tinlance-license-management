@@ -166,7 +166,7 @@ final readonly class MembershipRoleAssignmentService
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
-        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs, $bootstrapVendorAdmin): bool {
+        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs, $approvedGrant, $bootstrapVendorAdmin): bool {
             $activeActor = User::query()
                 ->whereKey($actor->getKey())
                 ->where('status', 'active')
