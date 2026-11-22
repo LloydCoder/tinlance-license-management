@@ -252,6 +252,32 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         ]);
     }
 
+    public function test_challenge_rejects_an_account_deactivated_after_password_authentication_without_consuming_its_code(): void
+    {
+        $password = str()->random(48);
+        $user = $this->createMfaUser($password);
+        $codes = app(MfaRecoveryCodeVault::class)->replaceAll($user);
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => $password,
+        ])->assertRedirect(route('two-factor.login'));
+
+        $user->forceFill(['status' => 'suspended'])->save();
+
+        $this->post('/two-factor-challenge', [
+            'recovery_code' => $codes[0],
+        ])->assertRedirect(route('two-factor.login'));
+
+        $this->assertGuest();
+        $this->assertNull(
+            DB::table('mfa_recovery_codes')
+                ->where('user_id', $user->getKey())
+                ->where('code_hash', hash('sha256', $codes[0]))
+                ->value('consumed_at'),
+        );
+    }
+
     public function test_enabling_totp_persists_only_hashed_recovery_codes(): void
     {
         $user = User::query()->create([
