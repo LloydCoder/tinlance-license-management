@@ -39,6 +39,18 @@ final class PlatformAccessAuditEvent extends BaseModel
                 throw new LogicException('Platform access audit action is invalid.');
             }
 
+            $expectedResourceType = match ($event->action) {
+                'vendor.read' => 'vendor_account',
+                'customer_organization.read' => 'customer_organization',
+            };
+
+            if (
+                $event->resource_type !== $expectedResourceType
+                || ! in_array($event->reason_code, ['platform_super_admin', 'resource_inactive', 'tenant_inactive'], true)
+            ) {
+                throw new LogicException('Platform access audit resource metadata is invalid.');
+            }
+
             if (
                 preg_match('/\A[a-z][a-z0-9_]{0,127}\z/D', $event->resource_type) !== 1
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $event->request_id) !== 1
