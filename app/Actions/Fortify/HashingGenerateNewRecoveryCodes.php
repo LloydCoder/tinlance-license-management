@@ -26,6 +26,10 @@ final class HashingGenerateNewRecoveryCodes extends GenerateNewRecoveryCodes
             throw new HttpException(401, 'An authenticated user is required.');
         }
 
+        if (! $user->hasEnabledTwoFactorAuthentication()) {
+            throw new HttpException(403, 'Authenticator enrollment must be confirmed before recovery codes can be regenerated.');
+        }
+
         $stepUpAt = $this->request->session()->get('auth.mfa_step_up_at');
         $stepUpMethod = $this->request->session()->get('auth.mfa_step_up_method');
         $timestamp = is_numeric($stepUpAt) ? (int) $stepUpAt : null;
