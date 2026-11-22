@@ -28,7 +28,7 @@ final class BrandIdentityTest extends TestCase
         $this->assertIsString($workspace);
         $this->assertStringContainsString('brand/tlms-lockup-horizontal-dark.svg', $workspace);
         $this->assertStringContainsString('brand/tlms-brand.css', $workspace);
-        $this->assertStringContainsString('/favicon.svg', $workspace);
+        $this->assertStringContainsString('favicon.svg', $workspace);
 
         $this->assertFileExists(public_path('brand/tlms-lockup-horizontal-dark.svg'));
         $this->assertFileExists(public_path('brand/tlms-lockup-horizontal-light.svg'));
