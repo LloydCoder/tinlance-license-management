@@ -13,6 +13,7 @@ use App\Models\VendorMembership;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -40,12 +41,14 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $events = PlatformAccessAuditEvent::query()->orderBy('sequence')->get();
 
         $this->assertCount(2, $events);
-        $this->assertSame(1, (int) $events[0]->sequence);
-        $this->assertNull($events[0]->previous_hash);
-        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', (string) $events[0]->event_hash);
-        $this->assertSame(2, (int) $events[1]->sequence);
-        $this->assertSame($events[0]->event_hash, $events[1]->previous_hash);
-        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', (string) $events[1]->event_hash);
+        $first = $events->firstOrFail();
+        $second = $events->skip(1)->firstOrFail();
+        $this->assertSame(1, (int) $first->sequence);
+        $this->assertNull($first->previous_hash);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', (string) $first->event_hash);
+        $this->assertSame(2, (int) $second->sequence);
+        $this->assertSame($first->event_hash, $second->previous_hash);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', (string) $second->event_hash);
 
         $head = DB::table('platform_access_audit_chain_heads')
             ->where('stream_key', 'platform_access')
@@ -53,11 +56,10 @@ final class PlatformAccessAuditHashChainTest extends TestCase
 
         $this->assertNotNull($head);
         $this->assertSame(2, (int) $head->last_sequence);
-        $this->assertSame($events[1]->event_hash, $head->last_hash);
+        $this->assertSame($second->event_hash, $head->last_hash);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
-        $this->artisan('tlms:audit:verify')
-            ->expectsOutput('Platform access audit hash chain is valid.')
-            ->assertExitCode(0);
+        $this->assertSame(0, Artisan::call('tlms:audit:verify'));
+        $this->assertStringContainsString('Platform access audit hash chain is valid.', Artisan::output());
     }
 
     public function test_verifier_detects_modified_audit_event_content(): void
@@ -69,16 +71,15 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $superAdmin = $this->bootstrapSuperAdmin();
         $vendor = $this->createVendor('tamper-detection');
         Gate::forUser($superAdmin)->allows('view', $vendor);
-        $event = PlatformAccessAuditEvent::query()->sole();
+        $event = PlatformAccessAuditEvent::query()->firstOrFail();
 
         DB::table('platform_access_audit_events')
             ->where('id', $event->getKey())
             ->update(['reason_code' => 'resource_inactive']);
 
         $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
-        $this->artisan('tlms:audit:verify')
-            ->expectsOutput('Platform access audit hash chain verification failed.')
-            ->assertExitCode(1);
+        $this->assertSame(1, Artisan::call('tlms:audit:verify'));
+        $this->assertStringContainsString('Platform access audit hash chain verification failed.', Artisan::output());
     }
 
     public function test_verifier_detects_chain_head_replacement(): void
