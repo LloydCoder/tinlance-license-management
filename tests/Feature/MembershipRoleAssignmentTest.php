@@ -382,6 +382,21 @@ final class MembershipRoleAssignmentTest extends TestCase
         $event->delete();
     }
 
+    public function test_revocable_role_catalogues_exclude_protected_and_owner_roles(): void
+    {
+        $service = app(MembershipRoleAssignmentService::class);
+
+        $vendorSlugs = $service->revocableVendorRoles()->pluck('slug')->all();
+        $this->assertContains('vendor_admin', $vendorSlugs);
+        $this->assertContains('finance_admin', $vendorSlugs);
+        $this->assertNotContains('super_admin', $vendorSlugs);
+        $this->assertNotContains('platform_admin', $vendorSlugs);
+
+        $customerSlugs = $service->revocableCustomerRoles()->pluck('slug')->all();
+        $this->assertContains('customer_member', $customerSlugs);
+        $this->assertNotContains('customer_owner', $customerSlugs);
+    }
+
     public function test_vendor_admin_can_revoke_assignable_role_and_audit_it(): void
     {
         [$actor, $vendor] = $this->vendorActor('super_admin');
