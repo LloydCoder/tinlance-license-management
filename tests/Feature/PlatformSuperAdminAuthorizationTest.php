@@ -114,7 +114,13 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         VendorAccount::query()->whereKey($primaryVendor->getKey())->update(['status' => 'suspended']);
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
-        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
     }
 
     public function test_cross_tenant_super_admin_read_is_denied_after_bootstrap_user_suspension(): void
@@ -125,6 +131,13 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         User::query()->whereKey($superAdmin->getKey())->update(['status' => 'suspended']);
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
     }
 
     public function test_vendor_scoped_super_admin_role_without_bootstrap_authority_cannot_read_other_tenants(): void
@@ -168,7 +181,13 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         );
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
-        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
     }
 
     public function test_platform_access_audit_events_cannot_be_updated_or_deleted(): void
