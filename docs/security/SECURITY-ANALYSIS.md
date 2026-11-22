@@ -83,3 +83,13 @@ See the official project sources:
 - https://github.com/gitleaks/gitleaks-action
 - https://github.com/google/osv-scanner-action
 - https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets
+
+
+## Version-2 customer profile payload commitments (PR #95)
+
+- Customer-organization create/profile-update records use hash version 2 and include a unique details_ref_id plus details_hash in the canonical chain event.
+- The referenced immutable profile event includes a SHA-256 change_digest over canonical before/after values for changed fields. Raw profile values are not copied into the audit chain or profile-event payload.
+- Verification resolves the reference and checks the event type, organization, actor, tenant vendor, request ID, reason, changed fields and change digest before validating the chain hash.
+- Historical version-1 events are verified using their original canonical form; version-2 verification does not silently reinterpret historical hashes.
+- Mutation, profile event and chain append share one outer database transaction. The unique reference index prevents multiple chain entries from reusing one profile event.
+- The digest is an unkeyed commitment, not encryption or a digital signature. The overall chain remains vulnerable to a privileged database administrator rewriting the complete database and recomputing all hashes. External anchoring and separate log retention remain open controls.
