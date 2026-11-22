@@ -47,6 +47,7 @@ final class PlatformAccessAuditEvent extends BaseModel
 
             if (! in_array($event->action, [
                 'vendor.read',
+                'vendor_account.profile_updated',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated',
@@ -55,7 +56,7 @@ final class PlatformAccessAuditEvent extends BaseModel
             }
 
             $expectedResourceType = match ($event->action) {
-                'vendor.read' => 'vendor_account',
+                'vendor.read', 'vendor_account.profile_updated' => 'vendor_account',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated' => 'customer_organization',
@@ -68,6 +69,7 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'resource_inactive',
                     'tenant_inactive',
                 ],
+                'vendor_account.profile_updated' => ['vendor_account_profile_management'],
                 'customer_organization.created' => ['vendor_customer_management'],
                 'customer_organization.profile_updated' => [
                     'vendor_customer_management',
@@ -78,6 +80,7 @@ final class PlatformAccessAuditEvent extends BaseModel
             $mutationAction = in_array($event->action, [
                 'customer_organization.created',
                 'customer_organization.profile_updated',
+                'vendor_account.profile_updated',
             ], true);
 
             if (
@@ -101,6 +104,7 @@ final class PlatformAccessAuditEvent extends BaseModel
                 2 => ! in_array($event->action, [
                     'customer_organization.created',
                     'customer_organization.profile_updated',
+                    'vendor_account.profile_updated',
                 ], true)
                     || ! is_string($event->details_ref_id)
                     || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', strtoupper($event->details_ref_id)) !== 1
