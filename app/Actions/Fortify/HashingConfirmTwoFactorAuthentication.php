@@ -7,11 +7,13 @@ namespace App\Actions\Fortify;
 use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
 use Laravel\Fortify\Fortify;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthentication
 {
@@ -25,6 +27,12 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
 
     public function __invoke($user, $code): void
     {
+        $key = 'mfa-enrollment-confirm:'.$user->getKey().':'.$this->request->ip();
+
+        if (! RateLimiter::attempt($key, 5, static fn (): bool => true, 60)) {
+            throw new TooManyRequestsHttpException(60, 'Too many authenticator confirmation attempts.');
+        }
+
         if (
             empty($user->two_factor_secret)
             || empty($code)
@@ -34,6 +42,8 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
                 'code' => [__('The provided two factor authentication code was invalid.')],
             ])->errorBag('confirmTwoFactorAuthentication');
         }
+
+        RateLimiter::clear($key);
 
         $user->forceFill([
             'two_factor_confirmed_at' => now(),
