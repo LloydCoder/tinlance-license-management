@@ -6,12 +6,8 @@ namespace App\Providers;
 
 use App\Actions\Fortify\HashingEnableTwoFactorAuthentication;
 use App\Actions\Fortify\HashingGenerateNewRecoveryCodes;
-use App\Http\Requests\Fortify\HashedTwoFactorLoginRequest;
-use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
-use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
-use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
-
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Requests\Fortify\HashedTwoFactorLoginRequest;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -19,7 +15,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
 use Laravel\Passkeys\Contracts\PasskeyUser;
 use Laravel\Passkeys\Passkey;
 use Laravel\Passkeys\Passkeys;
