@@ -38,6 +38,8 @@ required_entries=(
     "tlms/BUILD-MANIFEST.json"
     "tlms/LICENSE"
     "tlms/COMMERCIAL-LICENSING.md"
+    "tlms/public/build/passkeys.js"
+    "tlms/public/build/membership-invitations.js"
 )
 
 for required in "${required_entries[@]}"; do
@@ -47,7 +49,7 @@ for required in "${required_entries[@]}"; do
     fi
 done
 
-for forbidden in "tlms/.env" "tlms/composer.json" "tlms/composer.lock" "tlms/phpunit.xml" "tlms/phpstan.neon" "tlms/auth.json"; do
+for forbidden in "tlms/.env" "tlms/composer.json" "tlms/composer.lock" "tlms/phpunit.xml" "tlms/phpstan.neon" "tlms/auth.json" "tlms/package.json" "tlms/package-lock.json" "tlms/vite.config.js"; do
     if printf '%s\n' "${entries[@]}" | grep -Fx "$forbidden" >/dev/null; then
         printf 'Forbidden release entry found: %s\n' "$forbidden" >&2
         exit 1
@@ -130,6 +132,18 @@ if (($manifest["database_targets"] ?? null) !== ["MySQL 8.4", "MariaDB 10.11"]) 
 }
 if (($manifest["public_document_root"] ?? null) !== "public/") {
     fwrite(STDERR, "Manifest document root is not public/.".PHP_EOL);
+    exit(1);
+}
+if (($manifest["browser_asset_build"]["entries"] ?? null) !== ["public/build/passkeys.js", "public/build/membership-invitations.js"]) {
+    fwrite(STDERR, "Manifest browser asset entry points are invalid.".PHP_EOL);
+    exit(1);
+}
+if (! is_string($manifest["browser_asset_build"]["node_version"] ?? null) || version_compare(ltrim($manifest["browser_asset_build"]["node_version"], "v"), "22.16.0", "<")) {
+    fwrite(STDERR, "Manifest browser asset Node.js build version is unsupported.".PHP_EOL);
+    exit(1);
+}
+if (! is_string($manifest["browser_asset_build"]["npm_version"] ?? null)) {
+    fwrite(STDERR, "Manifest browser asset npm version is missing.".PHP_EOL);
     exit(1);
 }
 if (($manifest["dependency_install_mode"] ?? null) !== "production-only --no-dev") {

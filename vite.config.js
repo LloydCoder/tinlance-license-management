@@ -5,9 +5,12 @@ export default defineConfig({
         emptyOutDir: true,
         outDir: 'public/build',
         rollupOptions: {
-            input: 'resources/js/passkeys.js',
+            input: {
+                passkeys: 'resources/js/passkeys.js',
+                'membership-invitations': 'resources/js/membership-invitations.js',
+            },
             output: {
-                entryFileNames: 'passkeys.js',
+                entryFileNames: '[name].js',
                 chunkFileNames: 'chunks/[name]-[hash].js',
                 assetFileNames: 'assets/[name]-[hash][extname]',
             },

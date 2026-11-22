@@ -10,7 +10,7 @@ if [[ ! "$release_version" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$ ]]; then
     exit 2
 fi
 
-for required_command in composer git sha256sum tar touch zip; do
+for required_command in composer git node npm sha256sum tar touch zip; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         printf 'Required build command is unavailable: %s\n' "$required_command" >&2
         exit 2
@@ -65,6 +65,25 @@ if [[ -n "$source_symlink" ]]; then
     exit 2
 fi
 
+node_version="$(node --version)"
+npm_version="$(npm --version)"
+if ! node -e 'const [major, minor] = process.versions.node.split(".").map(Number); process.exit(major > 22 || (major === 22 && minor >= 16) ? 0 : 1)'; then
+    printf 'Node.js >=22.16.0 is required for the reproducible browser asset build; found %s\n' "$node_version" >&2
+    exit 2
+fi
+
+(
+    cd "$app_root"
+    npm ci --no-audit --no-fund
+    npm run build
+)
+
+for required_asset in public/build/passkeys.js public/build/membership-invitations.js; do
+    if [[ ! -s "$app_root/$required_asset" ]]; then
+        printf 'Required production browser asset was not built: %s\n' "$required_asset" >&2
+        exit 2
+    fi
+done
 
 (
     cd "$app_root"
@@ -73,7 +92,10 @@ fi
     composer install         --no-dev         --no-interaction         --prefer-dist         --no-progress         --optimize-autoloader         --classmap-authoritative
 )
 
-rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     "$app_root/tests"     "$app_root/node_modules"     "$app_root/phpstan.neon"     "$app_root/phpunit.xml"     "$app_root/composer.json"     "$app_root/composer.lock"
+rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     "$app_root/tests"     "$app_root/node_modules"     "$app_root/phpstan.neon"     "$app_root/phpunit.xml"     "$app_root/composer.json"     "$app_root/composer.lock" \
+    "$app_root/package.json" \
+    "$app_root/package-lock.json" \
+    "$app_root/vite.config.js"
 
 find "$app_root" \( -type f -o -type l \) -name '.env*' ! -path "$app_root/.env.example" -delete
 find "$app_root" -type d -name '.env*' -prune -exec rm -rf {} +
@@ -94,7 +116,12 @@ cat > "$app_root/BUILD-MANIFEST.json" <<MANIFEST
   "runtime_php": ">=8.3 <8.6",
   "database_targets": ["MySQL 8.4", "MariaDB 10.11"],
   "dependency_install_mode": "production-only --no-dev",
-  "public_document_root": "public/"
+  "public_document_root": "public/",
+  "browser_asset_build": {
+    "node_version": "$node_version",
+    "npm_version": "$npm_version",
+    "entries": ["public/build/passkeys.js", "public/build/membership-invitations.js"]
+  }
 }
 MANIFEST
 
