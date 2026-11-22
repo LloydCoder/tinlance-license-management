@@ -6,12 +6,15 @@ namespace Tests\Feature;
 
 use App\Models\CustomerOrganization;
 use App\Models\CustomerOrganizationProfileEvent;
+use App\Models\PlatformInstallation;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Services\Authorization\CustomerOrganizationManagementService;
 use LogicException;
 use Tests\TestCase;
 
@@ -156,6 +159,32 @@ final class CustomerOrganizationManagementTest extends TestCase
                 'reason' => 'Duplicate external references are prohibited.',
             ])
             ->assertSessionHasErrors('external_reference');
+    }
+
+
+    public function test_platform_bootstrap_super_admin_cannot_mutate_customer_records_through_the_service_layer(): void
+    {
+        [$admin] = $this->createSuperAdmin();
+        PlatformInstallation::query()
+            ->where('installation_key', 'primary')
+            ->update([
+                'bootstrapped_user_id' => $admin->getKey(),
+                'bootstrapped_at' => now(),
+            ]);
+
+        $this->expectException(AuthorizationException::class);
+
+        app(CustomerOrganizationManagementService::class)->create(
+            $admin,
+            [
+                'legal_name' => 'Unauthorized Platform Mutation Limited',
+                'display_name' => 'Unauthorized Platform Mutation',
+                'external_reference' => null,
+                'billing_email' => null,
+            ],
+            'Platform bootstrap identity is read-only across tenant resources.',
+            'platform-mutation-denied-0001',
+        );
     }
 
     public function test_customer_profile_audit_events_cannot_be_updated_through_eloquent(): void

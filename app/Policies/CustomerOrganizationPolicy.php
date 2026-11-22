@@ -48,6 +48,10 @@ final class CustomerOrganizationPolicy
 
     private function canManagePrimaryVendorCustomers(User $user): bool
     {
+        if ($this->platformAuthorization->isBootstrapSuperAdmin($user)) {
+            return false;
+        }
+
         $primaryVendor = VendorAccount::query()
             ->where('installation_key', 'primary')
             ->where('status', 'active')

@@ -16,7 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class CustomerOrganizationManagementService
 {
-    public function __construct(private MembershipAuthorization $authorization) {}
+    public function __construct(
+        private MembershipAuthorization $authorization,
+        private PlatformSuperAdminAuthorization $platformAuthorization,
+    ) {}
 
     public function primaryVendor(): VendorAccount
     {
@@ -169,7 +172,11 @@ final readonly class CustomerOrganizationManagementService
             ->where('status', 'active')
             ->exists();
 
-        if (! $activeActor || ! $this->authorization->vendorCan($actor, $vendor, 'customers.manage')) {
+        if (
+            ! $activeActor
+            || $this->platformAuthorization->isBootstrapSuperAdmin($actor)
+            || ! $this->authorization->vendorCan($actor, $vendor, 'customers.manage')
+        ) {
             throw new AuthorizationException('The actor cannot manage customer organizations for this vendor.');
         }
     }
