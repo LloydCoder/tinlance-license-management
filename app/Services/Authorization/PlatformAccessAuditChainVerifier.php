@@ -15,6 +15,8 @@ final readonly class PlatformAccessAuditChainVerifier
         return DB::transaction(function (): bool {
             $head = DB::table('platform_access_audit_chain_heads')
                 ->where('stream_key', 'platform_access')
+                // Serialize verification with appends even when the host uses READ COMMITTED.
+                ->lockForUpdate()
                 ->first();
 
             if ($head === null) {
