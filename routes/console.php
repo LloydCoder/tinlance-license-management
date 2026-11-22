@@ -27,7 +27,6 @@ Artisan::command('tlms:hosting-preflight {--json : Output the report as JSON}', 
     return $report['ready'] ? Command::SUCCESS : Command::FAILURE;
 })->purpose('Verify TLMS shared-hosting runtime, database, security and filesystem prerequisites');
 
-
 Artisan::command('tlms:audit:verify', function (PlatformAccessAuditChainVerifier $verifier): int {
     $valid = $verifier->verify();
 
