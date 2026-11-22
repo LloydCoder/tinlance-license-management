@@ -10,6 +10,7 @@ use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
 
 final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
 {
+    /** @return array<string, array<int, string>> */
     public function rules(): array
     {
         return [
