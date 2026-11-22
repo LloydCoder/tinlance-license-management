@@ -187,15 +187,14 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         ]);
 
         $paginator = app(MembershipInvitationWorkspaceQuery::class)->vendorRevokedMemberships($actor, $vendor);
-        $items = collect($paginator->items());
-
         $this->assertSame(1, $paginator->total());
-        $this->assertSame($revoked->getKey(), $items->first()->getKey());
-        $this->assertSame($revokedUser->email, $items->first()->user->email);
-        $this->assertSame('Prior vendor access removed.', $items->first()->latestLifecycleEvent->reason);
-        $this->assertTrue($items->first()->roles->contains('id', $previousRole->getKey()));
+        $item = $paginator->getCollection()->firstOrFail();
+        $this->assertSame($revoked->getKey(), $item->getKey());
+        $this->assertSame($revokedUser->email, $item->user?->email);
+        $this->assertSame('Prior vendor access removed.', $item->latestLifecycleEvent?->reason);
+        $this->assertTrue($item->roles->contains('id', $previousRole->getKey()));
         $this->assertSame(25, $paginator->perPage());
-        $this->assertArrayNotHasKey('token_hash', $items->first()->toArray());
+        $this->assertArrayNotHasKey('token_hash', $item->toArray());
     }
 
     public function test_customer_revoked_membership_query_is_scoped_to_active_organization_and_parent_vendor(): void
@@ -237,14 +236,13 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         ]);
 
         $paginator = app(MembershipInvitationWorkspaceQuery::class)->customerRevokedMemberships($actor, $organization);
-        $items = collect($paginator->items());
-
         $this->assertSame(1, $paginator->total());
-        $this->assertSame($revoked->getKey(), $items->first()->getKey());
-        $this->assertSame($revokedUser->email, $items->first()->user->email);
-        $this->assertSame('Prior customer access removed.', $items->first()->latestLifecycleEvent->reason);
-        $this->assertTrue($items->first()->roles->contains('id', $previousRole->getKey()));
-        $this->assertArrayNotHasKey('token_hash', $items->first()->toArray());
+        $item = $paginator->getCollection()->firstOrFail();
+        $this->assertSame($revoked->getKey(), $item->getKey());
+        $this->assertSame($revokedUser->email, $item->user?->email);
+        $this->assertSame('Prior customer access removed.', $item->latestLifecycleEvent?->reason);
+        $this->assertTrue($item->roles->contains('id', $previousRole->getKey()));
+        $this->assertArrayNotHasKey('token_hash', $item->toArray());
     }
 
     public function test_assignable_role_catalogue_excludes_maker_checker_only_vendor_roles(): void
