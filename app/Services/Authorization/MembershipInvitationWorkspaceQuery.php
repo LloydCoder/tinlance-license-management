@@ -170,6 +170,4 @@ final readonly class MembershipInvitationWorkspaceQuery
             ->orderByDesc('id')
             ->paginate(25, ['*'], 'customer_revoked_'.$organization->getKey().'_page');
     }
-
-
 }
