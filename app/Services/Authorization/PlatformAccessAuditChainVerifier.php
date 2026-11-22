@@ -33,7 +33,7 @@ final readonly class PlatformAccessAuditChainVerifier
                     || ! in_array($hashVersion, [1, 2], true)
                     || ($event->previous_hash === null ? null : (string) $event->previous_hash) !== $previousHash
                     || ($hashVersion === 1 && ($event->details_ref_id !== null || $event->details_hash !== null))
-                    || ($hashVersion === 2 && ! $this->verifyCustomerProfileDetails($event))
+                    || ($hashVersion === 2 && ! $this->verifyVersionTwoDetails($event))
                 ) {
                     return false;
                 }
@@ -69,6 +69,76 @@ final readonly class PlatformAccessAuditChainVerifier
 
             return (int) $head->last_sequence === $lastSequence && $lastHash === $previousHash;
         });
+    }
+
+    private function verifyVersionTwoDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+
+        return match ($row['action'] ?? null) {
+            'customer_organization.created',
+            'customer_organization.profile_updated' => $this->verifyCustomerProfileDetails($auditEvent),
+            'vendor_account.profile_updated' => $this->verifyVendorProfileDetails($auditEvent),
+            default => false,
+        };
+    }
+
+    private function verifyVendorProfileDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+
+        if (
+            ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
+        ) {
+            return false;
+        }
+
+        $profileEvent = DB::table('vendor_account_profile_events')
+            ->where('id', $detailsReferenceId)
+            ->first();
+
+        if (
+            $profileEvent === null
+            || (string) $profileEvent->vendor_account_id !== $resourceId
+            || (string) $profileEvent->vendor_account_id !== $tenantVendorAccountId
+            || (string) $profileEvent->actor_user_id !== $actorUserId
+            || (string) $profileEvent->request_id !== $requestId
+            || $profileEvent->event_type !== 'profile_updated'
+            || ! is_string($profileEvent->change_digest)
+            || preg_match('/\\A[a-f0-9]{64}\\z/D', $profileEvent->change_digest) !== 1
+        ) {
+            return false;
+        }
+
+        $changedFields = json_decode((string) $profileEvent->changed_fields, true);
+        if (! is_array($changedFields) || ! array_is_list($changedFields)) {
+            return false;
+        }
+
+        $expectedDetailsHash = $this->hasher->hashVendorAccountProfileEvent(
+            (string) $profileEvent->id,
+            (string) $profileEvent->vendor_account_id,
+            (string) $profileEvent->actor_user_id,
+            (string) $profileEvent->event_type,
+            (string) $profileEvent->reason,
+            $changedFields,
+            (string) $profileEvent->change_digest,
+            (string) $profileEvent->request_id,
+            (string) $profileEvent->created_at,
+        );
+
+        return hash_equals($detailsHash, $expectedDetailsHash);
     }
 
     private function verifyCustomerProfileDetails(object $auditEvent): bool
