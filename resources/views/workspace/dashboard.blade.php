@@ -82,6 +82,34 @@
         <section class="panel" aria-labelledby="vendor-invitations-{{ $vendor->getKey() }}">
             <h3 id="vendor-invitations-{{ $vendor->getKey() }}">{{ $vendor->display_name }} — vendor invitations</h3>
             <p class="muted-note">Pending, expired and failed-delivery invitations for this vendor account. Accepted and revoked invitations are not shown.</p>
+
+            <h4>Active vendor members</h4>
+            <p class="muted-note">Only active users with active membership in this vendor account are listed.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Joined</th></tr></thead>
+                    <tbody>
+                    @forelse ($group['members'] as $member)
+                        <tr>
+                            <td>{{ $member->user?->name }}</td>
+                            <td>{{ $member->user?->email }}</td>
+                            <td>
+                                @forelse ($member->roles as $role)
+                                    <span class="role">{{ $role->name }}</span>
+                                @empty
+                                    <span class="muted">No role assigned</span>
+                                @endforelse
+                            </td>
+                            <td>{{ $member->joined_at?->format('Y-m-d H:i T') ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="muted">No active members for this vendor account.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+            {{ $group['members']->links() }}
+
             <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="create" data-endpoint="{{ $createUrl }}">
                 @csrf
                 <div class="form-grid">
@@ -220,6 +248,34 @@
         <section class="panel" aria-labelledby="customer-invitations-{{ $organization->getKey() }}">
             <h3 id="customer-invitations-{{ $organization->getKey() }}">{{ $organization->display_name }} — customer invitations</h3>
             <p class="muted-note">Pending, expired and failed-delivery invitations for this customer organization.</p>
+
+            <h4>Active customer members</h4>
+            <p class="muted-note">Only active users with active membership in this customer organization are listed.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Joined</th></tr></thead>
+                    <tbody>
+                    @forelse ($group['members'] as $member)
+                        <tr>
+                            <td>{{ $member->user?->name }}</td>
+                            <td>{{ $member->user?->email }}</td>
+                            <td>
+                                @forelse ($member->roles as $role)
+                                    <span class="role">{{ $role->name }}</span>
+                                @empty
+                                    <span class="muted">No role assigned</span>
+                                @endforelse
+                            </td>
+                            <td>{{ $member->joined_at?->format('Y-m-d H:i T') ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="muted">No active members for this customer organization.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+            {{ $group['members']->links() }}
+
             <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="create" data-endpoint="{{ $createUrl }}">
                 @csrf
                 <div class="form-grid">
