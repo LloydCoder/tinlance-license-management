@@ -7,6 +7,7 @@ namespace App\Services\Authorization;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorAccountProfileEvent;
+use App\Models\VendorMembership;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
