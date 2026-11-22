@@ -6,6 +6,7 @@ namespace App\\Actions\\Fortify;
 
 use App\\Models\\User;
 use App\\Services\\Identity\\MfaRecoveryCodeVault;
+use Illuminate\\Http\\Request;
 use Laravel\\Fortify\\Actions\\EnableTwoFactorAuthentication;
 use Laravel\\Fortify\\Contracts\\TwoFactorAuthenticationProvider;
 use Laravel\\Fortify\\Fortify;
@@ -16,6 +17,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
     public function __construct(
         TwoFactorAuthenticationProvider $provider,
         private readonly MfaRecoveryCodeVault $vault,
+        private readonly Request $request,
     ) {
         parent::__construct($provider);
     }
@@ -42,6 +44,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
             throw new RuntimeException('Fortify did not generate a complete recovery-code set.');
         }
 
-        $this->vault->replaceWithCodes($user, $codes);
+        $hashedCodes = $this->vault->replaceWithCodes($user, $codes);
+        $this->request->session()->flash('mfa.recovery_codes_once', $hashedCodes);
     }
 }
