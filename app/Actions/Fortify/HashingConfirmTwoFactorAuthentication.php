@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Notifications\MfaRecoveryCodeActivityNotification;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
@@ -16,6 +18,7 @@ use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
 use Laravel\Fortify\Fortify;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Throwable;
 
 final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthentication
 {
@@ -63,5 +66,16 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
 
         $this->request->session()->flash('mfa.recovery_codes_once', $codes);
         RateLimiter::clear($key);
+
+        try {
+            $user->notify(new MfaRecoveryCodeActivityNotification(
+                'Your MFA recovery codes were issued after authenticator confirmation. They are displayed once in your authenticated TLMS session.',
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('TLMS could not deliver an MFA recovery-code issuance notification.', [
+                'user_id' => $user->getKey(),
+                'exception' => $exception::class,
+            ]);
+        }
     }
 }
