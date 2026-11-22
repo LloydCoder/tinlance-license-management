@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Identity;
 
-use App\Models\CustomerMembership;
 use App\Models\User;
-use App\Models\VendorMembership;
 use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
