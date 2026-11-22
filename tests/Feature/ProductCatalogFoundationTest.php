@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\PlatformAccessAuditEvent;
-use App\\Models\\PlatformAccessAuditChainVerifier;
-use App\\Models\\PlatformInstallation;
-use App\\Models\\Product;
-use App\\Models\\ProductEvent;
-use App\\Models\\Role;
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorMembership;
-use Database\\Seeders\\AuthorizationCatalogSeeder;
-use Illuminate\\Database\\QueryException;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\DB;
-use Tests\\TestCase;
+use App\Models\PlatformAccessAuditEvent;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
+use App\Models\PlatformInstallation;
+use App\Models\Product;
+use App\Models\ProductEvent;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 final class ProductCatalogFoundationTest extends TestCase
 {
@@ -62,7 +62,7 @@ final class ProductCatalogFoundationTest extends TestCase
         $this->assertSame('created', $event->event_type);
         $this->assertSame(2, $audit->hash_version);
         $this->assertSame($event->getKey(), $audit->details_ref_id);
-        $this->assertMatchesRegularExpression('/\\A[a-f0-9]{64}\\z/', $event->change_digest);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $event->change_digest);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
 
         $this->authenticated($manager)
