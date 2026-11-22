@@ -264,7 +264,7 @@ final class ProductCatalogFoundationTest extends TestCase
 
         $response->assertCreated();
 
-        return Product::query()->findOrFail($response->json('data.id'));
+        return Product::query()->findOrFail((string) $response->json('data.id'));
     }
 
     /**
