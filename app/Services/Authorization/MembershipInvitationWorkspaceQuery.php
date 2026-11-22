@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Authorization;
 
+use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerOrganization;
 use App\Models\User;
 use App\Models\VendorAccount;
+use App\Models\VendorMembership;
 use App\Models\VendorMembershipInvitation;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
