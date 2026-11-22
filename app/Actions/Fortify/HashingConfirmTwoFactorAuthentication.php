@@ -14,6 +14,7 @@ use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
 use Laravel\Fortify\Fortify;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthentication
@@ -29,6 +30,10 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
     /** @param User $user @param string $code */
     public function __invoke(mixed $user, mixed $code): void
     {
+        if ($user->status !== 'active') {
+            throw new HttpException(403, 'Inactive accounts cannot confirm authenticator enrollment.');
+        }
+
         $key = 'mfa-enrollment-confirm:'.$user->getKey().':'.$this->request->ip();
 
         if (! RateLimiter::attempt($key, 5, static fn (): bool => true, 60)) {
