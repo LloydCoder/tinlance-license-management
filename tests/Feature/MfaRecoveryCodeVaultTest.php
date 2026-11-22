@@ -95,7 +95,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
     {
         $user = $this->createMfaUser();
         $legacyCodes = array_map(
-            static fn (): string => str()->random(10).'-'.str()->random(10),
+            static fn (int $_index): string => str()->random(10).'-'.str()->random(10),
             range(1, 8),
         );
 
@@ -199,6 +199,22 @@ final class MfaRecoveryCodeVaultTest extends TestCase
                 'consumed_at' => null,
             ]);
         }
+    }
+
+    public function test_recovery_code_regeneration_is_denied_until_totp_enrollment_is_confirmed(): void
+    {
+        $user = $this->createMfaUser();
+        $user->forceFill(['two_factor_confirmed_at' => null])->save();
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+                'auth.mfa_step_up_at' => now()->timestamp,
+                'auth.mfa_step_up_method' => 'totp',
+            ])
+            ->postJson(route('two-factor.regenerate-recovery-codes'))
+            ->assertForbidden();
     }
 
     public function test_fortify_login_consumes_a_hashed_recovery_code_and_issues_one_replacement(): void
