@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\\Http\\Controllers\\Identity;
+namespace App\Http\Controllers\Identity;
 
-use App\\Models\\CustomerMembership;
-use App\\Models\\User;
-use App\\Models\\VendorMembership;
-use App\\Services\\Authorization\\MembershipAuthorization;
-use App\\Services\\Authorization\\MembershipInvitationWorkspaceQuery;
-use App\\Services\\Authorization\\MembershipRoleAssignmentService;
-use Illuminate\\Http\\RedirectResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\View\\View;
+use App\Models\CustomerMembership;
+use App\Models\User;
+use App\Models\VendorMembership;
+use App\Services\Authorization\MembershipAuthorization;
+use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
+use App\Services\Authorization\MembershipRoleAssignmentService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 final class WorkspaceController
 {
