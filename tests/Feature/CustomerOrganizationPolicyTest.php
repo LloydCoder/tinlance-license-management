@@ -330,6 +330,40 @@ final class CustomerOrganizationPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($customer)->allows('update', $organization));
     }
 
+
+    public function test_customer_owner_can_update_only_its_own_organization_profile(): void
+    {
+        $vendor = $this->createVendor('profile-owner');
+        $own = $this->createOrganization($vendor, 'owner-profile');
+        $other = $this->createOrganization($vendor, 'other-profile');
+
+        $owner = $this->createUser();
+        $ownerMembership = CustomerMembership::query()->create([
+            'customer_organization_id' => $own->getKey(),
+            'user_id' => $owner->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $ownerMembership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_owner')->firstOrFail(),
+        );
+
+        $billingAdmin = $this->createUser();
+        $billingMembership = CustomerMembership::query()->create([
+            'customer_organization_id' => $own->getKey(),
+            'user_id' => $billingAdmin->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $billingMembership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_billing_admin')->firstOrFail(),
+        );
+
+        $this->assertTrue(Gate::forUser($owner)->allows('update', $own));
+        $this->assertFalse(Gate::forUser($owner)->allows('update', $other));
+        $this->assertFalse(Gate::forUser($billingAdmin)->allows('update', $own));
+    }
+
     public function test_customer_organization_profile_mutations_are_denied_for_suspended_or_foreign_tenants(): void
     {
         $admin = $this->createUser();
