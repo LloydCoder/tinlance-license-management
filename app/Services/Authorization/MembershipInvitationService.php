@@ -1025,7 +1025,7 @@ final readonly class MembershipInvitationService
     {
         $reason = trim($reason);
 
-        if ($reason === '' || mb_strlen($reason) > 500) {
+        if (mb_strlen($reason) < 5 || mb_strlen($reason) > 500) {
             throw new AuthorizationException('A valid invitation reason is required.');
         }
 
