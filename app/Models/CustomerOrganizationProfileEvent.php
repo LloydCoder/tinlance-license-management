@@ -12,6 +12,7 @@ use LogicException;
  * @property string $reason
  * @property string $event_type
  * @property string $request_id
+ * @property string|null $change_digest
  */
 final class CustomerOrganizationProfileEvent extends BaseModel
 {
@@ -23,6 +24,7 @@ final class CustomerOrganizationProfileEvent extends BaseModel
         'event_type',
         'reason',
         'changed_fields',
+        'change_digest',
         'request_id',
         'created_at',
     ];
@@ -48,6 +50,10 @@ final class CustomerOrganizationProfileEvent extends BaseModel
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
             ) {
                 throw new LogicException('Customer organization profile event metadata is invalid.');
+            }
+
+            if ($event->change_digest !== null && preg_match('/\A[a-f0-9]{64}\z/D', $event->change_digest) !== 1) {
+                throw new LogicException('Customer organization profile change digest is invalid.');
             }
 
             $allowedFields = ['legal_name', 'display_name', 'external_reference', 'billing_email'];

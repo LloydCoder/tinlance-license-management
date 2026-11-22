@@ -16,6 +16,7 @@ use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 use Tests\TestCase;
 
@@ -85,6 +86,19 @@ final class CustomerOrganizationManagementTest extends TestCase
             'reason_code' => 'vendor_customer_management',
             'request_id' => 'customer-create-000001',
         ]);
+        $profileEvent = CustomerOrganizationProfileEvent::query()
+            ->where('customer_organization_id', $organization->getKey())
+            ->where('request_id', 'customer-create-000001')
+            ->firstOrFail();
+        $auditEvent = DB::table('platform_access_audit_events')
+            ->where('request_id', 'customer-create-000001')
+            ->first();
+
+        $this->assertNotNull($auditEvent);
+        $this->assertSame(2, (int) $auditEvent->hash_version);
+        $this->assertSame($profileEvent->getKey(), $auditEvent->details_ref_id);
+        $this->assertMatchesRegularExpression('/\\A[a-f0-9]{64}\\z/', (string) $profileEvent->change_digest);
+        $this->assertMatchesRegularExpression('/\\A[a-f0-9]{64}\\z/', (string) $auditEvent->details_hash);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 

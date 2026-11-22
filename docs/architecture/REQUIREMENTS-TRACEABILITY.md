@@ -9,7 +9,7 @@ This matrix links approved requirements to architecture artifacts and future ver
 | Provider credentials | ADR 0002, INTEGRATION-CREDENTIALS-REQUIREMENTS.md, INTEGRATION-CREDENTIALS.md | Ciphertext, no-readback, rotation, leakage and SSRF tests |
 | Deployment/tenancy | ADR 0004, DOMAIN-MODEL.md | Single-vendor install test, customer org isolation |
 | Identity/access | AUTHORIZATION-MATRIX.md, THREAT-MODEL.md | MFA, session, RBAC/ABAC, IDOR and recovery tests |
-| Data integrity | DOMAIN-MODEL.md | Migration, FK, transaction, concurrency and immutable-history tests |
+| Data integrity | DOMAIN-MODEL.md, SECURITY-ANALYSIS.md | Migration, FK, transaction, concurrency, immutable-history and cross-record audit-payload tamper tests |
 | Licence lifecycle | DOMAIN-MODEL.md, STATE-MACHINES.md, API-CONTRACTS.md | State transition, activation race, offline lease and revocation tests |
 | Payment/ledger | DOMAIN-MODEL.md, API-CONTRACTS.md, THREAT-MODEL.md | Webhook signature, replay, duplicate, amount mismatch, ledger reconciliation |
 | Secure updates | DOMAIN-MODEL.md, THREAT-MODEL.md | TUF metadata, signature, expiry, rollback and artifact provenance |

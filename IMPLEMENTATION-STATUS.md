@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-22 (main baseline `5a87cf6bae81c1b1cd1f699b65ac59dbd03d9498`; PR #93 adds customer-owner profile self-service with scoped authorization, SQL pagination and future-timestamp assurance hardening; PR #94 adds hash-chain operation records for customer-organization create/profile updates)
+**Last reviewed:** 2026-11-23 (PR #95 adds versioned, payload-bound audit-chain commitments for customer-organization create/profile mutations)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -423,3 +423,14 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - Model validation restricts action/resource/reason combinations and prevents denied outcomes for mutation events.
 - **Assurance boundary:** the chain attests to the mutation operation and its correlation metadata. The detailed changed-field and reason payload remains in a separate immutable profile-event table and is not yet included in the chain hash. The ledger is not yet a complete payload-level global audit ledger and remains unkeyed/unanchored.
 - Exact-head CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, browser assets, OpenAPI, documentation governance and cPanel artifact verification. Security Analysis passed Larastan, Semgrep, Gitleaks and OSV-Scanner. Signed release publication was correctly skipped because no version tag was created.
+
+
+## PR #95 — payload-bound customer organization audit evidence (2026-11-23)
+
+- Adds hash version 2 for customer-organization creation and profile-update audit records while retaining verification compatibility for historical version-1 events.
+- Adds a unique details_ref_id and details_hash to the platform audit event. The reference binds one platform audit record to one immutable customer profile event.
+- Adds change_digest to new customer profile events. It commits to canonical before/after values for changed fields without copying raw profile values into the audit stream.
+- The verifier cross-checks the referenced profile event's type, organization, actor, tenant vendor, request ID, reason, changed fields and change digest before accepting the version-2 chain record.
+- The profile mutation, profile event and chain append remain inside the same outer database transaction; a failed append rolls back the mutation.
+- Historical version-1 records remain unchanged and verifiable. The hash chain remains unkeyed and externally unanchored; a privileged database administrator able to rewrite all records and recompute the chain can still defeat it.
+- Exact-head CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, browser asset build, OpenAPI validation, documentation governance and cPanel artifact verification. Security Analysis is required before merge.

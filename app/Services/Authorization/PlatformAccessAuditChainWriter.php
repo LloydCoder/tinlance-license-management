@@ -22,6 +22,8 @@ final readonly class PlatformAccessAuditChainWriter
         string $outcome,
         string $reasonCode,
         string $requestId,
+        ?string $detailsReferenceId = null,
+        ?string $detailsHash = null,
     ): PlatformAccessAuditEvent {
         return DB::transaction(function () use (
             $actorUserId,
@@ -32,6 +34,8 @@ final readonly class PlatformAccessAuditChainWriter
             $outcome,
             $reasonCode,
             $requestId,
+            $detailsReferenceId,
+            $detailsHash,
         ): PlatformAccessAuditEvent {
             $head = DB::table('platform_access_audit_chain_heads')
                 ->where('stream_key', 'platform_access')
@@ -46,6 +50,7 @@ final readonly class PlatformAccessAuditChainWriter
             $previousHash = $head->last_hash === null ? null : (string) $head->last_hash;
             $id = (string) Str::ulid();
             $createdAt = now()->utc()->format('Y-m-d H:i:s');
+            $hashVersion = $detailsReferenceId === null ? 1 : 2;
             $eventHash = $this->hasher->hashEvent(
                 $sequence,
                 $previousHash,
@@ -59,6 +64,9 @@ final readonly class PlatformAccessAuditChainWriter
                 $reasonCode,
                 $requestId,
                 $createdAt,
+                $hashVersion,
+                $detailsReferenceId,
+                $detailsHash,
             );
 
             $event = new PlatformAccessAuditEvent;
@@ -67,7 +75,9 @@ final readonly class PlatformAccessAuditChainWriter
                 'sequence' => $sequence,
                 'previous_hash' => $previousHash,
                 'event_hash' => $eventHash,
-                'hash_version' => 1,
+                'hash_version' => $hashVersion,
+                'details_ref_id' => $detailsReferenceId,
+                'details_hash' => $detailsHash,
                 'actor_user_id' => $actorUserId,
                 'action' => $action,
                 'resource_type' => $resourceType,
