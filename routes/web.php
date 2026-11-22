@@ -162,6 +162,17 @@ Route::middleware([
     Route::get('/admin', SuperAdminDashboardController::class)
         ->name('admin.dashboard');
 
+    Route::get('/admin/customers', [CustomerOrganizationController::class, 'index'])
+        ->name('admin.customers.index');
+
+    Route::post('/admin/customers', [CustomerOrganizationController::class, 'store'])
+        ->middleware([EnsureRecentPasswordConfirmation::class, EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('admin.customers.store');
+
+    Route::patch('/admin/customers/{organization}', [CustomerOrganizationController::class, 'update'])
+        ->middleware([EnsureRecentPasswordConfirmation::class, EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('admin.customers.update');
+
     Route::get('/admin/security/sessions', [SessionController::class, 'index'])
         ->middleware('password.confirm')
         ->name('admin.security.sessions');
