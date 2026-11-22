@@ -274,6 +274,27 @@ final class AuthenticationFoundationTest extends TestCase
         $this->assertSame(0, (int) User::query()->whereKey($user->getKey())->value('session_version'));
     }
 
+    public function test_session_management_page_exposes_a_fresh_totp_step_up_control(): void
+    {
+        $user = $this->createSuperAdmin();
+        $user->forceFill([
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt('[]'),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->get('/admin/security/sessions')
+            ->assertOk()
+            ->assertSee('data-step-up-totp', false)
+            ->assertSee('build/membership-invitations.js', false)
+            ->assertSee('Fresh MFA verification', false);
+    }
+
     public function test_confirmed_super_admin_can_revoke_sessions_and_is_logged_out(): void
     {
         $user = $this->createSuperAdmin();
@@ -296,6 +317,21 @@ final class AuthenticationFoundationTest extends TestCase
             ->withSession([
                 'auth_session_version' => 0,
                 'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->post('/admin/security/sessions/revoke-all')
+            ->assertStatus(423)
+            ->assertJsonPath('code', 'MFA_STEP_UP_REQUIRED');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(0, (int) User::query()->whereKey($user->getKey())->value('session_version'));
+        $this->assertDatabaseHas('sessions', ['user_id' => $user->getKey()]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+                'auth.mfa_step_up_at' => now()->timestamp,
+                'auth.mfa_step_up_method' => 'totp',
             ])
             ->post('/admin/security/sessions/revoke-all')
             ->assertRedirect(route('login'));
