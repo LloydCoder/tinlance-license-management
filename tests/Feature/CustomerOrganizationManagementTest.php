@@ -15,7 +15,6 @@ use App\Services\Authorization\CustomerOrganizationManagementService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\Authorization\CustomerOrganizationManagementService;
 use LogicException;
 use Tests\TestCase;
 
