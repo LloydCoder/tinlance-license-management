@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\Security\SessionController;
+use App\Http\Controllers\Admin\CustomerOrganizationController;\nuse App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
