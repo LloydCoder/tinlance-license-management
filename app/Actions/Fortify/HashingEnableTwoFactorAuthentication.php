@@ -6,12 +6,15 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Events\TwoFactorAuthenticationEnabled;
 use Laravel\Fortify\Fortify;
-use RuntimeException;
+use Laravel\Fortify\RecoveryCode;
 
 final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthentication
 {
@@ -25,36 +28,23 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
 
     public function __invoke($user, $force = false): void
     {
-        $shouldGenerate = empty($user->two_factor_secret) || $force === true;
-
-        if (! $shouldGenerate) {
-            parent::__invoke($user, $force);
-
+        if (! empty($user->two_factor_secret) && $force !== true) {
             return;
         }
 
-        DB::transaction(function () use ($user, $force): void {
-            parent::__invoke($user, $force);
+        DB::transaction(function () use ($user): void {
+            $secretLength = (int) config('fortify-options.two-factor-authentication.secret-length', 16);
+            $recoveryCodes = Collection::times(8, static fn (): string => RecoveryCode::generate())->all();
 
-            $encryptedCodes = (string) $user->two_factor_recovery_codes;
+            $user->forceFill([
+                'two_factor_secret' => Fortify::currentEncrypter()->encrypt($this->provider->generateSecretKey($secretLength)),
+                'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(json_encode($recoveryCodes, JSON_THROW_ON_ERROR)),
+            ])->save();
 
-            if ($encryptedCodes === '') {
-                throw new RuntimeException('Fortify did not persist the recovery-code set.');
-            }
-
-            $codes = json_decode(
-                Fortify::currentEncrypter()->decrypt($encryptedCodes),
-                true,
-                512,
-                JSON_THROW_ON_ERROR,
-            );
-
-            if (! is_array($codes) || ! array_is_list($codes) || count($codes) !== 8) {
-                throw new RuntimeException('Fortify did not generate a complete recovery-code set.');
-            }
-
-            $hashedCodes = $this->vault->replaceWithCodes($user, $codes);
+            $hashedCodes = $this->vault->replaceWithCodes($user, $recoveryCodes);
             $this->request->session()->flash('mfa.recovery_codes_once', $hashedCodes);
+
+            TwoFactorAuthenticationEnabled::dispatch($user);
         }, 3);
     }
 }
