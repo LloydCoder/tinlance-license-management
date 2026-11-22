@@ -67,7 +67,8 @@
             @endif
             @if (! $mfaStepUpFresh)
                 @if ($hasTotp)
-                    <form data-step-up-totp>
+                    <form method="post" action="{{ route('workspace.home') }}" data-step-up-totp>
+                        @csrf
                         <label for="step-up-code">Authenticator code</label>
                         <div class="form-grid">
                             <input id="step-up-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="step-up-help">
@@ -96,7 +97,8 @@
         <section class="panel" aria-labelledby="vendor-invitations-{{ $vendor->getKey() }}">
             <h3 id="vendor-invitations-{{ $vendor->getKey() }}">{{ $vendor->display_name }} — vendor invitations</h3>
             <p class="muted-note">Pending, expired and failed-delivery invitations for this vendor account. Accepted and revoked invitations are not shown.</p>
-            <form data-invitation-form data-action="create" data-endpoint="{{ $createUrl }}">
+            <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="create" data-endpoint="{{ $createUrl }}">
+                @csrf
                 <div class="form-grid">
                     <div>
                         <label for="vendor-email-{{ $vendor->getKey() }}">Invitee email</label>
@@ -147,13 +149,15 @@
                             </td>
                             <td>
                                 <div class="actions">
-                                    <form data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitation->vendor_membership_id.'/invitation/resend') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->
+                @csrfgetKey().'/memberships/'.$invitation->vendor_membership_id.'/invitation/resend') }}">
                                         <label for="vendor-resend-reason-{{ $invitation->getKey() }}">Resend reason</label>
                                         <input id="vendor-resend-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Resend</button>
                                         <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
                                     </form>
-                                    <form data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitation->vendor_membership_id.'/revoke') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->
+                @csrfgetKey().'/memberships/'.$invitation->vendor_membership_id.'/revoke') }}">
                                         <label for="vendor-revoke-reason-{{ $invitation->getKey() }}">Revocation reason</label>
                                         <input id="vendor-revoke-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="1" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Cancel invitation</button>
@@ -180,7 +184,8 @@
         <section class="panel" aria-labelledby="customer-invitations-{{ $organization->getKey() }}">
             <h3 id="customer-invitations-{{ $organization->getKey() }}">{{ $organization->display_name }} — customer invitations</h3>
             <p class="muted-note">Pending, expired and failed-delivery invitations for this customer organization.</p>
-            <form data-invitation-form data-action="create" data-endpoint="{{ $createUrl }}">
+            <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="create" data-endpoint="{{ $createUrl }}">
+                @csrf
                 <div class="form-grid">
                     <div>
                         <label for="customer-email-{{ $organization->getKey() }}">Invitee email</label>
@@ -231,13 +236,15 @@
                             </td>
                             <td>
                                 <div class="actions">
-                                    <form data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->
+                @csrfgetKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend') }}">
                                         <label for="customer-resend-reason-{{ $invitation->getKey() }}">Resend reason</label>
                                         <input id="customer-resend-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Resend</button>
                                         <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
                                     </form>
-                                    <form data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/revoke') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->
+                @csrfgetKey().'/memberships/'.$invitation->customer_membership_id.'/revoke') }}">
                                         <label for="customer-revoke-reason-{{ $invitation->getKey() }}">Revocation reason</label>
                                         <input id="customer-revoke-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="1" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Cancel invitation</button>
