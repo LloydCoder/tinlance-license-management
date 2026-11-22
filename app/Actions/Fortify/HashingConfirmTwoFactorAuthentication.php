@@ -6,7 +6,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
-use Illuminate\Database\Facades\DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -38,7 +38,7 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
         if (
             empty($user->two_factor_secret)
             || empty($code)
-            || ! $this->provider->verify(Fortify::currentEncrypter()->decrypt($user->two_factor_secret), $code)
+            || ! $this->provider->verify(Fortify::currentEncrypter()->decrypt((string) $user->two_factor_secret), $code)
         ) {
             throw ValidationException::withMessages([
                 'code' => [__('The provided two factor authentication code was invalid.')],
