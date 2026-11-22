@@ -485,6 +485,62 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /vendor-accounts/{vendorId}/memberships/{membershipId}/reinstate:
+    post:
+      tags: [Identity]
+      operationId: reinstateVendorMembership
+      summary: Reinstate a revoked vendor membership through a new invitation
+      description: Requires vendor-scoped admins.manage, recent password confirmation, enrolled MFA and fresh five-minute TOTP/passkey step-up. Only a revoked membership with an active target account can be reinstated. Previous roles are revoked with immutable role-event evidence, a new allowlisted low-risk role is assigned, the membership returns to invited, all prior invitation tokens remain revoked, and a fresh single-use invitation token is emailed. The raw token is never returned by the API. Protected super_admin/platform_admin role cleanup requires an acting vendor Super Admin.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: vendorId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipReinstatementRequest'
+      responses:
+        '201':
+          description: Membership moved from revoked to invited and a fresh invitation delivered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipInvitationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Membership is not currently revoked
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Membership reinstatement committed but invitation email delivery failed; resend the new invitation after correcting mail transport
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/roles/{roleId}:
     post:
       tags: [Identity]
@@ -730,6 +786,62 @@ paths:
           $ref: '#/components/responses/RateLimited'
         '503':
           description: Invitation record was created but email delivery failed; retry with the resend operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /customer-organizations/{organizationId}/memberships/{membershipId}/reinstate:
+    post:
+      tags: [Identity]
+      operationId: reinstateCustomerMembership
+      summary: Reinstate a revoked customer membership through a new invitation
+      description: Requires customer.members.manage, recent password confirmation, enrolled MFA and fresh five-minute TOTP/passkey step-up. Only a revoked membership with an active target account and active parent organization/vendor can be reinstated. Previous roles are revoked with immutable role-event evidence, a new allowlisted customer role is assigned, the membership returns to invited, all prior invitation tokens remain revoked, and a fresh single-use invitation token is emailed. The raw token is never returned by the API.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: membershipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipReinstatementRequest'
+      responses:
+        '201':
+          description: Membership moved from revoked to invited and a fresh invitation delivered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipInvitationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Membership is not currently revoked
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Membership reinstatement committed but invitation email delivery failed; resend the new invitation after correcting mail transport
           content:
             application/problem+json:
               schema:
@@ -1564,6 +1676,20 @@ components:
           type: string
           minLength: 5
           maxLength: 500
+    MembershipReinstatementRequest:
+      type: object
+      additionalProperties: false
+      required: [role_slug, reason]
+      properties:
+        role_slug:
+          type: string
+          maxLength: 100
+          description: Must be a directly assignable low-risk role in the matching tenant scope.
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+          description: Human-readable reinstatement reason stored in immutable lifecycle and role-event evidence.
     MembershipInvitationResendRequest:
       type: object
       additionalProperties: false
