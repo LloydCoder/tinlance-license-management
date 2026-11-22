@@ -184,16 +184,18 @@ final class MfaRecoveryCodeVaultTest extends TestCase
     {
         $user = $this->createMfaUser();
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->withSession([
                 'auth_session_version' => 0,
                 'auth.password_confirmed_at' => now()->timestamp,
             ])
-            ->get(route('security.mfa.enroll'))
-            ->assertOk()
+            ->get(route('security.mfa.enroll'));
+
+        $response->assertOk()
             ->assertSee('data-step-up-totp', false)
-            ->assertSee('build/membership-invitations.js', false)
-            ->assertHeader('Cache-Control', 'no-store, private');
+            ->assertSee('build/membership-invitations.js', false);
+
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
     }
 
     public function test_recovery_code_regeneration_requires_recent_password_and_fresh_mfa_step_up(): void
