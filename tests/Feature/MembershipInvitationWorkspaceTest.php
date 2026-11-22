@@ -232,6 +232,14 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             now()->addDay(),
         );
 
+        $pendingInvitation = $this->createVendorInvitation(
+            $actor,
+            $vendor,
+            'workspace-vendor-ui-pending',
+            'pending',
+            now()->addDay(),
+        );
+
         $this->enableWorkspaceAuthentication($actor);
         $session = $this->workspaceSession($actor);
         $session['auth.password_confirmed_at'] = now()->getTimestamp();
@@ -244,6 +252,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('method="post"', false);
         $response->assertSee('name="_token"', false);
         $response->assertSee($invitation->invited_email);
+        $response->assertSee($pendingInvitation->invited_email);
+        $response->assertSee('Delivery pending');
         $response->assertSee('Created');
         $response->assertSee('support_agent');
         $response->assertSee('security_auditor');
