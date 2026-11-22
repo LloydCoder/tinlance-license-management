@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\\Services\\Identity;
+namespace App\Services\Identity;
 
-use App\\Models\\User;
-use Illuminate\\Support\\Facades\\DB;
-use Laravel\\Fortify\\Fortify;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Laravel\Fortify\Fortify;
 
 final class MfaRecoveryCodeVault
 {
