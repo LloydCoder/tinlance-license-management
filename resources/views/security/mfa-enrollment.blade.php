@@ -55,6 +55,13 @@
             </form>
         @else
             <p class="status">Authenticator app is enabled.</p>
+            @if (is_string(session('mfa.recovery_code_replacement_once')))
+                <section class="panel warning" aria-labelledby="replacement-recovery-code-heading">
+                    <h3 id="replacement-recovery-code-heading">Your replacement recovery code — shown once</h3>
+                    <p>Store this code offline. It will not be displayed again.</p>
+                    <code>{{ session('mfa.recovery_code_replacement_once') }}</code>
+                </section>
+            @endif
             <p>Recovery codes are stored as one-way SHA-256 digests and cannot be retrieved after issuance. Store the codes offline in a secure password manager. Each code is single-use; using one issues a replacement that is shown once after sign-in.</p>
             @if (session()->has('mfa.recovery_codes_once'))
                 <section class="panel warning" aria-labelledby="new-recovery-codes-heading">
