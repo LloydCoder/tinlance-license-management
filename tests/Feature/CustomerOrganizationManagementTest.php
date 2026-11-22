@@ -109,7 +109,7 @@ final class CustomerOrganizationManagementTest extends TestCase
         $this->actingAs($admin, 'web')
             ->withSession([
                 'auth_session_version' => (int) $admin->session_version,
-                'auth.password_confirmed_at' => now()->timestamp,
+                'auth.password_confirmed_at' => (int) now()->timestamp,
             ])
             ->post('/admin/customers', [
                 'legal_name' => 'No Step Up Limited',
@@ -195,6 +195,7 @@ final class CustomerOrganizationManagementTest extends TestCase
         $event->delete();
     }
 
+    /** @return array{User, VendorAccount} */
     private function createSuperAdmin(): array
     {
         $vendor = $this->createVendor('primary');
@@ -259,7 +260,7 @@ final class CustomerOrganizationManagementTest extends TestCase
         return [
             'auth_session_version' => (int) $admin->session_version,
             'auth.password_confirmed_at' => now()->timestamp,
-            'auth.mfa_step_up_at' => now()->timestamp,
+            'auth.mfa_step_up_at' => (int) now()->timestamp,
             'auth.mfa_step_up_method' => 'totp',
         ];
     }
