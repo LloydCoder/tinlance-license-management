@@ -23,6 +23,7 @@ final readonly class VendorRoleApprovalService
         'finance_admin',
         'vendor_product_manager',
         'reseller_manager',
+        'vendor_admin',
     ];
 
     public function __construct(
