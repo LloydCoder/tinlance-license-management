@@ -4,23 +4,16 @@ declare(strict_types=1);
 
 namespace App\Actions\Fortify;
 
-use App\Services\Identity\MfaRecoveryCodeVault;
-use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Events\TwoFactorAuthenticationEnabled;
 use Laravel\Fortify\Fortify;
-use Laravel\Fortify\RecoveryCode;
 
 final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthentication
 {
-    public function __construct(
-        TwoFactorAuthenticationProvider $provider,
-        private readonly MfaRecoveryCodeVault $vault,
-        private readonly Request $request,
-    ) {
+    public function __construct(TwoFactorAuthenticationProvider $provider)
+    {
         parent::__construct($provider);
     }
 
@@ -32,15 +25,12 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
 
         DB::transaction(function () use ($user): void {
             $secretLength = (int) config('fortify-options.two-factor-authentication.secret-length', 16);
-            $recoveryCodes = Collection::times(8, static fn (int $_index): string => RecoveryCode::generate())->all();
 
             $user->forceFill([
                 'two_factor_secret' => Fortify::currentEncrypter()->encrypt($this->provider->generateSecretKey($secretLength)),
-                'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(json_encode($recoveryCodes, JSON_THROW_ON_ERROR)),
+                'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt('[]'),
+                'two_factor_confirmed_at' => null,
             ])->save();
-
-            $hashedCodes = $this->vault->replaceWithCodes($user, $recoveryCodes);
-            $this->request->session()->flash('mfa.recovery_codes_once', $hashedCodes);
 
             TwoFactorAuthenticationEnabled::dispatch($user);
         }, 3);
