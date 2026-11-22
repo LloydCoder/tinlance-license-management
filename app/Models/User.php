@@ -55,6 +55,16 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         });
     }
 
+    /**
+     * Fortify calls this after the custom challenge request has atomically consumed
+     * the hashed code and issued its replacement. The legacy encrypted-code mutation
+     * must never run because the users column intentionally contains only an empty list.
+     */
+    public function replaceRecoveryCode(mixed $code): void
+    {
+        // Consumption and replacement are completed by MfaRecoveryCodeVault.
+    }
+
     /** @return HasMany<VendorMembership, $this> */
     public function vendorMemberships(): HasMany
     {

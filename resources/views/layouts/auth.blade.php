@@ -16,5 +16,6 @@
     @yield('content')
 </main>
 <script type="module" src="{{ asset('build/passkeys.js') }}"></script>
+<script type="module" src="{{ asset('build/membership-invitations.js') }}"></script>
 </body>
 </html>

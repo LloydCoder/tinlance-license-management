@@ -11,7 +11,7 @@ use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Illuminate\Http\Response;
 
 final class WorkspaceController
 {
@@ -21,7 +21,7 @@ final class WorkspaceController
         MembershipInvitationWorkspaceQuery $invitations,
         MembershipDirectoryQuery $directory,
         MembershipRoleAssignmentService $roles,
-    ): View|RedirectResponse {
+    ): Response|RedirectResponse {
         $user = $request->user();
         abort_unless($user instanceof User && $user->status === 'active', 403);
 
@@ -111,8 +111,9 @@ final class WorkspaceController
             $request->session()->put('url.intended', route('workspace.home'));
         }
 
-        return view('workspace.dashboard', [
+        return response()->view('workspace.dashboard', [
             'user' => $user,
+            'mfaRecoveryCodeReplacement' => $request->session()->get('mfa.recovery_code_replacement_once'),
             'vendorMemberships' => $vendorMemberships,
             'customerMemberships' => $customerMemberships,
             'vendorInvitationGroups' => $vendorInvitationGroups,
@@ -125,6 +126,6 @@ final class WorkspaceController
                 && $passwordConfirmationFresh
                 && $mfaStepUpFresh
                 && ($hasTotp || $hasPasskeys),
-        ]);
+        ])->header('Cache-Control', 'no-store, private')->header('Pragma', 'no-cache');
     }
 }
