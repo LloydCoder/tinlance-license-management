@@ -10,6 +10,7 @@ use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Fortify;
 use Tests\TestCase;
 
@@ -321,7 +322,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         );
     }
 
-    public function test_enabling_totp_persists_only_hashed_recovery_codes(): void
+    public function test_totp_confirmation_issues_hashed_recovery_codes_after_authenticator_proof(): void
     {
         $user = User::query()->create([
             'name' => 'MFA Enable Test User',
@@ -338,10 +339,19 @@ final class MfaRecoveryCodeVaultTest extends TestCase
             ->post(route('two-factor.enable'))
             ->assertRedirect();
 
-        $this->assertSame(8, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->whereNull('consumed_at')->count());
+        $this->assertSame(0, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->count());
         $this->assertSame('[]', Fortify::currentEncrypter()->decrypt(
             (string) DB::table('users')->where('id', $user->getKey())->value('two_factor_recovery_codes'),
         ));
+        $this->assertFalse(session()->has('mfa.recovery_codes_once'));
+
+        $provider = \\Mockery::mock(TwoFactorAuthenticationProvider::class);
+        $provider->shouldReceive('verify')->once()->andReturnTrue();
+        app()->instance(TwoFactorAuthenticationProvider::class, $provider);
+
+        $this->post(route('two-factor.confirm'), ['code' => '123456'])->assertRedirect();
+
+        $this->assertSame(8, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->whereNull('consumed_at')->whereNull('invalidated_at')->count());
         $this->assertTrue(session()->has('mfa.recovery_codes_once'));
     }
 
