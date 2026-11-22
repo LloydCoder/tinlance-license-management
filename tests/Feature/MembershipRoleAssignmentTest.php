@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipRoleEvent;
+use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\MembershipRoleAssignmentService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -27,6 +28,71 @@ final class MembershipRoleAssignmentTest extends TestCase
         parent::setUp();
 
         $this->seed(AuthorizationCatalogSeeder::class);
+    }
+
+    public function test_super_admin_can_bootstrap_only_the_first_vendor_admin_with_minimal_permissions(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $firstAdmin = $this->createUser('first-vendor-admin');
+        $firstMembership = $this->vendorMembership($vendor, $firstAdmin);
+        $vendorAdminRole = $this->role('vendor', 'vendor_admin');
+
+        $this->assertTrue(app(MembershipRoleAssignmentService::class)->assignVendorRole(
+            $actor,
+            $vendor,
+            $firstMembership,
+            $vendorAdminRole,
+            'Bootstrap the first tenant-scoped vendor administrator.',
+        ));
+
+        $authorization = app(MembershipAuthorization::class);
+        $this->assertTrue($authorization->vendorCan($firstAdmin, $vendor, 'vendor.account.read'));
+        $this->assertTrue($authorization->vendorCan($firstAdmin, $vendor, 'admins.manage'));
+        $this->assertTrue($authorization->vendorCan($firstAdmin, $vendor, 'audit.read'));
+
+        foreach ([
+            'platform.settings.manage',
+            'customers.manage',
+            'payments.read',
+            'payments.refund',
+            'releases.publish',
+            'approvals.review',
+            'signing.operational.rotate',
+        ] as $forbiddenPermission) {
+            $this->assertFalse($authorization->vendorCan($firstAdmin, $vendor, $forbiddenPermission));
+        }
+
+        $secondAdmin = $this->createUser('second-vendor-admin');
+        $secondMembership = $this->vendorMembership($vendor, $secondAdmin);
+
+        $this->expectException(AuthorizationException::class);
+        app(MembershipRoleAssignmentService::class)->assignVendorRole(
+            $actor,
+            $vendor,
+            $secondMembership,
+            $vendorAdminRole,
+            'A second vendor administrator requires maker-checker approval.',
+        );
+    }
+
+    public function test_super_admin_cannot_bootstrap_vendor_admin_on_an_unaccepted_invitation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('super_admin');
+        $target = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $this->createUser('invited-vendor-admin')->getKey(),
+            'status' => 'invited',
+            'invited_by' => $actor->getKey(),
+        ]);
+
+        $this->expectException(AuthorizationException::class);
+        app(MembershipRoleAssignmentService::class)->assignVendorRole(
+            $actor,
+            $vendor,
+            $target,
+            $this->role('vendor', 'vendor_admin'),
+            'Do not grant tenant administration before invitation acceptance.',
+        );
     }
 
     public function test_vendor_admin_can_assign_non_privileged_role_to_another_member_and_audit_it(): void
@@ -129,7 +195,7 @@ final class MembershipRoleAssignmentTest extends TestCase
         $target = $this->vendorMembership($vendor, $this->createUser('privileged-target'));
         $service = app(MembershipRoleAssignmentService::class);
 
-        foreach (['super_admin', 'platform_admin', 'finance_admin', 'vendor_product_manager'] as $slug) {
+        foreach (['super_admin', 'platform_admin', 'finance_admin', 'vendor_product_manager', 'reseller_manager'] as $slug) {
             try {
                 $service->assignVendorRole($actor, $vendor, $target, $this->role('vendor', $slug), 'Generic grant attempt.');
                 $this->fail('Privileged role assignment must be denied for '.$slug.'.');
