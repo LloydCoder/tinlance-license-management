@@ -92,7 +92,10 @@ done
     composer install         --no-dev         --no-interaction         --prefer-dist         --no-progress         --optimize-autoloader         --classmap-authoritative
 )
 
-rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     "$app_root/tests"     "$app_root/node_modules"     "$app_root/phpstan.neon"     "$app_root/phpunit.xml"     "$app_root/composer.json"     "$app_root/composer.lock"
+rm -rf     "$app_root/.github"     "$app_root/docs"     "$app_root/scripts"     "$app_root/tests"     "$app_root/node_modules"     "$app_root/phpstan.neon"     "$app_root/phpunit.xml"     "$app_root/composer.json"     "$app_root/composer.lock" \
+    "$app_root/package.json" \
+    "$app_root/package-lock.json" \
+    "$app_root/vite.config.js"
 
 find "$app_root" \( -type f -o -type l \) -name '.env*' ! -path "$app_root/.env.example" -delete
 find "$app_root" -type d -name '.env*' -prune -exec rm -rf {} +
