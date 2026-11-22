@@ -159,6 +159,27 @@ final class CustomerOrganizationProfilePortalTest extends TestCase
         $this->assertSame('Customer target-profile', $organization->refresh()->display_name);
     }
 
+    public function test_customer_profile_write_rejects_future_password_confirmation_timestamp(): void
+    {
+        [$owner, $organization] = $this->createCustomerOwner('future-password-confirmation');
+
+        $this->actingAs($owner, 'web')
+            ->withSession([
+                'auth_session_version' => (int) $owner->session_version,
+                'auth.password_confirmed_at' => (int) now()->addHour()->timestamp,
+                'auth.mfa_step_up_at' => (int) now()->timestamp,
+                'auth.mfa_step_up_method' => 'totp',
+            ])
+            ->patch('/workspace/customer-profiles/'.$organization->getKey(), [
+                'display_name' => 'Must Not Change',
+                'billing_email' => 'must-not-change@example.test',
+                'reason' => 'Future password timestamps must not authorize profile changes.',
+            ])
+            ->assertStatus(423);
+
+        $this->assertSame('Customer future-password-confirmation', $organization->refresh()->display_name);
+    }
+
     /** @return array{User, CustomerOrganization} */
     private function createCustomerOwner(string $reference): array
     {
