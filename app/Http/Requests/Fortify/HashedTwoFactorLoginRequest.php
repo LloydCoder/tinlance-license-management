@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\\Http\\Requests\\Fortify;
+namespace App\Http\Requests\Fortify;
 
-use App\\Models\\User;
-use App\\Services\\Identity\\MfaRecoveryCodeVault;
-use Laravel\\Fortify\\Http\\Requests\\TwoFactorLoginRequest;
+use App\Models\User;
+use App\Services\Identity\MfaRecoveryCodeVault;
+use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
 
 final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
 {
     public function rules(): array
     {
         return [
-            'code' => ['nullable', 'string', 'regex:/\\A[0-9]{6}\\z/D'],
+            'code' => ['nullable', 'string', 'regex:/\A[0-9]{6}\z/D'],
             'recovery_code' => ['nullable', 'string', 'max:128'],
         ];
     }
