@@ -29,9 +29,9 @@ final class EnsureRecentPasswordConfirmation
 
             return response()->json([
                 'type' => 'about:blank',
-                'title' => 'Password confirmation required',
+                'title' => 'Recent password confirmation required',
                 'status' => 423,
-                'detail' => 'Confirm your password again before changing membership roles.',
+                'detail' => 'Confirm your password again before performing this privileged action.',
                 'code' => 'PASSWORD_CONFIRMATION_REQUIRED',
                 'request_id' => $requestId,
             ], 423, ['Content-Type' => 'application/problem+json']);
