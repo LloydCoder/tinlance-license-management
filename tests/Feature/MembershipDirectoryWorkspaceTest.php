@@ -178,7 +178,6 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         $this->assertTrue($paginator->hasMorePages());
     }
 
-    /** @return array{User, VendorAccount} */
     /** @return array{0: User, 1: VendorAccount} */
     private function vendorManager(string $label): array
     {
@@ -189,7 +188,6 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         return [$actor, $vendor];
     }
 
-    /** @return array{User, CustomerOrganization} */
     /** @return array{0: User, 1: CustomerOrganization} */
     private function customerOwner(string $label): array
     {
