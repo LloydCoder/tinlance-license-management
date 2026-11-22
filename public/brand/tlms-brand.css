@@ -50,3 +50,26 @@ code, pre, .tlms-mono { font-family: var(--tlms-font-mono); }
 .tlms-role { display: inline-block; margin: 6px 6px 0 0; padding: 4px 8px; border: 1px solid var(--tlms-edge); border-radius: 999px; color: var(--tlms-paper); font-size: .8rem; }
 @media (max-width: 600px) { .tlms-shell { padding: 20px 12px; } .tlms-auth-shell { padding: 22px 18px; } .tlms-panel { padding: 14px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Compatibility selectors for current Blade screens. */
+.tlms-auth-page { display: grid; place-items: center; padding: 28px 16px; }
+.stack, .tlms-stack { display: grid; gap: 12px; }
+.links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
+.divider { height: 1px; margin: 22px 0; background: var(--tlms-edge); }
+.muted { color: var(--tlms-fog); font-size: .88rem; }
+.panel { margin: 12px 0; border: 1px solid var(--tlms-edge); border-radius: 12px; background: var(--tlms-surface); padding: 18px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.role { display: inline-block; margin: 6px 6px 0 0; padding: 4px 8px; border: 1px solid var(--tlms-edge); border-radius: 999px; color: var(--tlms-paper); font-size: .8rem; }
+form { margin-top: 16px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.table-wrap { width: 100%; overflow-x: auto; }
+table { width: 100%; min-width: 620px; border-collapse: collapse; }
+th, td { padding: 10px 8px; border-bottom: 1px solid var(--tlms-edge); text-align: left; vertical-align: top; }
+th { color: var(--tlms-fog); font-size: .8rem; font-weight: 600; }
+td { font-size: .9rem; }
+.actions { display: grid; gap: 8px; min-width: 190px; }
+.status { min-height: 1.5em; color: var(--tlms-lime); }
+.warning { border-color: var(--tlms-fog); }
+.muted-note { color: var(--tlms-fog); font-size: .82rem; }
+.errors { margin: 12px 0; padding: 10px 12px; border: 1px solid #8B514A; border-radius: 8px; color: var(--tlms-paper); }
+@media (max-width: 600px) { .panel { padding: 14px; } h1 { font-size: 1.45rem; } }
