@@ -177,6 +177,7 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
     }
 
     /** @return array{User, VendorAccount} */
+    /** @return array{0: User, 1: VendorAccount} */
     private function vendorManager(string $label): array
     {
         $actor = $this->createUser($label);
@@ -187,6 +188,7 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
     }
 
     /** @return array{User, CustomerOrganization} */
+    /** @return array{0: User, 1: CustomerOrganization} */
     private function customerOwner(string $label): array
     {
         $actor = $this->createUser($label);
