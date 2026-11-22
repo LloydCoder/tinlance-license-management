@@ -229,19 +229,16 @@ final class ProductCatalogFoundationTest extends TestCase
 
     private function createProduct(User $manager): Product
     {
-        $vendor = $manager->vendorMemberships()->with('vendorAccount')->firstOrFail()->vendorAccount;
-
-        return Product::query()->create([
-            'vendor_account_id' => $vendor->getKey(),
-            'public_id' => (string) str()->uuid(),
-            'slug' => 'draft-product-'.str()->lower(str()->random(8)),
+        $response = $this->authenticated($manager)->postJson('/api/v1/products', [
             'name' => 'Draft product',
+            'slug' => 'draft-product-'.str()->lower(str()->random(8)),
             'description' => 'A product fixture for authorization tests.',
-            'status' => 'draft',
-            'version' => 1,
-            'created_by_user_id' => $manager->getKey(),
-            'updated_by_user_id' => $manager->getKey(),
+            'reason' => 'Create a scoped product test fixture.',
         ]);
+
+        $response->assertCreated();
+
+        return Product::query()->findOrFail($response->json('data.id'));
     }
 
     /**
