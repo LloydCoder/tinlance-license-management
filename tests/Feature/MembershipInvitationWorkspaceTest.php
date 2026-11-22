@@ -188,7 +188,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
 
         $paginator = app(MembershipInvitationWorkspaceQuery::class)->vendorRevokedMemberships($actor, $vendor);
         $this->assertSame(1, $paginator->total());
-        $item = $paginator->getCollection()->firstOrFail();
+        $item = $paginator->getCollection()->sole();
         $this->assertSame($revoked->getKey(), $item->getKey());
         $this->assertSame($revokedUser->email, $item->user?->email);
         $this->assertSame('Prior vendor access removed.', $item->latestLifecycleEvent?->reason);
