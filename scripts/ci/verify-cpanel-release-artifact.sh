@@ -37,7 +37,9 @@ required_entries=(
     "tlms/.env.example"
     "tlms/BUILD-MANIFEST.json"
     "tlms/LICENSE"
-    "tlms/COMMERCIAL-LICENSING.md"
+    "tlms/COMMERCIAL-LICENSING.md",
+    "tlms/public/build/passkeys.js",
+    "tlms/public/build/membership-invitations.js"
 )
 
 for required in "${required_entries[@]}"; do
@@ -130,6 +132,10 @@ if (($manifest["database_targets"] ?? null) !== ["MySQL 8.4", "MariaDB 10.11"]) 
 }
 if (($manifest["public_document_root"] ?? null) !== "public/") {
     fwrite(STDERR, "Manifest document root is not public/.".PHP_EOL);
+    exit(1);
+}
+if (($manifest["browser_asset_build"]["entries"] ?? null) !== ["public/build/passkeys.js", "public/build/membership-invitations.js"]) {
+    fwrite(STDERR, "Manifest browser asset entry points are invalid.".PHP_EOL);
     exit(1);
 }
 if (($manifest["dependency_install_mode"] ?? null) !== "production-only --no-dev") {
