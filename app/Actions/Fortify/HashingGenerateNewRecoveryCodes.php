@@ -26,7 +26,7 @@ final class HashingGenerateNewRecoveryCodes extends GenerateNewRecoveryCodes
             throw new HttpException(401, 'An authenticated user is required.');
         }
 
-        if (! $user->hasEnabledTwoFactorAuthentication()) {
+        if ($user->status !== 'active' || ! $user->hasEnabledTwoFactorAuthentication()) {
             throw new HttpException(403, 'Authenticator enrollment must be confirmed before recovery codes can be regenerated.');
         }
 
