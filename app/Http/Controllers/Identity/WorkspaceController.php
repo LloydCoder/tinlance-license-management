@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Identity;
 
 use App\Models\User;
 use App\Services\Authorization\MembershipAuthorization;
+use App\Services\Authorization\MembershipDirectoryQuery;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ final class WorkspaceController
         Request $request,
         MembershipAuthorization $authorization,
         MembershipInvitationWorkspaceQuery $invitations,
+        MembershipDirectoryQuery $directory,
         MembershipRoleAssignmentService $roles,
     ): View|RedirectResponse {
         $user = $request->user();
@@ -60,6 +62,7 @@ final class WorkspaceController
 
             $vendorInvitationGroups[] = [
                 'tenant' => $vendor,
+                'members' => $directory->vendorMembers($user, $vendor),
                 'invitations' => $invitations->vendorInvitations($user, $vendor),
                 'revokedMemberships' => $invitations->vendorRevokedMemberships($user, $vendor),
                 'roles' => $roles->assignableVendorRoles(),
@@ -75,6 +78,7 @@ final class WorkspaceController
 
             $customerInvitationGroups[] = [
                 'tenant' => $organization,
+                'members' => $directory->customerMembers($user, $organization),
                 'invitations' => $invitations->customerInvitations($user, $organization),
                 'revokedMemberships' => $invitations->customerRevokedMemberships($user, $organization),
                 'roles' => $roles->assignableCustomerRoles(),
