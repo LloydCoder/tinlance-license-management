@@ -53,7 +53,9 @@ document.addEventListener('submit', async (event) => {
         return;
     }
 
-    const payload = Object.fromEntries(new FormData(form).entries());
+    const formData = new FormData(form);
+    formData.delete('_token');
+    const payload = Object.fromEntries(formData.entries());
     const originalLabel = submit instanceof HTMLButtonElement ? submit.textContent : '';
 
     if (submit instanceof HTMLButtonElement) {
