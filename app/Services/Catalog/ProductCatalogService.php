@@ -268,6 +268,7 @@ final readonly class ProductCatalogService
         }, 3);
     }
 
+    /** @param list<string> $changedFields */
     private function appendProductEvent(
         Product $product,
         User $actor,
