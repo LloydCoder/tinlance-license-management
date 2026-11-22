@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Fortify;
 
-use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +32,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
 
         DB::transaction(function () use ($user): void {
             $secretLength = (int) config('fortify-options.two-factor-authentication.secret-length', 16);
-            $recoveryCodes = Collection::times(8, static fn (): string => RecoveryCode::generate())->all();
+            $recoveryCodes = Collection::times(8, static fn (int $_index): string => RecoveryCode::generate())->all();
 
             $user->forceFill([
                 'two_factor_secret' => Fortify::currentEncrypter()->encrypt($this->provider->generateSecretKey($secretLength)),
