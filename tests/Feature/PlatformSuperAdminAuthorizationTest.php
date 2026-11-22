@@ -88,6 +88,34 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         ]);
     }
 
+    public function test_cross_tenant_super_admin_read_is_denied_and_audited_for_an_inactive_customer_organization(): void
+    {
+        [$superAdmin] = $this->bootstrapSuperAdmin();
+        $vendor = $this->createVendor('active-parent');
+        $organization = $this->createOrganization($vendor, 'inactive-organization');
+        CustomerOrganization::query()->whereKey($organization->getKey())->update(['status' => 'suspended']);
+
+        $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $organization));
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'customer_organization.read',
+            'resource_id' => $organization->getKey(),
+            'tenant_vendor_account_id' => $vendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'resource_inactive',
+        ]);
+    }
+
+    public function test_cross_tenant_super_admin_read_is_denied_when_the_primary_vendor_is_suspended(): void
+    {
+        [$superAdmin, $primaryVendor] = $this->bootstrapSuperAdmin();
+        $otherVendor = $this->createVendor('primary-suspended-target');
+        VendorAccount::query()->whereKey($primaryVendor->getKey())->update(['status' => 'suspended']);
+
+        $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
+        $this->assertDatabaseCount('platform_access_audit_events', 0);
+    }
+
     public function test_cross_tenant_super_admin_read_is_denied_after_bootstrap_user_suspension(): void
     {
         [$superAdmin] = $this->bootstrapSuperAdmin();
