@@ -35,7 +35,7 @@ final class Product extends BaseModel
             if (
                 $product->status !== 'draft'
                 || (int) $product->version !== 1
-                || preg_match('/\A[a-f0-9-]{36}\z/iD', (string) $product->public_id) !== 1
+                || preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/iD', (string) $product->public_id) !== 1
                 || preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/D', (string) $product->slug) !== 1
                 || trim((string) $product->name) === ''
                 || mb_strlen((string) $product->name) > 160
