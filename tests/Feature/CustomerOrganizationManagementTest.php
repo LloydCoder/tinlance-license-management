@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\CustomerOrganizationManagementService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -160,7 +161,6 @@ final class CustomerOrganizationManagementTest extends TestCase
             ])
             ->assertSessionHasErrors('external_reference');
     }
-
 
     public function test_platform_bootstrap_super_admin_cannot_mutate_customer_records_through_the_service_layer(): void
     {
