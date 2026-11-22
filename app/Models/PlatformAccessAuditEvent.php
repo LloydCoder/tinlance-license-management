@@ -16,6 +16,8 @@ final class PlatformAccessAuditEvent extends BaseModel
         'previous_hash',
         'event_hash',
         'hash_version',
+        'details_ref_id',
+        'details_hash',
         'actor_user_id',
         'action',
         'resource_type',
@@ -93,6 +95,20 @@ final class PlatformAccessAuditEvent extends BaseModel
                 throw new LogicException('Platform access audit metadata is invalid.');
             }
 
+            $hashVersion = (int) $event->hash_version;
+            $detailsMetadataInvalid = match ($hashVersion) {
+                1 => $event->details_ref_id !== null || $event->details_hash !== null,
+                2 => ! in_array($event->action, [
+                    'customer_organization.created',
+                    'customer_organization.profile_updated',
+                ], true)
+                    || ! is_string($event->details_ref_id)
+                    || preg_match('/\\A[0-9A-HJKMNP-TV-Z]{26}\\z/D', $event->details_ref_id) !== 1
+                    || ! is_string($event->details_hash)
+                    || preg_match('/\\A[a-f0-9]{64}\\z/D', $event->details_hash) !== 1,
+                default => true,
+            };
+
             $previousHashInvalid = (int) $event->sequence === 1
                 ? $event->previous_hash !== null
                 : ! is_string($event->previous_hash)
@@ -100,7 +116,7 @@ final class PlatformAccessAuditEvent extends BaseModel
 
             if (
                 (int) $event->sequence < 1
-                || (int) $event->hash_version !== 1
+                || $detailsMetadataInvalid
                 || preg_match('/\A[a-f0-9]{64}\z/D', $event->event_hash) !== 1
                 || $previousHashInvalid
             ) {
