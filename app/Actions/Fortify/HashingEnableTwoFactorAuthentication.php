@@ -28,7 +28,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
         $shouldGenerate = $user instanceof User
             && (empty($user->two_factor_secret) || $force === true);
 
-        if (! $shouldGenerate || ! $user instanceof User) {
+        if (! $shouldGenerate) {
             parent::__invoke($user, $force);
 
             return;
@@ -37,12 +37,14 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
         DB::transaction(function () use ($user, $force): void {
             parent::__invoke($user, $force);
 
-            if (! is_string($user->two_factor_recovery_codes)) {
+            $encryptedCodes = (string) $user->two_factor_recovery_codes;
+
+            if ($encryptedCodes === '') {
                 throw new RuntimeException('Fortify did not persist the recovery-code set.');
             }
 
             $codes = json_decode(
-                Fortify::currentEncrypter()->decrypt($user->two_factor_recovery_codes),
+                Fortify::currentEncrypter()->decrypt($encryptedCodes),
                 true,
                 512,
                 JSON_THROW_ON_ERROR,
