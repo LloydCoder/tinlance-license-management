@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\\Actions\\Fortify;
+namespace App\Actions\Fortify;
 
-use App\\Models\\User;
-use App\\Services\\Identity\\MfaRecoveryCodeVault;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\RateLimiter;
-use Laravel\\Fortify\\Actions\\GenerateNewRecoveryCodes;
-use Laravel\\Fortify\\Events\\RecoveryCodesGenerated;
-use Symfony\\Component\\HttpKernel\\Exception\\TooManyRequestsHttpException;
-use Symfony\\Component\\HttpKernel\\Exception\\HttpException;
+use App\Models\User;
+use App\Services\Identity\MfaRecoveryCodeVault;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
+use Laravel\Fortify\Events\RecoveryCodesGenerated;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class HashingGenerateNewRecoveryCodes extends GenerateNewRecoveryCodes
 {
