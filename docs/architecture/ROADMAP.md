@@ -33,7 +33,7 @@ Products, versions, release channels, plans, price versions, feature/seat/usage/
 ## Phase 6 — Licence engine
 Secure key generation and storage; lifecycle state machine; idempotent issuance; activation; domain/site/user/seat/usage limits; transfer, replacement, renewal, suspension, revocation and reinstatement; atomic concurrency control.
 
-## Phase 7 — Cryptographic signing and key managemen
+## Phase 7 — Cryptographic signing and key management
 Versioned signed claims; canonical JSON; Ed25519/Sodium; offline root; delegated operational keys; rotation; revocation; key distribution; audit; compromise recovery; independent verifier and cross-language vectors.
 
 ## Phase 8 — Activation, domain binding and offline operation
