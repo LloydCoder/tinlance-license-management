@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-22 (main baseline `68261b3e07e3f1fa0d1e2223451bdeaf5a340417`; PRs #86–#91 complete hashed MFA recovery-code hardening, active-member workspace controls, fresh-MFA protection for global session revocation, Phase 4 documentation reconciliation and the first Super Admin customer-organization management surface)
+**Last reviewed:** 2026-11-22 (main baseline `5a87cf6bae81c1b1cd1f699b65ac59dbd03d9498`; PR #93 adds customer-owner profile self-service with scoped authorization, SQL pagination and future-timestamp assurance hardening; PR #94 adds hash-chain operation records for customer-organization create/profile updates)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -8,7 +8,7 @@
 
 | Phase | Scope | Status | Remaining exit evidence |
 |---|---|---|---|
-| 0 | Repository governance and project control | Initial governance documentation merged. Current main-branch protection/ruleset state cannot be verified through the connected GitHub integration because the endpoint requires admin access. | Owner must enable PR-only changes, required CI checks, prevent force-push/deletion, resolve conversations, enable GitHub native secret scanning/push protection, dependency graph and Dependabot alerts; counsel/contributor rights review. |
+| 0 | Repository governance and project control | Initial governance documentation merged. Live GitHub API inspection confirms `main` is unprotected and the repository has no rulesets (`protected: false`, rulesets `[]`). | Owner must enable PR-only changes, require CI and Security Analysis checks, prevent force-push/deletion, require conversation resolution, enable GitHub native secret scanning/push protection, dependency graph and Dependabot alerts; counsel/contributor rights review. The connected GitHub actions expose read-only ruleset inspection, so repository-admin UI/API action is required. |
 | 1 | Requirements and architecture freeze | Initial ADRs, threat model, OpenAPI, authorization matrix, state machines, traceability and 31 decision records are present. | Complete semantic API authorization, lifecycle contracts, privacy/controller-processor/legal review, decision owners and explicit closure evidence. |
 | 2 | Shared-hosting qualification | Requirements, provider shortlist and automated `tlms:hosting-preflight --json` runtime checks implemented; no provider approved and no live account tested. | Real annual cPanel provider PoC: PHP 8.3–8.5, intl, Sodium, Argon2id, MySQL 8.4 or MariaDB 10.11, outbound HTTPS, cron, webhooks, document-root isolation, permissions, resource limits and restore drill. |
 | 3 | Engineering foundation and CI/CD | Laravel 13, locked Composer dependencies, PHP 8.3–8.5 CI, Pint, Composer audit, OpenAPI lint, MySQL 8.4.13 and MariaDB 10.11 integration, Semgrep (`p/security-audit`), Larastan 3.15.0 with PHPStan 2.3.7 (level 8 across `app/`, `src/`, `database/`, `routes/`, `bootstrap/`, `config/` and `tests/`; committed lock, no baseline), pinned Gitleaks 8.30.1 full-history scan across all reachable Git refs (`--all`) with an exact synthetic-fixture/path/rule allowlist, OSV-Scanner 2.7.1 Composer lockfile/repository scanning, weekly Composer/GitHub Actions Dependabot configuration, and a reproducible production-only cPanel ZIP builder/verifier are implemented. The cPanel artifact builder compiles the passkey and invitation browser bundles with pinned Node.js 22.16.0, verifies bundle presence and reproducibility, and removes npm/Vite build tooling from the customer package. CI verifies the artifact; it is not published by default and Node.js is not a customer runtime requirement. | GitHub native secret scanning/push protection and Dependabot alert settings, enforced `main` ruleset, artifact install/upgrade/rollback automation, backup/restore automation and real cPanel PoC. |
@@ -402,3 +402,24 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - The events are append-only but are not yet included in the platform-access SHA-256 hash chain. This is not the complete global audit ledger.
 - Exact-head CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, browser assets, OpenAPI, documentation governance and cPanel artifact verification. Security Analysis passed Larastan, Semgrep, Gitleaks and OSV-Scanner. Signed release publication was correctly skipped because no version tag was created.
 - This is an initial administrative customer-management surface, not a complete customer portal. No customer deletion, suspension, billing mutation or licence operations are exposed.
+
+
+## PR #93 — customer-owner profile self-service (2026-11-22)
+
+- Merged as `3e4a8f3f7bf8182ecd624de8b70d2008d28d8c41`.
+- Adds the customer-scoped `customer.organization.profile.manage` permission to `customer_owner` only.
+- Adds a customer profile workspace scoped in SQL to active customer organizations, active vendor accounts, active memberships and the customer-owner permission; the list is paginated at 25 records.
+- Customer owners can update only their own organization's display name and billing email. Legal name, external reference, tenant ownership and lifecycle status remain vendor-controlled.
+- Writes require recent password confirmation and fresh five-minute TOTP/passkey step-up; vendor/customer profile events remain transactional and immutable.
+- Fixes a shared assurance defect: future password-confirmation timestamps are no longer accepted as fresh. Error detail is now action-neutral.
+- Exact-head CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, browser assets, OpenAPI, documentation governance and cPanel artifact verification. Security Analysis passed Larastan, Semgrep, Gitleaks and OSV-Scanner. Signed release publication was correctly skipped because no version tag was created.
+
+## PR #94 — hash-chain customer organization profile mutations (2026-11-22)
+
+- Merged as `5a87cf6bae81c1b1cd1f699b65ac59dbd03d9498`.
+- Adds `customer_organization.created` and `customer_organization.profile_updated` operation records to the existing serialized SHA-256 audit chain.
+- Records actor, action, resource, tenant, allowed outcome, action-specific reason code and the same normalized request correlation ID used by the detailed profile event.
+- The profile mutation and hash-chain append occur in the same outer database transaction; an audit append failure rolls back the business mutation.
+- Model validation restricts action/resource/reason combinations and prevents denied outcomes for mutation events.
+- **Assurance boundary:** the chain attests to the mutation operation and its correlation metadata. The detailed changed-field and reason payload remains in a separate immutable profile-event table and is not yet included in the chain hash. The ledger is not yet a complete payload-level global audit ledger and remains unkeyed/unanchored.
+- Exact-head CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, browser assets, OpenAPI, documentation governance and cPanel artifact verification. Security Analysis passed Larastan, Semgrep, Gitleaks and OSV-Scanner. Signed release publication was correctly skipped because no version tag was created.
