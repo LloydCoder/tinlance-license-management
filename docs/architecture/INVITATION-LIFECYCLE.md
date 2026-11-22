@@ -19,7 +19,7 @@ Invitation creation and resend are privileged tenant actions. The HTTP routes re
 
 ## Tenant-admin workspace
 
-The authenticated workspace groups invitations by the active vendor account or customer organization. The controller revalidates the actor's tenant permissions through database-backed authorization before invoking the invitation workspace query. Each tenant receives its own paginated result set; the query includes pending, expired and failed-delivery invitations and excludes accepted or revoked invitations.
+The authenticated workspace groups invitations by the active vendor account or customer organization. Vendor-side workspace access is granted by the least-privilege vendor_admin role (PR #70), not by platform_admin: the first active vendor administrator is bootstrapped by a Super Admin, and all later grants require maker-checker approval. The controller revalidates the actor's tenant permissions through database-backed authorization before invoking the invitation workspace query. Each tenant receives its own paginated result set; the query includes pending, expired and failed-delivery invitations and excludes accepted or revoked invitations.
 
 The workspace displays the invitee email, assigned role, delivery state, creation time and expiry. It offers create, resend and revoke actions through the existing tenant-scoped JSON APIs. The UI does not create an alternate mutation path or authorize requests from client-supplied tenant identifiers. Direct invitation role choices come from the same allowlists as the invitation service; maker-checker-only roles are not offered.
 
