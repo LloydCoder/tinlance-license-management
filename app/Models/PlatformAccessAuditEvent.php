@@ -59,6 +59,7 @@ final class PlatformAccessAuditEvent extends BaseModel
 
             $expectedResourceType = match ($event->action) {
                 'vendor.read', 'vendor_account.profile_updated' => 'vendor_account',
+                'product.created', 'product.updated' => 'product',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated' => 'customer_organization',
