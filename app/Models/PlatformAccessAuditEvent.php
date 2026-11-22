@@ -12,7 +12,6 @@ final class PlatformAccessAuditEvent extends BaseModel
     public $timestamps = false;
 
     protected $fillable = [
-        'id',
         'sequence',
         'previous_hash',
         'event_hash',
