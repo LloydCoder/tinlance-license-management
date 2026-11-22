@@ -490,6 +490,16 @@ final class MembershipInvitationTest extends TestCase
 
         $this->assertNotNull($oldInvitation->refresh()->revoked_at);
 
+        $staleInvitation = VendorMembershipInvitation::query()->create([
+            'vendor_membership_id' => $membership->getKey(),
+            'invited_by_user_id' => $actor->getKey(),
+            'invited_email' => $invitee->email,
+            'reason' => 'Legacy pending invitation requiring defensive invalidation.',
+            'token_hash' => hash('sha256', str()->random(64)),
+            'expires_at' => now()->addDay(),
+            'delivery_status' => 'sent',
+        ]);
+
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
                 'role_slug' => 'support_agent',
@@ -500,6 +510,7 @@ final class MembershipInvitationTest extends TestCase
             ->assertJsonMissingPath('data.token')
             ->assertJsonMissingPath('data.token_hash');
 
+        $this->assertNotNull($staleInvitation->refresh()->revoked_at);
         $this->assertSame('invited', $membership->refresh()->status);
         $this->assertNull($membership->joined_at);
         $this->assertSame($actor->getKey(), $membership->invited_by);
@@ -573,6 +584,16 @@ final class MembershipInvitationTest extends TestCase
 
         $this->assertNotNull($oldInvitation->refresh()->revoked_at);
 
+        $staleInvitation = CustomerMembershipInvitation::query()->create([
+            'customer_membership_id' => $membership->getKey(),
+            'invited_by_user_id' => $actor->getKey(),
+            'invited_email' => $invitee->email,
+            'reason' => 'Legacy pending invitation requiring defensive invalidation.',
+            'token_hash' => hash('sha256', str()->random(64)),
+            'expires_at' => now()->addDay(),
+            'delivery_status' => 'sent',
+        ]);
+
         $response = $this->authenticatedJson($actor)
             ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
                 'role_slug' => 'customer_member',
@@ -583,6 +604,7 @@ final class MembershipInvitationTest extends TestCase
             ->assertJsonMissingPath('data.token')
             ->assertJsonMissingPath('data.token_hash');
 
+        $this->assertNotNull($staleInvitation->refresh()->revoked_at);
         $this->assertSame('invited', $membership->refresh()->status);
         $this->assertNull($membership->joined_at);
         $this->assertSame($actor->getKey(), $membership->invited_by);
