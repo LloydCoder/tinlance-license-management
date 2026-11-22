@@ -233,7 +233,12 @@ final class MembershipInvitationWorkspaceTest extends TestCase
     /** @return array<string, int> */
     private function workspaceSession(User $user): array
     {
-        return ['auth_session_version' => (int) $user->fresh()->session_version];
+        $freshUser = $user->fresh();
+        if (! $freshUser instanceof User) {
+            throw new \\RuntimeException('The workspace test user must remain persisted.');
+        }
+
+        return ['auth_session_version' => (int) $freshUser->session_version];
     }
 
     /** @return array{User, VendorAccount} */
@@ -256,6 +261,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         return [$actor, $vendor];
     }
 
+    /** @return array{User, VendorAccount} */
     private function vendorActor(string $label): array
     {
         $actor = $this->createUser($label);
@@ -271,6 +277,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         return [$actor, $vendor];
     }
 
+    /** @return array{User, CustomerOrganization} */
     /** @return array{User, CustomerOrganization} */
     private function customerActor(string $label): array
     {
