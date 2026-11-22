@@ -73,6 +73,12 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (app()->environment('testing')) {
+            Schema::dropIfExists('mfa_recovery_codes');
+
+            return;
+        }
+
         throw new RuntimeException('Hashed MFA recovery codes cannot be restored to the legacy encrypted format. Reissue codes and plan an explicit rollback before removing this table.');
     }
 };
