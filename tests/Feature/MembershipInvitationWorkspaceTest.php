@@ -235,7 +235,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
     {
         $freshUser = $user->fresh();
         if (! $freshUser instanceof User) {
-            throw new \\RuntimeException('The workspace test user must remain persisted.');
+            throw new \RuntimeException('The workspace test user must remain persisted.');
         }
 
         return ['auth_session_version' => (int) $freshUser->session_version];
