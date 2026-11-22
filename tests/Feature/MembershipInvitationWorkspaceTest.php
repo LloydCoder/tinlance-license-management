@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerOrganization;
-use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
@@ -258,6 +257,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('support_agent');
         $response->assertSee('security_auditor');
         $response->assertSee('vendor_developer');
+        $response->assertDontSee('vendor_admin');
         $response->assertDontSee('finance_admin');
         $response->assertDontSee('vendor_product_manager');
         $response->assertDontSee('reseller_manager');
@@ -350,11 +350,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             'status' => 'active',
             'joined_at' => now(),
         ]);
-        $membership->roles()->attach($this->role('vendor', 'platform_admin'));
-        $platformAdmin = $membership->roles()->firstOrFail();
-        $platformAdmin->permissions()->attach(
-            Permission::query()->where('scope', 'vendor')->where('name', 'admins.manage')->firstOrFail(),
-        );
+        $membership->roles()->attach($this->role('vendor', 'vendor_admin'));
 
         return [$actor, $vendor];
     }

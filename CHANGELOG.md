@@ -23,6 +23,7 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Tenant-scoped pending-invitation query and workspace view model for vendor/customer managers, including tenant pagination, allowlisted roles, password-confirmation and fresh MFA assurance flags (PRs #66–#67).
 - Vendor/customer invitation management UI with create/resend/revoke controls, delivery/expiry/creation metadata, TOTP/passkey step-up UX, same-origin CSRF-protected interactions and token-material exclusion (PR #68).
 - Reproducible cPanel release packaging now compiles passkey and invitation browser bundles with pinned Node.js/npm, verifies their presence and build metadata, and removes Node build tooling from the production ZIP (PR #68).
+- Add least-privilege vendor_admin with one-time Super Admin bootstrap and maker-checker approval for subsequent grants; workspace access no longer depends on synthetic permission injection into platform_admin (PR #70).
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).

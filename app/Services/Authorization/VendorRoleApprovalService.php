@@ -23,6 +23,7 @@ final readonly class VendorRoleApprovalService
         'finance_admin',
         'vendor_product_manager',
         'reseller_manager',
+        'vendor_admin',
     ];
 
     public function __construct(
@@ -107,6 +108,7 @@ final readonly class VendorRoleApprovalService
                 || $targetUser === null
                 || $currentRole === null
                 || $target->user_id === $maker->getKey()
+                || ($currentRole->slug === 'vendor_admin' && $target->status !== 'active')
                 || ! $this->authorization->vendorCan($maker, $vendor, 'admins.manage')
             ) {
                 throw new AuthorizationException('The requested privileged role approval is not permitted.');

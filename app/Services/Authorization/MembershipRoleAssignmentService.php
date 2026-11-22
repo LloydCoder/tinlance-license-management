@@ -30,6 +30,7 @@ final readonly class MembershipRoleAssignmentService
         'finance_admin',
         'vendor_product_manager',
         'reseller_manager',
+        'vendor_admin',
     ];
 
     private const ASSIGNABLE_CUSTOMER_ROLES = [
@@ -69,7 +70,9 @@ final readonly class MembershipRoleAssignmentService
         Role $role,
         string $reason,
     ): bool {
-        return $this->mutateVendorRole($actor, $vendor, $membership, $role, $reason, 'assigned');
+        $bootstrapVendorAdmin = $role->slug === 'vendor_admin';
+
+        return $this->mutateVendorRole($actor, $vendor, $membership, $role, $reason, 'assigned', false, $bootstrapVendorAdmin);
     }
 
     public function revokeVendorRole(
@@ -148,17 +151,22 @@ final readonly class MembershipRoleAssignmentService
         string $reason,
         string $action,
         bool $approvedGrant = false,
+        bool $bootstrapVendorAdmin = false,
     ): bool {
         $reason = trim($reason);
         $allowedRoleSlugs = $action === 'revoked'
             ? array_merge(self::ASSIGNABLE_VENDOR_ROLES, self::APPROVAL_REQUIRED_VENDOR_ROLES)
             : ($approvedGrant ? self::APPROVAL_REQUIRED_VENDOR_ROLES : self::ASSIGNABLE_VENDOR_ROLES);
 
+        if ($bootstrapVendorAdmin) {
+            $allowedRoleSlugs = ['vendor_admin'];
+        }
+
         if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, $allowedRoleSlugs, true)) {
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
-        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs): bool {
+        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs, $approvedGrant, $bootstrapVendorAdmin): bool {
             $activeActor = User::query()
                 ->whereKey($actor->getKey())
                 ->where('status', 'active')
@@ -211,6 +219,31 @@ final readonly class MembershipRoleAssignmentService
                 || ! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')
             ) {
                 throw new AuthorizationException('The requested vendor role change is not permitted.');
+            }
+
+            if ($approvedGrant && $currentRole->slug === 'vendor_admin' && $target->status !== 'active') {
+                throw new AuthorizationException('Vendor administrator grants require an active membership.');
+            }
+
+            if ($bootstrapVendorAdmin) {
+                $actorIsSuperAdmin = $actorMembership->roles()
+                    ->where('scope', 'vendor')
+                    ->where('slug', 'super_admin')
+                    ->exists();
+
+                $existingVendorAdmin = VendorMembership::query()
+                    ->where('vendor_account_id', $vendor->getKey())
+                    ->where('status', 'active')
+                    ->whereHas('user', static fn ($query) => $query->where('status', 'active'))
+                    ->whereHas('roles', static fn ($query) => $query
+                        ->where('scope', 'vendor')
+                        ->where('slug', 'vendor_admin'))
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $actorIsSuperAdmin || $target->status !== 'active' || $existingVendorAdmin !== null) {
+                    throw new AuthorizationException('Only a Super Admin may bootstrap the first active vendor administrator.');
+                }
             }
 
             $alreadyAssigned = $target->roles()->whereKey($currentRole->getKey())->exists();

@@ -99,6 +99,10 @@ final class AuthorizationCatalogSeeder extends Seeder
     {
         return [
             'vendor' => [
+                'vendor_admin' => [
+                    'name' => 'Vendor Administrator',
+                    'permissions' => ['vendor.account.read', 'admins.manage', 'audit.read'],
+                ],
                 'super_admin' => [
                     'name' => 'Super Admin',
                     'permissions' => $vendorPermissionNames,

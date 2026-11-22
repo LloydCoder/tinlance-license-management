@@ -1,6 +1,6 @@
 # TLMS authorization and permission matrix
 
-**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, fresh TOTP/passkey step-up for those role mutations, and maker-checker for high-risk vendor role grants are implemented and tested. Self-only membership reads and persisted tenant-binding checks are covered. Tenant-admin membership revocation is implemented with fresh step-up and immutable lifecycle evidence; customer membership revocation locks and revalidates the persisted parent vendor row to serialize against concurrent suspension (PR #58). Invitation creation/delivery/acceptance/expiry/resend and the tenant-scoped management workspace are implemented; explicit membership reinstatement, complete resource-level ABAC, non-membership mutation policies, generalized step-up/approval and full actor-principal authorization remain pending.
+**Status:** Initial vendor/customer role catalogue, membership-level authorization service, customer-organization/vendor-account/vendor-membership/customer-membership `view` policies, scoped vendor/customer membership role assignment/revocation APIs, fresh TOTP/passkey step-up for those role mutations, and maker-checker for high-risk vendor role grants are implemented and tested. Self-only membership reads and persisted tenant-binding checks are covered. Tenant-admin membership revocation is implemented with fresh step-up and immutable lifecycle evidence; customer membership revocation locks and revalidates the persisted parent vendor row to serialize against concurrent suspension (PR #58). Invitation creation/delivery/acceptance/expiry/resend and the tenant-scoped management workspace are implemented. The least-privilege vendor_admin role enables that workspace for ordinary vendor tenants; first-admin bootstrap is Super Admin-only and subsequent grants require maker-checker. Explicit membership reinstatement, complete resource-level ABAC, non-membership mutation policies, generalized step-up/approval and full actor-principal authorization remain pending.
 
 ## 1. Authorization model
 
@@ -15,6 +15,7 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 | Actor | Scope | Notes |
 |---|---|---|
 | Super Admin | Entire TLMS installation / vendor account | Full platform administration, subject to cryptographic separation, audit, step-up and legal gates |
+| Vendor Administrator | One vendor account | Manage vendor memberships and invitations; can request privileged role grants but cannot approve them or administer platform settings, finance, products, releases or signing |
 | Platform Admin | Explicitly assigned platform modules | No automatic access to secrets, signing roots or financial approvals |
 | Finance Admin | Payments, invoices, ledger and reconciliation | No provider secret readback; refunds/adjustments may require maker-checker |
 | Support Agent | Customer support and limited licence diagnostics | No credential, payment mutation or private key access |
@@ -36,7 +37,7 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | vendor.account.read | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | No |
 | platform.settings.manage | Yes | Scoped | No | No | Read-only | No | No | No | No |
-| admins.manage | Yes | Scoped | No | No | Read-only | No | No | No | No |
+| admins.manage | Yes | No | No | No | Read-only | No | No | No | No |
 | customers.manage | Yes | Scoped | No | Scoped support | Read-only | Assigned products only | No | Assigned accounts | Own org roles |
 | products.manage | Yes | Scoped | No | Read-only | Read-only | Assigned products | Scoped | No | No |
 | plans.entitlements.manage | Yes | Scoped | No | Read-only | Read-only | Assigned products | No | No | No |
@@ -61,6 +62,8 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 | backups.restore | Yes + step-up + recorded change | No by default | No | No | Read-only evidence | No | No | No | No |
 | system.maintenance.manage | Yes + step-up | Explicit ops scope | No | No | Read-only | No | No | No | No |
 
+**Vendor Administrator:** a tenant-scoped role with only vendor.account.read, admins.manage and audit.read. It has no approvals.review permission and cannot manage platform settings, customer resources, payments, products, releases or signing. The first active vendor administrator may be bootstrapped by a Super Admin only; later grants require an independent maker-checker approval. The role is not directly invitable.
+
 **Customer roles:** “Customer roles” column is constrained by organization membership and the named billing/technical/member role. Organization Owner may administer members but cannot elevate themselves into vendor staff.
 
 
@@ -72,7 +75,7 @@ Permission identifiers are stable machine-readable strings. Roles are bundles of
 - The membership authorization service reloads actor/resource status from the database to avoid trusting stale model instances.
 - Cross-scope role or permission pivots fail closed at authorization time.
 - `MembershipRoleAssignmentService` performs transactional, row-locked assignment/revocation, checks actor permission and target scope, blocks self-assignment and privileged roles, requires a reason, and records immutable vendor/customer membership-role events.
-- Generic grants are allowlisted; Super Admin, platform admin, finance admin, vendor product manager and customer owner grants require separate bootstrap/approval workflows.
+- Generic grants are allowlisted; Super Admin, platform admin, finance admin, vendor product manager, reseller manager and customer owner grants require separate bootstrap/approval workflows. vendor_admin has a one-time Super Admin bootstrap path; all subsequent grants require maker-checker.
 - Membership-role events are an application-level append-only precursor, not the future global hash-chained audit ledger.
 - PR #29 adds `CustomerOrganizationPolicy::view`: a customer principal may read only its own organization with `customer.licences.read`; a vendor support principal may read organizations only under its active vendor with `customers.support.read`. Both branches delegate to `MembershipAuthorization`, which reloads current actor, membership and resource/vendor state from the database.
 - PR #38 adds `VendorAccountPolicy::view`, backed by the dedicated vendor-scoped `vendor.account.read` permission. The permission is granted to the defined vendor staff roles, never customer roles; authorization reloads current user, vendor and membership state. The policy exposes no collection listing or mutation abilities.
@@ -151,4 +154,5 @@ Any future dual-control workflow must prohibit both maker/checker identity confl
 - Status transition and immutable lifecycle evidence commit in one transaction. Repeated revocation is idempotent and creates no duplicate event. Role pivots are retained; a revoked membership cannot authorize tenant operations.
 - Revocation is tenant-scoped and does not invalidate all of the user's sessions, because the same user may hold other tenant memberships. Each protected operation must re-evaluate the relevant persisted membership.
 - PR #58 additionally locks the persisted parent vendor row during customer membership revocation. The active vendor check is now serialized against concurrent vendor suspension; the customer organization row is also locked before the parent vendor row.
+- PR #70 adds a least-privilege vendor_admin role (vendor.account.read, admins.manage, audit.read only). The first active vendor administrator is bootstrapped by a Super Admin under the existing fresh password/MFA-gated role mutation route; the operation is serialized under the vendor lock and records an immutable role event. Subsequent vendor-admin grants use the existing maker-checker workflow; vendor admins can request but cannot approve grants. The role is excluded from direct invitation/assignment allowlists.
 - PRs #66–#68 implement a tenant-scoped pending-invitation workspace. The query reloads manager permissions, scopes results to active parent tenants, paginates independently per tenant, includes expired/failed-delivery records for recovery, excludes accepted/revoked records and never selects token material. The controller revalidates vendor/customer manager permissions before passing groups to the workspace view. The UI calls the existing invitation/lifecycle APIs for create/resend/revoke; role options use the invitation-service allowlists, and maker-checker-only roles remain excluded. Mutations require recent password confirmation and fresh five-minute TOTP/passkey step-up; same-origin POST/CSRF controls are UX safeguards only, while server authorization remains authoritative. Raw invitation tokens and token hashes are not rendered. Explicit membership reinstatement remains a separate unimplemented workflow.
