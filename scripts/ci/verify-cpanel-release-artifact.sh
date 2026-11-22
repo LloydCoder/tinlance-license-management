@@ -37,8 +37,8 @@ required_entries=(
     "tlms/.env.example"
     "tlms/BUILD-MANIFEST.json"
     "tlms/LICENSE"
-    "tlms/COMMERCIAL-LICENSING.md",
-    "tlms/public/build/passkeys.js",
+    "tlms/COMMERCIAL-LICENSING.md"
+    "tlms/public/build/passkeys.js"
     "tlms/public/build/membership-invitations.js"
 )
 
