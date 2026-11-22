@@ -216,6 +216,256 @@ final readonly class MembershipInvitationService
         return $payload['membership']->refresh();
     }
 
+    public function reinstateVendor(
+        User $actor,
+        VendorAccount $vendor,
+        VendorMembership $membership,
+        string $roleSlug,
+        string $reason,
+    ): VendorMembership {
+        $reason = $this->validateReason($reason);
+        $token = bin2hex(random_bytes(32));
+
+        $payload = DB::transaction(function () use ($actor, $vendor, $membership, $roleSlug, $reason, $token): array {
+            $activeActor = User::query()
+                ->whereKey($actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+            $activeVendor = VendorAccount::query()
+                ->whereKey($vendor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+            $actorMembership = VendorMembership::query()
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('user_id', $actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+            $target = VendorMembership::query()
+                ->whereKey($membership->getKey())
+                ->where('vendor_account_id', $vendor->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($target instanceof VendorMembership && $target->status !== 'revoked') {
+                throw new ConflictHttpException('Only a revoked vendor membership can be reinstated.');
+            }
+
+            $invitee = $target instanceof VendorMembership
+                ? User::query()->whereKey($target->user_id)->where('status', 'active')->lockForUpdate()->first()
+                : null;
+            $role = $this->membershipRoles->assignableVendorRoles()->firstWhere('slug', $roleSlug);
+
+            if (
+                $activeActor === null
+                || ! $activeVendor instanceof VendorAccount
+                || $actorMembership === null
+                || ! $target instanceof VendorMembership
+                || ! $invitee instanceof User
+                || $target->user_id === $actor->getKey()
+                || ! $role instanceof Role
+                || ! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')
+            ) {
+                throw new AuthorizationException('The vendor membership cannot be reinstated by this actor.');
+            }
+
+            $previousRoles = $target->roles()->orderBy('slug')->get();
+
+            $target->forceFill([
+                'status' => 'invited',
+                'invited_by' => $actor->getKey(),
+                'joined_at' => null,
+            ])->save();
+
+            VendorMembershipLifecycleEvent::query()->create([
+                'vendor_membership_id' => $target->getKey(),
+                'actor_user_id' => $actor->getKey(),
+                'from_status' => 'revoked',
+                'to_status' => 'invited',
+                'reason' => $reason,
+                'created_at' => now(),
+            ]);
+
+            foreach ($previousRoles as $previousRole) {
+                if (in_array($previousRole->slug, ['super_admin', 'platform_admin'], true)) {
+                    $this->membershipRoles->revokeVendorRoleForReinstatement(
+                        $actor,
+                        $vendor,
+                        $target,
+                        $previousRole,
+                        $reason,
+                    );
+                } else {
+                    $this->membershipRoles->revokeVendorRole(
+                        $actor,
+                        $vendor,
+                        $target,
+                        $previousRole,
+                        $reason,
+                    );
+                }
+            }
+
+            $this->membershipRoles->assignVendorRole($actor, $vendor, $target, $role, $reason);
+
+            VendorMembershipInvitation::query()
+                ->where('vendor_membership_id', $target->getKey())
+                ->whereNull('accepted_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
+
+            $invitation = VendorMembershipInvitation::query()->create([
+                'vendor_membership_id' => $target->getKey(),
+                'invited_by_user_id' => $actor->getKey(),
+                'invited_email' => $invitee->email,
+                'reason' => $reason,
+                'token_hash' => hash('sha256', $token),
+                'expires_at' => $this->invitationExpiry(),
+                'delivery_status' => 'pending',
+            ]);
+
+            return [
+                'type' => 'vendor',
+                'membership' => $target,
+                'invitation' => $invitation,
+                'email' => $invitee->email,
+                'tenant_name' => $activeVendor->display_name,
+                'role_name' => $role->name,
+                'token' => $token,
+            ];
+        }, 3);
+
+        $this->deliver($payload);
+
+        return $payload['membership']->refresh();
+    }
+
+    public function reinstateCustomer(
+        User $actor,
+        CustomerOrganization $organization,
+        CustomerMembership $membership,
+        string $roleSlug,
+        string $reason,
+    ): CustomerMembership {
+        $reason = $this->validateReason($reason);
+        $token = bin2hex(random_bytes(32));
+
+        $payload = DB::transaction(function () use ($actor, $organization, $membership, $roleSlug, $reason, $token): array {
+            $activeActor = User::query()
+                ->whereKey($actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+            $activeOrganization = CustomerOrganization::query()
+                ->whereKey($organization->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+            $activeVendor = $activeOrganization instanceof CustomerOrganization
+                ? VendorAccount::query()
+                    ->whereKey($activeOrganization->vendor_account_id)
+                    ->where('status', 'active')
+                    ->lockForUpdate()
+                    ->first()
+                : null;
+            $actorMembership = CustomerMembership::query()
+                ->where('customer_organization_id', $organization->getKey())
+                ->where('user_id', $actor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+            $target = CustomerMembership::query()
+                ->whereKey($membership->getKey())
+                ->where('customer_organization_id', $organization->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($target instanceof CustomerMembership && $target->status !== 'revoked') {
+                throw new ConflictHttpException('Only a revoked customer membership can be reinstated.');
+            }
+
+            $invitee = $target instanceof CustomerMembership
+                ? User::query()->whereKey($target->user_id)->where('status', 'active')->lockForUpdate()->first()
+                : null;
+            $role = $this->membershipRoles->assignableCustomerRoles()->firstWhere('slug', $roleSlug);
+
+            if (
+                $activeActor === null
+                || ! $activeOrganization instanceof CustomerOrganization
+                || ! $activeVendor instanceof VendorAccount
+                || $actorMembership === null
+                || ! $target instanceof CustomerMembership
+                || ! $invitee instanceof User
+                || $target->user_id === $actor->getKey()
+                || ! $role instanceof Role
+                || ! $this->authorization->customerCan($actor, $organization, 'customer.members.manage')
+            ) {
+                throw new AuthorizationException('The customer membership cannot be reinstated by this actor.');
+            }
+
+            $previousRoles = $target->roles()->orderBy('slug')->get();
+
+            $target->forceFill([
+                'status' => 'invited',
+                'invited_by' => $actor->getKey(),
+                'joined_at' => null,
+            ])->save();
+
+            CustomerMembershipLifecycleEvent::query()->create([
+                'customer_membership_id' => $target->getKey(),
+                'actor_user_id' => $actor->getKey(),
+                'from_status' => 'revoked',
+                'to_status' => 'invited',
+                'reason' => $reason,
+                'created_at' => now(),
+            ]);
+
+            foreach ($previousRoles as $previousRole) {
+                $this->membershipRoles->revokeCustomerRole(
+                    $actor,
+                    $organization,
+                    $target,
+                    $previousRole,
+                    $reason,
+                );
+            }
+
+            $this->membershipRoles->assignCustomerRole($actor, $organization, $target, $role, $reason);
+
+            CustomerMembershipInvitation::query()
+                ->where('customer_membership_id', $target->getKey())
+                ->whereNull('accepted_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
+
+            $invitation = CustomerMembershipInvitation::query()->create([
+                'customer_membership_id' => $target->getKey(),
+                'invited_by_user_id' => $actor->getKey(),
+                'invited_email' => $invitee->email,
+                'reason' => $reason,
+                'token_hash' => hash('sha256', $token),
+                'expires_at' => $this->invitationExpiry(),
+                'delivery_status' => 'pending',
+            ]);
+
+            return [
+                'type' => 'customer',
+                'membership' => $target,
+                'invitation' => $invitation,
+                'email' => $invitee->email,
+                'tenant_name' => $activeOrganization->display_name,
+                'role_name' => $role->name,
+                'token' => $token,
+            ];
+        }, 3);
+
+        $this->deliver($payload);
+
+        return $payload['membership']->refresh();
+    }
+
     public function resendVendor(User $actor, VendorAccount $vendor, VendorMembership $membership, string $reason): void
     {
         $reason = $this->validateReason($reason);
@@ -775,7 +1025,7 @@ final readonly class MembershipInvitationService
     {
         $reason = trim($reason);
 
-        if ($reason === '' || mb_strlen($reason) > 500) {
+        if (mb_strlen($reason) < 5 || mb_strlen($reason) > 500) {
             throw new AuthorizationException('A valid invitation reason is required.');
         }
 

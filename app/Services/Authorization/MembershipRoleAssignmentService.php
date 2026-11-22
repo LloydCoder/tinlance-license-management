@@ -85,6 +85,20 @@ final readonly class MembershipRoleAssignmentService
         return $this->mutateVendorRole($actor, $vendor, $membership, $role, $reason, 'revoked');
     }
 
+    public function revokeVendorRoleForReinstatement(
+        User $actor,
+        VendorAccount $vendor,
+        VendorMembership $membership,
+        Role $role,
+        string $reason,
+    ): bool {
+        if (! in_array($role->slug, ['super_admin', 'platform_admin'], true)) {
+            throw new AuthorizationException('Only protected vendor roles use the Super Admin reinstatement revocation path.');
+        }
+
+        return $this->mutateVendorRole($actor, $vendor, $membership, $role, $reason, 'revoked', false, false, true);
+    }
+
     public function assignVendorRoleAfterApproval(
         User $checker,
         VendorAccount $vendor,
@@ -152,6 +166,7 @@ final readonly class MembershipRoleAssignmentService
         string $action,
         bool $approvedGrant = false,
         bool $bootstrapVendorAdmin = false,
+        bool $superAdminReinstatement = false,
     ): bool {
         $reason = trim($reason);
         $allowedRoleSlugs = $action === 'revoked'
@@ -162,11 +177,15 @@ final readonly class MembershipRoleAssignmentService
             $allowedRoleSlugs = ['vendor_admin'];
         }
 
+        if ($superAdminReinstatement) {
+            $allowedRoleSlugs = array_merge($allowedRoleSlugs, ['super_admin', 'platform_admin']);
+        }
+
         if ($reason === '' || mb_strlen($reason) > 500 || ! in_array($role->slug, $allowedRoleSlugs, true)) {
             throw new AuthorizationException('The requested vendor role change is not permitted.');
         }
 
-        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs, $approvedGrant, $bootstrapVendorAdmin): bool {
+        return DB::transaction(function () use ($actor, $vendor, $membership, $role, $reason, $action, $allowedRoleSlugs, $approvedGrant, $bootstrapVendorAdmin, $superAdminReinstatement): bool {
             $activeActor = User::query()
                 ->whereKey($actor->getKey())
                 ->where('status', 'active')
@@ -243,6 +262,21 @@ final readonly class MembershipRoleAssignmentService
 
                 if (! $actorIsSuperAdmin || $target->status !== 'active' || $existingVendorAdmin !== null) {
                     throw new AuthorizationException('Only a Super Admin may bootstrap the first active vendor administrator.');
+                }
+            }
+
+            if ($superAdminReinstatement) {
+                $actorIsSuperAdmin = $actorMembership->roles()
+                    ->where('scope', 'vendor')
+                    ->where('slug', 'super_admin')
+                    ->exists();
+
+                if (
+                    ! $actorIsSuperAdmin
+                    || $action !== 'revoked'
+                    || ! in_array($currentRole->slug, ['super_admin', 'platform_admin'], true)
+                ) {
+                    throw new AuthorizationException('Only a vendor Super Admin may remove protected roles during reinstatement.');
                 }
             }
 

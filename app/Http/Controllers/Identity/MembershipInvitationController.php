@@ -109,6 +109,92 @@ final class MembershipInvitationController
         ], 201);
     }
 
+    public function reinstateVendor(
+        Request $request,
+        VendorAccount $vendor,
+        VendorMembership $membership,
+        MembershipInvitationService $invitations,
+    ): JsonResponse {
+        abort_unless($membership->vendor_account_id === $vendor->getKey(), 404);
+
+        $validated = $request->validate([
+            'role_slug' => ['required', 'string', 'max:100'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        try {
+            $membership = $invitations->reinstateVendor(
+                $actor,
+                $vendor,
+                $membership,
+                $validated['role_slug'],
+                $validated['reason'],
+            );
+        } catch (MembershipInvitationDeliveryException) {
+            return $this->deliveryFailure();
+        }
+
+        $expiresAt = VendorMembershipInvitation::query()
+            ->where('vendor_membership_id', $membership->getKey())
+            ->whereNull('revoked_at')
+            ->latest('created_at')
+            ->value('expires_at');
+
+        return response()->json([
+            'data' => [
+                'membership_id' => $membership->getKey(),
+                'status' => $membership->status,
+                'invitation_expires_at' => $expiresAt,
+            ],
+        ], 201);
+    }
+
+    public function reinstateCustomer(
+        Request $request,
+        CustomerOrganization $organization,
+        CustomerMembership $membership,
+        MembershipInvitationService $invitations,
+    ): JsonResponse {
+        abort_unless($membership->customer_organization_id === $organization->getKey(), 404);
+
+        $validated = $request->validate([
+            'role_slug' => ['required', 'string', 'max:100'],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        try {
+            $membership = $invitations->reinstateCustomer(
+                $actor,
+                $organization,
+                $membership,
+                $validated['role_slug'],
+                $validated['reason'],
+            );
+        } catch (MembershipInvitationDeliveryException) {
+            return $this->deliveryFailure();
+        }
+
+        $expiresAt = CustomerMembershipInvitation::query()
+            ->where('customer_membership_id', $membership->getKey())
+            ->whereNull('revoked_at')
+            ->latest('created_at')
+            ->value('expires_at');
+
+        return response()->json([
+            'data' => [
+                'membership_id' => $membership->getKey(),
+                'status' => $membership->status,
+                'invitation_expires_at' => $expiresAt,
+            ],
+        ], 201);
+    }
+
     public function resendVendor(
         Request $request,
         VendorAccount $vendor,
