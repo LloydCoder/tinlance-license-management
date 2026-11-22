@@ -66,15 +66,17 @@ final class PlatformAccessAuditEvent extends BaseModel
                 throw new LogicException('Platform access audit metadata is invalid.');
             }
 
+            $previousHashInvalid = (int) $event->sequence === 1
+                ? $event->previous_hash !== null
+                : ! is_string($event->previous_hash)
+                    || preg_match('/\A[a-f0-9]{64}\z/D', $event->previous_hash) !== 1;
+
             if (
                 (int) $event->sequence < 1
                 || (int) $event->hash_version !== 1
+                || ! is_string($event->event_hash)
                 || preg_match('/\A[a-f0-9]{64}\z/D', $event->event_hash) !== 1
-                || (
-                    (int) $event->sequence === 1
-                        ? $event->previous_hash !== null
-                        : preg_match('/\A[a-f0-9]{64}\z/D', $event->previous_hash) !== 1
-                )
+                || $previousHashInvalid
             ) {
                 throw new LogicException('Platform access audit chain metadata is invalid.');
             }
