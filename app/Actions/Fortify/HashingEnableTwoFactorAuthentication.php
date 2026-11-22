@@ -24,10 +24,8 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
         }
 
         DB::transaction(function () use ($user): void {
-            $secretLength = (int) config('fortify-options.two-factor-authentication.secret-length', 16);
-
             $user->forceFill([
-                'two_factor_secret' => Fortify::currentEncrypter()->encrypt($this->provider->generateSecretKey($secretLength)),
+                'two_factor_secret' => Fortify::currentEncrypter()->encrypt($this->provider->generateSecretKey()),
                 'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt('[]'),
                 'two_factor_confirmed_at' => null,
             ])->save();
