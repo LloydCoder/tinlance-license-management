@@ -61,7 +61,8 @@ final readonly class PlatformAccessAuditChainWriter
                 $createdAt,
             );
 
-            $event = PlatformAccessAuditEvent::query()->create([
+            $event = new PlatformAccessAuditEvent();
+            $event->forceFill([
                 'id' => $id,
                 'sequence' => $sequence,
                 'previous_hash' => $previousHash,
@@ -77,6 +78,7 @@ final readonly class PlatformAccessAuditChainWriter
                 'request_id' => $requestId,
                 'created_at' => $createdAt,
             ]);
+            $event->save();
 
             DB::table('platform_access_audit_chain_heads')
                 ->where('stream_key', 'platform_access')
