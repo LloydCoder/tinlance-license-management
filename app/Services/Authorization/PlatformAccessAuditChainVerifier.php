@@ -117,7 +117,7 @@ final readonly class PlatformAccessAuditChainVerifier
             || (string) $profileEvent->vendor_account_id !== (string) $auditEvent->tenant_vendor_account_id
             || (string) $profileEvent->request_id !== (string) $auditEvent->request_id
             || ! is_string($profileEvent->change_digest)
-            || preg_match('/\\A[a-f0-9]{64}\\z/D', $profileEvent->change_digest) !== 1
+            || preg_match('/\A[a-f0-9]{64}\z/D', $profileEvent->change_digest) !== 1
         ) {
             return false;
         }
