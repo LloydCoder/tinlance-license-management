@@ -71,13 +71,13 @@
                         <label for="step-up-code">Authenticator code</label>
                         <div class="form-grid">
                             <input id="step-up-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="step-up-help">
-                            <button type="submit">Verify authenticator</button>
+                            <button type="submit" @disabled(! $passwordConfirmationFresh)>Verify authenticator</button>
                         </div>
                         <p id="step-up-help" class="muted-note">Enter the current six-digit code from your enrolled authenticator.</p>
                     </form>
                 @endif
                 @if ($hasPasskeys)
-                    <button type="button" data-passkey-action="verify">Verify with passkey</button>
+                    <button type="button" data-passkey-action="verify" @disabled(! $passwordConfirmationFresh)>Verify with passkey</button>
                 @endif
             @endif
             <p class="status" role="status" aria-live="polite" data-passkey-status></p>
@@ -124,7 +124,7 @@
 
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th scope="col">Invitee</th><th scope="col">Role</th><th scope="col">Delivery</th><th scope="col">Expiry</th><th scope="col">Actions</th></tr></thead>
+                    <thead><tr><th scope="col">Invitee</th><th scope="col">Role</th><th scope="col">Delivery</th><th scope="col">Created</th><th scope="col">Expiry</th><th scope="col">Actions</th></tr></thead>
                     <tbody>
                     @forelse ($group['invitations'] as $invitation)
                         <tr>
@@ -137,6 +137,7 @@
                                 @endforelse
                             </td>
                             <td>{{ $invitation->delivery_status === 'failed' ? 'Delivery failed' : 'Sent' }}</td>
+                            <td>{{ $invitation->created_at?->format('Y-m-d H:i T') }}</td>
                             <td>
                                 @if ($invitation->expires_at?->isPast())
                                     Expired
@@ -162,7 +163,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="muted">No open invitations for this vendor account.</td></tr>
+                        <tr><td colspan="6" class="muted">No open invitations for this vendor account.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -245,7 +246,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="muted">No open invitations for this customer organization.</td></tr>
+                        <tr><td colspan="6" class="muted">No open invitations for this customer organization.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
