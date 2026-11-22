@@ -48,6 +48,8 @@ final class PlatformAccessAuditEvent extends BaseModel
             if (! in_array($event->action, [
                 'vendor.read',
                 'vendor_account.profile_updated',
+                'product.created',
+                'product.updated',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated',
@@ -70,6 +72,7 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'tenant_inactive',
                 ],
                 'vendor_account.profile_updated' => ['vendor_account_profile_management'],
+                'product.created', 'product.updated' => ['product_catalog_management'],
                 'customer_organization.created' => ['vendor_customer_management'],
                 'customer_organization.profile_updated' => [
                     'vendor_customer_management',
@@ -81,6 +84,8 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'customer_organization.created',
                 'customer_organization.profile_updated',
                 'vendor_account.profile_updated',
+                'product.created',
+                'product.updated',
             ], true);
 
             if (
@@ -105,6 +110,8 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'customer_organization.created',
                     'customer_organization.profile_updated',
                     'vendor_account.profile_updated',
+                    'product.created',
+                    'product.updated',
                 ], true)
                     || ! is_string($event->details_ref_id)
                     || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', strtoupper($event->details_ref_id)) !== 1
