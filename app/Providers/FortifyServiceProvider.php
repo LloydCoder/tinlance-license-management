@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Actions\Fortify\HashingConfirmTwoFactorAuthentication;
 use App\Actions\Fortify\HashingEnableTwoFactorAuthentication;
 use App\Actions\Fortify\HashingGenerateNewRecoveryCodes;
 use App\Actions\Fortify\ResetUserPassword;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Laravel\Fortify\Fortify;
@@ -29,8 +31,8 @@ final class FortifyServiceProvider extends ServiceProvider
     {
         $this->app->bind(TwoFactorLoginRequest::class, HashedTwoFactorLoginRequest::class);
         $this->app->bind(EnableTwoFactorAuthentication::class, HashingEnableTwoFactorAuthentication::class);
+        $this->app->bind(ConfirmTwoFactorAuthentication::class, HashingConfirmTwoFactorAuthentication::class);
         $this->app->bind(GenerateNewRecoveryCodes::class, HashingGenerateNewRecoveryCodes::class);
-        Fortify::generateRecoveryCodesUsing(static fn (): string => bin2hex(random_bytes(16)));
 
         Fortify::authenticateUsing(static function (Request $request): ?User {
             $email = Str::lower(trim((string) $request->input(Fortify::username(), '')));
