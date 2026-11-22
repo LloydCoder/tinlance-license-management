@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
+use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -93,6 +94,38 @@ final class PlatformAccessAuditHashChainTest extends TestCase
             ->update(['last_hash' => str_repeat('0', 64)]);
 
         $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_failed_audit_append_does_not_advance_the_chain_head(): void
+    {
+        $superAdmin = $this->bootstrapSuperAdmin();
+        $vendor = $this->createVendor('failed-append');
+
+        try {
+            app(PlatformAccessAuditChainWriter::class)->append(
+                (string) $superAdmin->getKey(),
+                'vendor.delete',
+                'vendor_account',
+                (string) $vendor->getKey(),
+                (string) $vendor->getKey(),
+                'allowed',
+                'platform_super_admin',
+                bin2hex(random_bytes(16)),
+            );
+            $this->fail('An unsupported audit action must not be appended.');
+        } catch (\\LogicException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $head = DB::table('platform_access_audit_chain_heads')
+            ->where('stream_key', 'platform_access')
+            ->first();
+
+        $this->assertNotNull($head);
+        $this->assertSame(0, (int) $head->last_sequence);
+        $this->assertNull($head->last_hash);
+        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     private function bootstrapSuperAdmin(): User
