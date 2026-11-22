@@ -310,6 +310,12 @@ final readonly class MembershipInvitationService
 
             $this->membershipRoles->assignVendorRole($actor, $vendor, $target, $role, $reason);
 
+            VendorMembershipInvitation::query()
+                ->where('vendor_membership_id', $target->getKey())
+                ->whereNull('accepted_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
+
             $invitation = VendorMembershipInvitation::query()->create([
                 'vendor_membership_id' => $target->getKey(),
                 'invited_by_user_id' => $actor->getKey(),
@@ -427,6 +433,12 @@ final readonly class MembershipInvitationService
             }
 
             $this->membershipRoles->assignCustomerRole($actor, $organization, $target, $role, $reason);
+
+            CustomerMembershipInvitation::query()
+                ->where('customer_membership_id', $target->getKey())
+                ->whereNull('accepted_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
 
             $invitation = CustomerMembershipInvitation::query()->create([
                 'customer_membership_id' => $target->getKey(),
