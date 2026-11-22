@@ -14,10 +14,10 @@ use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\PlatformAccessAuditChainHasher;
 use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Auth\Access\AuthorizationException;
 use InvalidArgumentException;
 
 final readonly class ProductCatalogService
@@ -160,7 +160,7 @@ final readonly class ProductCatalogService
     }
 
     /**
-     * @param array{name: string, slug: string, description: string|null} $changes
+     * @param  array{name: string, slug: string, description: string|null}  $changes
      */
     public function update(
         User $actor,
