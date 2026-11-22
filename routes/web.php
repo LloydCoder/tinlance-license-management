@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CustomerOrganizationController;
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
+use App\Http\Controllers\Catalog\ProductCatalogController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
 use App\Http\Controllers\Identity\MembershipRoleController;
@@ -104,6 +105,18 @@ Route::middleware([
     EnsureRecentPasswordConfirmation::class,
     EnsureMfaEnrolled::class,
 ])->prefix('/api/v1')->group(function (): void {
+    Route::get('/products', [ProductCatalogController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.products.index');
+    Route::post('/products', [ProductCatalogController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.store');
+    Route::get('/products/{product}', [ProductCatalogController::class, 'show'])
+        ->middleware('throttle:60,1')
+        ->name('api.products.show');
+    Route::patch('/products/{product}', [ProductCatalogController::class, 'update'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.update');
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/role-approval-requests', [VendorRoleApprovalController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor.role-approvals.store');
