@@ -113,12 +113,20 @@ Route::middleware([
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
         ->name('api.vendor-memberships.invitations.resend');
 
+    Route::post('/vendor-accounts/{vendor}/memberships/{membership}/reinstate', [MembershipInvitationController::class, 'reinstateVendor'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.vendor-memberships.reinstate');
+
     Route::post('/customer-organizations/{organization}/memberships/invitations', [MembershipInvitationController::class, 'storeCustomer'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
         ->name('api.customer-memberships.invitations.store');
     Route::post('/customer-organizations/{organization}/memberships/{membership}/invitation/resend', [MembershipInvitationController::class, 'resendCustomer'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
         ->name('api.customer-memberships.invitations.resend');
+
+    Route::post('/customer-organizations/{organization}/memberships/{membership}/reinstate', [MembershipInvitationController::class, 'reinstateCustomer'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.customer-memberships.reinstate');
 
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/revoke', [MembershipLifecycleController::class, 'revokeVendor'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
