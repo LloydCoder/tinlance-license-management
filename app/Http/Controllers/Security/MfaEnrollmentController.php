@@ -10,15 +10,15 @@ use Illuminate\Http\Request;
 
 final class MfaEnrollmentController
 {
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request): Response
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
-        return view('security.mfa-enrollment', [
+        return response()->view('security.mfa-enrollment', [
             'user' => $user,
             'passkeys' => $user->passkeys()->latest()->get(),
             'totpEnabled' => $user->hasEnabledTwoFactorAuthentication(),
-        ]);
+        ])->header('Cache-Control', 'no-store, private')->header('Pragma', 'no-cache');
     }
 }
