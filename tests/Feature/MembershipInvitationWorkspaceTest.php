@@ -14,7 +14,6 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipInvitation;
 use App\Models\VendorMembershipLifecycleEvent;
-use App\Models\VendorMembershipLifecycleEvent;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
 use Database\Seeders\AuthorizationCatalogSeeder;
