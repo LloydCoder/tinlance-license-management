@@ -188,7 +188,7 @@ final readonly class CustomerOrganizationManagementService
             ->where('external_reference', trim($reference));
 
         if ($exceptOrganizationId !== null) {
-            $query->whereKeyNot($exceptOrganizationId);
+            $query->where('id', '<>', $exceptOrganizationId);
         }
 
         if ($query->exists()) {
