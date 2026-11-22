@@ -70,7 +70,7 @@ The vendor account is identified by a non-user-editable installation key whose i
 - `platform_access_audit_chain_heads` stores the current sequence and hash for the `platform_access` stream. The writer appends the event and advances the head in one transaction under a row lock; the verifier locks the same head while checking the chain.
 - Existing events are deterministically backfilled by migration. MySQL 8.4 and MariaDB 10.11 immutable-row triggers remain installed for UPDATE/DELETE protection, in addition to Eloquent model guards.
 - PR #82 records denied platform-fallback reads by non-bootstrap actors when the actor and target tenant still exist. It does not grant read access. Missing actor/tenant rows cannot be recorded because the audit event requires valid foreign-key context.
-- Verification command: `php artisan tlms:audit:verify` (or `php artisan tlms:audit:verify --json` where machine-readable output is required).
+- Verification command: `php artisan tlms:audit:verify`.
 - The chain uses unkeyed SHA-256 and has no independent external anchor. It detects partial event/sequence/predecessor/head tampering but cannot stop a privileged database administrator from rewriting all events and recomputing the chain. External anchoring/asymmetric signing and separate retention remain Phase 14 work.
 
 ## Implemented tables
