@@ -221,6 +221,90 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertViewHas('vendorInvitationGroups', []);
     }
 
+    public function test_vendor_workspace_renders_invitation_controls_and_never_exposes_token_material(): void
+    {
+        [$actor, $vendor] = $this->vendorManager('workspace-vendor-ui');
+        $invitation = $this->createVendorInvitation(
+            $actor,
+            $vendor,
+            'workspace-vendor-ui-invitee',
+            'sent',
+            now()->addDay(),
+        );
+
+        $this->enableWorkspaceAuthentication($actor);
+        $session = $this->workspaceSession($actor);
+        $session['auth.password_confirmed_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_method'] = 'totp';
+
+        $response = $this->actingAs($actor)->withSession($session)->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee($invitation->invited_email);
+        $response->assertSee('support_agent');
+        $response->assertSee('security_auditor');
+        $response->assertSee('vendor_developer');
+        $response->assertDontSee('finance_admin');
+        $response->assertDontSee('vendor_product_manager');
+        $response->assertDontSee('reseller_manager');
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/invitations');
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitation->vendor_membership_id.'/invitation/resend');
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitation->vendor_membership_id.'/revoke');
+        $response->assertDontSee($invitation->token_hash);
+        $response->assertSee('build/passkeys.js');
+        $response->assertSee('build/membership-invitations.js');
+        $response->assertViewHas('canManageMembershipWrites', true);
+    }
+
+    public function test_customer_workspace_renders_only_customer_scoped_invitation_actions(): void
+    {
+        [$actor, $organization] = $this->customerActor('workspace-customer-ui');
+        $invitation = $this->createCustomerInvitation(
+            $actor,
+            $organization,
+            'workspace-customer-ui-invitee',
+            'failed',
+            now()->subDay(),
+        );
+
+        $this->enableWorkspaceAuthentication($actor);
+        $session = $this->workspaceSession($actor);
+        $session['auth.password_confirmed_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_method'] = 'totp';
+
+        $response = $this->actingAs($actor)->withSession($session)->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee($invitation->invited_email);
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations');
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend');
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/revoke');
+        $response->assertSee('failed');
+        $response->assertDontSee($invitation->token_hash);
+    }
+
+    public function test_workspace_disables_writes_until_password_confirmation_and_fresh_mfa_step_up(): void
+    {
+        [$actor, $vendor] = $this->vendorManager('workspace-vendor-assurance');
+        $this->createVendorInvitation($actor, $vendor, 'workspace-vendor-assurance-invitee', 'sent', now()->addDay());
+        $this->enableWorkspaceAuthentication($actor);
+
+        $response = $this->actingAs($actor)
+            ->withSession($this->workspaceSession($actor))
+            ->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee(route('password.confirm'));
+        $response->assertSee('data-step-up-totp', false);
+        $response->assertSee('data-passkey-action="verify"', false);
+        $response->assertSee('disabled', false);
+        $response->assertViewHas('passwordConfirmationFresh', false);
+        $response->assertViewHas('mfaStepUpFresh', false);
+        $response->assertViewHas('canManageMembershipWrites', false);
+    }
+
     private function enableWorkspaceAuthentication(User $user): void
     {
         $user->forceFill([
