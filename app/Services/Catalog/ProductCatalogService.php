@@ -15,7 +15,7 @@ use App\Services\Authorization\PlatformAccessAuditChainHasher;
 use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -57,6 +57,7 @@ final readonly class ProductCatalogService
         return $vendor;
     }
 
+    /** @return LengthAwarePaginator<int, Product> */
     public function listFor(User $actor, VendorAccount $vendor, int $perPage = 25): LengthAwarePaginator
     {
         $query = Product::query()
