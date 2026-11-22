@@ -51,6 +51,23 @@ final class MfaRecoveryCodeVault
         }, 3);
     }
 
+    public function invalidateAll(User $user): void
+    {
+        DB::transaction(function () use ($user): void {
+            $lockedUser = User::query()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
+
+            DB::table('mfa_recovery_codes')
+                ->where('user_id', $lockedUser->getKey())
+                ->whereNull('consumed_at')
+                ->whereNull('invalidated_at')
+                ->update(['invalidated_at' => now()]);
+
+            $lockedUser->forceFill([
+                'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt('[]'),
+            ])->save();
+        }, 3);
+    }
+
     /**
      * Atomically consume a saved code and issue one replacement.
      */
