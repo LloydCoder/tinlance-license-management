@@ -20,6 +20,7 @@ final readonly class CustomerOrganizationManagementService
         private MembershipAuthorization $authorization,
         private PlatformSuperAdminAuthorization $platformAuthorization,
         private PlatformAccessAuditChainWriter $auditWriter,
+        private PlatformAccessAuditChainHasher $auditHasher,
     ) {}
 
     public function primaryVendor(): VendorAccount
@@ -80,25 +81,28 @@ final readonly class CustomerOrganizationManagementService
 
             $normalizedRequestId = $this->normalizeRequestId($requestId);
 
-            CustomerOrganizationProfileEvent::query()->create([
+            $createdFields = ['legal_name', 'display_name', 'external_reference', 'billing_email'];
+            $changeDigest = $this->auditHasher->hashProfileChangeSet([
+                'before' => [],
+                'after' => array_intersect_key($organization->getAttributes(), array_flip($createdFields)),
+            ]);
+            $profileEvent = CustomerOrganizationProfileEvent::query()->create([
                 'customer_organization_id' => $organization->getKey(),
                 'actor_user_id' => $actor->getKey(),
                 'event_type' => 'created',
                 'reason' => trim($reason),
-                'changed_fields' => ['legal_name', 'display_name', 'external_reference', 'billing_email'],
+                'changed_fields' => $createdFields,
+                'change_digest' => $changeDigest,
                 'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
 
-            $this->auditWriter->append(
-                (string) $actor->getKey(),
+            $this->appendProfileAudit(
+                $profileEvent,
+                $actor,
                 'customer_organization.created',
-                'customer_organization',
-                (string) $organization->getKey(),
-                (string) $vendor->getKey(),
-                'allowed',
+                $vendor,
                 'vendor_customer_management',
-                $normalizedRequestId,
             );
 
             return $organization;
@@ -163,28 +167,31 @@ final readonly class CustomerOrganizationManagementService
                 return $current;
             }
 
+            $beforeValues = array_intersect_key($current->getAttributes(), $changes);
+            $changeDigest = $this->auditHasher->hashProfileChangeSet([
+                'before' => $beforeValues,
+                'after' => $changes,
+            ]);
             $current->fill($changes)->save();
             $normalizedRequestId = $this->normalizeRequestId($requestId);
 
-            CustomerOrganizationProfileEvent::query()->create([
+            $profileEvent = CustomerOrganizationProfileEvent::query()->create([
                 'customer_organization_id' => $current->getKey(),
                 'actor_user_id' => $actor->getKey(),
                 'event_type' => 'profile_updated',
                 'reason' => trim($reason),
                 'changed_fields' => array_keys($changes),
+                'change_digest' => $changeDigest,
                 'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
 
-            $this->auditWriter->append(
-                (string) $actor->getKey(),
+            $this->appendProfileAudit(
+                $profileEvent,
+                $actor,
                 'customer_organization.profile_updated',
-                'customer_organization',
-                (string) $current->getKey(),
-                (string) $vendor->getKey(),
-                'allowed',
+                $vendor,
                 'vendor_customer_management',
-                $normalizedRequestId,
             );
 
             return $current->refresh();
@@ -290,32 +297,72 @@ final readonly class CustomerOrganizationManagementService
                 return $current;
             }
 
+            $beforeValues = array_intersect_key($current->getAttributes(), $changes);
+            $changeDigest = $this->auditHasher->hashProfileChangeSet([
+                'before' => $beforeValues,
+                'after' => $changes,
+            ]);
             $current->fill($changes)->save();
             $normalizedRequestId = $this->normalizeRequestId($requestId);
 
-            CustomerOrganizationProfileEvent::query()->create([
+            $profileEvent = CustomerOrganizationProfileEvent::query()->create([
                 'customer_organization_id' => $current->getKey(),
                 'actor_user_id' => $actor->getKey(),
                 'event_type' => 'profile_updated',
                 'reason' => trim($reason),
                 'changed_fields' => array_keys($changes),
+                'change_digest' => $changeDigest,
                 'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
 
-            $this->auditWriter->append(
-                (string) $actor->getKey(),
+            $this->appendProfileAudit(
+                $profileEvent,
+                $actor,
                 'customer_organization.profile_updated',
-                'customer_organization',
-                (string) $current->getKey(),
-                (string) $vendor->getKey(),
-                'allowed',
+                $vendor,
                 'customer_owner_profile_management',
-                $normalizedRequestId,
             );
 
             return $current->refresh();
         }, 3);
+    }
+
+    private function appendProfileAudit(
+        CustomerOrganizationProfileEvent $profileEvent,
+        User $actor,
+        string $action,
+        VendorAccount $vendor,
+        string $reasonCode,
+    ): void {
+        $createdAt = (string) DB::table('customer_organization_profile_events')
+            ->where('id', $profileEvent->getKey())
+            ->value('created_at');
+
+        $detailsHash = $this->auditHasher->hashCustomerOrganizationProfileEvent(
+            (string) $profileEvent->getKey(),
+            (string) $profileEvent->customer_organization_id,
+            (string) $profileEvent->actor_user_id,
+            (string) $profileEvent->event_type,
+            (string) $profileEvent->reason,
+            $profileEvent->changed_fields,
+            (string) $profileEvent->change_digest,
+            (string) $profileEvent->request_id,
+            $createdAt,
+        );
+
+        $this->auditWriter->append(
+            (string) $actor->getKey(),
+            $action,
+            'customer_organization',
+            (string) $profileEvent->customer_organization_id,
+            (string) $vendor->getKey(),
+            'allowed',
+            $reasonCode,
+            (string) $profileEvent->request_id,
+            (string) $profileEvent->getKey(),
+            $detailsHash,
+        );
     }
 
     private function authorizeManager(User $actor, VendorAccount $vendor): void
