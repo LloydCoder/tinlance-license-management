@@ -143,14 +143,14 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         try {
             $event->update(['reason_code' => 'tampered']);
             $this->fail('Platform access audit event update should be rejected.');
-        } catch (\\LogicException) {
+        } catch (\LogicException) {
             $this->addToAssertionCount(1);
         }
 
         try {
             $event->delete();
             $this->fail('Platform access audit event deletion should be rejected.');
-        } catch (\\LogicException) {
+        } catch (\LogicException) {
             $this->addToAssertionCount(1);
         }
     }
