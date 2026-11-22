@@ -138,7 +138,15 @@
                                     <span class="muted">No role assigned</span>
                                 @endforelse
                             </td>
-                            <td>{{ $invitation->delivery_status === 'failed' ? 'Delivery failed' : 'Sent' }}</td>
+                            <td>
+                                @if ($invitation->delivery_status === 'failed')
+                                    Delivery failed
+                                @elseif ($invitation->delivery_status === 'sent')
+                                    Sent
+                                @else
+                                    Delivery pending
+                                @endif
+                            </td>
                             <td>{{ $invitation->created_at?->format('Y-m-d H:i T') }}</td>
                             <td>
                                 @if ($invitation->expires_at?->isPast())
@@ -225,7 +233,15 @@
                                     <span class="muted">No role assigned</span>
                                 @endforelse
                             </td>
-                            <td>{{ $invitation->delivery_status === 'failed' ? 'Delivery failed' : 'Sent' }}</td>
+                            <td>
+                                @if ($invitation->delivery_status === 'failed')
+                                    Delivery failed
+                                @elseif ($invitation->delivery_status === 'sent')
+                                    Sent
+                                @else
+                                    Delivery pending
+                                @endif
+                            </td>
                             <td>{{ $invitation->created_at?->format('Y-m-d H:i T') }}</td>
                             <td>
                                 @if ($invitation->expires_at?->isPast())
