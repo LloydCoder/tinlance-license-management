@@ -267,4 +267,87 @@ final class CustomerOrganizationPolicyTest extends TestCase
             'billing_email' => $reference.'@example.com',
         ]);
     }
+
+    public function test_only_primary_vendor_super_admin_can_create_customer_organizations(): void
+    {
+        $admin = $this->createUser();
+        $vendor = $this->createVendor();
+        $membership = VendorMembership::create([
+            'vendor_account_id' => $vendor->id,
+            'user_id' => $admin->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail(),
+        );
+
+        $this->assertTrue(Gate::forUser($admin)->allows('create', CustomerOrganization::class));
+
+        $otherAdmin = $this->createUser();
+        $otherVendor = $this->createVendor('other');
+        $otherMembership = VendorMembership::create([
+            'vendor_account_id' => $otherVendor->id,
+            'user_id' => $otherAdmin->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $otherMembership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($otherAdmin)->allows('create', CustomerOrganization::class));
+    }
+
+    public function test_only_vendor_actor_with_customers_manage_can_update_a_customer_organization(): void
+    {
+        $admin = $this->createUser();
+        $vendor = $this->createVendor();
+        $membership = VendorMembership::create([
+            'vendor_account_id' => $vendor->id,
+            'user_id' => $admin->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail(),
+        );
+        $organization = $this->createOrganization($vendor, 'editable');
+
+        $this->assertTrue(Gate::forUser($admin)->allows('update', $organization));
+
+        $customer = $this->createUser();
+        $customerMembership = CustomerMembership::create([
+            'customer_organization_id' => $organization->id,
+            'user_id' => $customer->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $customerMembership->roles()->attach(
+            Role::query()->where('scope', 'customer')->where('slug', 'customer_owner')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($customer)->allows('update', $organization));
+    }
+
+    public function test_customer_organization_profile_mutations_are_denied_for_suspended_or_foreign_tenants(): void
+    {
+        $admin = $this->createUser();
+        $vendor = $this->createVendor();
+        $membership = VendorMembership::create([
+            'vendor_account_id' => $vendor->id,
+            'user_id' => $admin->id,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail(),
+        );
+        $foreign = $this->createOrganization($this->createVendor('foreign'), 'foreign');
+        $suspended = $this->createOrganization($vendor, 'suspended', 'suspended');
+
+        $this->assertFalse(Gate::forUser($admin)->allows('update', $foreign));
+        $this->assertFalse(Gate::forUser($admin)->allows('update', $suspended));
+    }
+
 }
