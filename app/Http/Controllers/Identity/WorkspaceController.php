@@ -34,9 +34,7 @@ final class WorkspaceController
             ->exists();
 
         if ($isSuperAdmin) {
-            return $request->session()->has('mfa.recovery_code_replacement_once')
-                ? redirect()->route('security.mfa.enroll')
-                : redirect('/admin');
+            return redirect('/admin');
         }
 
         $vendorMemberships = $user->vendorMemberships()
