@@ -273,7 +273,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         $this->assertSame('[]', Fortify::currentEncrypter()->decrypt(
             (string) DB::table('users')->where('id', $user->getKey())->value('two_factor_recovery_codes'),
         ));
-        $this->assertSessionHas('mfa.recovery_codes_once');
+        $this->assertTrue(session()->has('mfa.recovery_codes_once'));
     }
 
     private function createMfaUser(?string $password = null): User
