@@ -33,7 +33,7 @@ return new class extends Migration
             ->orderBy('id')
             ->chunkById(100, function ($users): void {
                 foreach ($users as $user) {
-                    $plaintext = Fortify::currentEncrypter()->decrypt($user->two_factor_recovery_codes);
+                    $plaintext = Fortify::currentEncrypter()->decrypt((string) $user->two_factor_recovery_codes);
                     $codes = json_decode($plaintext, true, 512, JSON_THROW_ON_ERROR);
 
                     if (! is_array($codes) || ! array_is_list($codes)) {
