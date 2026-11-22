@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 /**
+ * @property string $product_id
+ * @property string $vendor_account_id
+ * @property string $actor_user_id
  * @property list<string> $changed_fields
  * @property string $reason
  * @property string $event_type
@@ -47,7 +50,6 @@ final class ProductEvent extends BaseModel
                 || mb_strlen((string) $event->reason) > 500
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
                 || preg_match('/\A[a-f0-9]{64}\z/D', (string) $event->change_digest) !== 1
-                || ! array_is_list($event->changed_fields)
                 || $event->changed_fields === []
                 || count(array_unique($event->changed_fields)) !== count($event->changed_fields)
                 || array_diff($event->changed_fields, ['name', 'slug', 'description']) !== []
