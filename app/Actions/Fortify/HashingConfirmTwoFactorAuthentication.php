@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Fortify;
 
+use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Database\Facades\DB;
 use Illuminate\Http\Request;
