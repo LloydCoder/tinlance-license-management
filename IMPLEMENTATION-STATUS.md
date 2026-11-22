@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-22 (main baseline `4e21956d395b2df535b24e13e94ac30e90e9a88a`; PRs #86–#88 complete hashed MFA recovery-code hardening, active-member workspace controls and fresh-MFA protection for global session revocation)
+**Last reviewed:** 2026-11-22 (main baseline `752eb1ea4738e9b98abf06201c1f6b571a1b0dac`; PRs #86–#89 complete hashed MFA recovery-code hardening, active-member workspace controls, fresh-MFA protection for global session revocation and Phase 4 documentation reconciliation)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
