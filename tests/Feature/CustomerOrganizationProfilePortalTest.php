@@ -180,6 +180,48 @@ final class CustomerOrganizationProfilePortalTest extends TestCase
         $this->assertSame('Customer future-password-confirmation', $organization->refresh()->display_name);
     }
 
+    public function test_customer_profile_workspace_paginates_authorized_organizations(): void
+    {
+        [$owner, $firstOrganization] = $this->createCustomerOwner('profile-pagination');
+        $vendor = $firstOrganization->vendorAccount()->firstOrFail();
+        $ownerRole = Role::query()
+            ->where('scope', 'customer')
+            ->where('slug', 'customer_owner')
+            ->firstOrFail();
+
+        $lastOrganization = null;
+
+        for ($index = 1; $index <= 25; $index++) {
+            $organization = CustomerOrganization::query()->create([
+                'vendor_account_id' => $vendor->getKey(),
+                'external_reference' => 'profile-pagination-'.$index,
+                'legal_name' => 'Pagination Customer '.$index.' Limited',
+                'display_name' => 'Pagination Customer '.$index,
+                'status' => 'active',
+                'billing_email' => 'pagination-'.$index.'@example.test',
+            ]);
+            $membership = CustomerMembership::query()->create([
+                'customer_organization_id' => $organization->getKey(),
+                'user_id' => $owner->getKey(),
+                'status' => 'active',
+                'joined_at' => now(),
+            ]);
+            $membership->roles()->attach($ownerRole);
+            $lastOrganization = $organization;
+        }
+
+        $this->actingAs($owner, 'web')
+            ->withSession($this->assuredSession($owner))
+            ->get('/workspace/customer-profiles')
+            ->assertOk()
+            ->assertSee($firstOrganization->display_name)
+            ->assertDontSee($lastOrganization->display_name);
+
+        $this->get('/workspace/customer-profiles?page=2')
+            ->assertOk()
+            ->assertSee($lastOrganization->display_name);
+    }
+
     /** @return array{User, CustomerOrganization} */
     private function createCustomerOwner(string $reference): array
     {
