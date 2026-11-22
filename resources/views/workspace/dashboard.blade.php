@@ -15,6 +15,13 @@
     <img class="tlms-brand-lockup" src="{{ asset('brand/tlms-lockup-horizontal-dark.svg') }}" alt="TLMS — Tinlance License Management System" width="232" height="78">
     <h1>Your TLMS workspace</h1>
     <p>Signed in as <strong>{{ $user->name }}</strong>. This workspace shows your active memberships and invitations for tenants you are authorized to manage.</p>
+    @if (is_string($mfaRecoveryCodeReplacement))
+        <section class="panel warning" aria-labelledby="replacement-recovery-code-heading">
+            <h2 id="replacement-recovery-code-heading">Your replacement MFA recovery code — shown once</h2>
+            <p>One recovery code was used to sign in. Save this replacement offline now; it cannot be retrieved later.</p>
+            <code>{{ $mfaRecoveryCodeReplacement }}</code>
+        </section>
+    @endif
 
     <h2>Vendor accounts</h2>
     @forelse ($vendorMemberships as $membership)
