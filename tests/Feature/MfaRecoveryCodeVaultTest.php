@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Notifications\MfaRecoveryCodeActivityNotification;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Fortify;
 use Tests\TestCase;
 
@@ -177,6 +179,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
 
     public function test_recovery_code_regeneration_requires_recent_password_and_fresh_mfa_step_up(): void
     {
+        Notification::fake();
         $user = $this->createMfaUser();
         $vault = app(MfaRecoveryCodeVault::class);
         $oldCodes = $vault->replaceAll($user);
@@ -208,6 +211,8 @@ final class MfaRecoveryCodeVaultTest extends TestCase
             $this->assertNull($vault->consumeAndReplace($user, $oldCode));
         }
 
+        Notification::assertSentTo($user, MfaRecoveryCodeActivityNotification::class);
+
         foreach ($newCodes as $newCode) {
             $this->assertDatabaseHas('mfa_recovery_codes', [
                 'user_id' => $user->getKey(),
@@ -235,6 +240,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
 
     public function test_fortify_login_consumes_a_hashed_recovery_code_and_issues_one_replacement(): void
     {
+        Notification::fake();
         $password = str()->random(48);
         $user = $this->createMfaUser($password);
         $vault = app(MfaRecoveryCodeVault::class);
@@ -251,6 +257,8 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         ])->assertRedirect('/workspace');
 
         $this->assertAuthenticatedAs($user);
+        Notification::assertSentTo($user, MfaRecoveryCodeActivityNotification::class);
+
         $this->assertNotNull(
             DB::table('mfa_recovery_codes')
                 ->where('user_id', $user->getKey())
