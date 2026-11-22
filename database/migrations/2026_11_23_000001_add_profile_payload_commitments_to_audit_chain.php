@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('platform_access_audit_events', function (Blueprint $table): void {
-            $table->string('details_ref_id', 64)->nullable();
+            $table->string('details_ref_id', 64)->nullable()->unique('platform_access_details_ref_unique');
             $table->char('details_hash', 64)->nullable();
         });
 
@@ -27,6 +27,7 @@ return new class extends Migration
         });
 
         Schema::table('platform_access_audit_events', function (Blueprint $table): void {
+            $table->dropUnique('platform_access_details_ref_unique');
             $table->dropColumn(['details_ref_id', 'details_hash']);
         });
     }
