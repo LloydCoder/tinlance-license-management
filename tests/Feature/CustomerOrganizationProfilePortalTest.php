@@ -13,6 +13,7 @@ use App\Models\VendorAccount;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 final class CustomerOrganizationProfilePortalTest extends TestCase
@@ -82,6 +83,65 @@ final class CustomerOrganizationProfilePortalTest extends TestCase
             'request_id' => 'customer-owner-profile-0001',
         ]);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_customer_profile_audit_chain_commits_the_exact_profile_event_payload_digest(): void
+    {
+        [$owner, $organization] = $this->createCustomerOwner('payload-digest');
+
+        $this->actingAs($owner, 'web')
+            ->withSession($this->assuredSession($owner))
+            ->patch('/workspace/customer-profiles/'.$organization->getKey(), [
+                'display_name' => 'Payload Digest Updated',
+                'billing_email' => 'payload-digest@example.test',
+                'reason' => 'Verify the exact customer profile audit payload.',
+            ], ['X-Request-ID' => 'customer-profile-payload-0001'])
+            ->assertRedirect('/workspace/customer-profiles');
+
+        $profileEvent = CustomerOrganizationProfileEvent::query()
+            ->where('customer_organization_id', $organization->getKey())
+            ->latest('created_at')
+            ->firstOrFail();
+        $auditEvent = DB::table('platform_access_audit_events')
+            ->where('request_id', 'customer-profile-payload-0001')
+            ->first();
+
+        $this->assertNotNull($auditEvent);
+        $this->assertSame(2, (int) $auditEvent->hash_version);
+        $this->assertSame($profileEvent->getKey(), $auditEvent->details_ref_id);
+        $this->assertMatchesRegularExpression('/\\A[a-f0-9]{64}\\z/', (string) $auditEvent->details_hash);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_audit_chain_verifier_detects_customer_profile_event_payload_tampering(): void
+    {
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $this->markTestSkipped('MySQL/MariaDB triggers prevent payload mutation; SQLite exercises cross-record tamper detection.');
+        }
+
+        [$owner, $organization] = $this->createCustomerOwner('payload-tamper');
+
+        $this->actingAs($owner, 'web')
+            ->withSession($this->assuredSession($owner))
+            ->patch('/workspace/customer-profiles/'.$organization->getKey(), [
+                'display_name' => 'Payload Tamper Updated',
+                'billing_email' => 'payload-tamper@example.test',
+                'reason' => 'Detect changes to immutable profile evidence.',
+            ], ['X-Request-ID' => 'customer-profile-tamper-0001'])
+            ->assertRedirect('/workspace/customer-profiles');
+
+        $profileEvent = CustomerOrganizationProfileEvent::query()
+            ->where('customer_organization_id', $organization->getKey())
+            ->latest('created_at')
+            ->firstOrFail();
+
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+
+        DB::table('customer_organization_profile_events')
+            ->where('id', $profileEvent->getKey())
+            ->update(['reason' => 'Tampered after append']);
+
+        $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     public function test_customer_owner_cannot_change_legal_identity_tenant_ownership_or_lifecycle_status(): void
