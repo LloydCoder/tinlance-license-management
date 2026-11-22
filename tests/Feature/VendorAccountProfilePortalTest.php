@@ -112,8 +112,6 @@ final class VendorAccountProfilePortalTest extends TestCase
             'installation_key' => 'primary',
             'bootstrapped_user_id' => $admin->getKey(),
             'bootstrapped_at' => now(),
-            'bootstrap_token_hash' => hash('sha256', 'consumed-bootstrap-token'),
-            'consumed_at' => now(),
         ]);
 
         $this->actingAs($admin, 'web')
@@ -203,7 +201,6 @@ final class VendorAccountProfilePortalTest extends TestCase
             'email' => 'vendor-profile-'.str()->random(12).'@example.test',
             'password' => str()->random(40),
             'status' => 'active',
-            'email_verified_at' => now(),
         ]);
 
         $membership = VendorMembership::query()->create([
@@ -217,6 +214,7 @@ final class VendorAccountProfilePortalTest extends TestCase
         );
 
         $admin->forceFill([
+            'email_verified_at' => now(),
             'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
             'two_factor_recovery_codes' => encrypt(json_encode([], JSON_THROW_ON_ERROR)),
             'two_factor_confirmed_at' => now(),
