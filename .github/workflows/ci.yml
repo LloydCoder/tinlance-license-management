@@ -246,6 +246,11 @@ jobs:
           extensions: intl, pdo_mysql, pdo_sqlite
           coverage: none
           tools: composer:2.11.2
+      - name: Set up Node.js for production asset compilation
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.16.0"
+          cache: npm
       - name: Verify production package contents and dependency exclusion
         run: bash scripts/ci/verify-cpanel-release-artifact.sh
       - name: Build package for explicit manual retrieval
