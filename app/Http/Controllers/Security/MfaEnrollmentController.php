@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Security;
 
 use App\Models\User;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 final class MfaEnrollmentController
 {
