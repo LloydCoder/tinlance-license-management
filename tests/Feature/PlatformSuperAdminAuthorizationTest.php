@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\CustomerOrganization;
+use App\Models\PlatformAccessAuditEvent;
 use App\Models\PlatformInstallation;
 use App\Models\Role;
 use App\Models\User;
