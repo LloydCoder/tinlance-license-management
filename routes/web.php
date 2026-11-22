@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CustomerOrganizationController;
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
+use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
 use App\Http\Controllers\Identity\MembershipRoleController;
@@ -65,6 +66,13 @@ Route::middleware([
 ])->group(function (): void {
     Route::get('/workspace', WorkspaceController::class)
         ->name('workspace.home');
+
+    Route::get('/workspace/customer-profiles', [CustomerOrganizationProfileController::class, 'index'])
+        ->name('workspace.customer-profiles.index');
+
+    Route::patch('/workspace/customer-profiles/{organization}', [CustomerOrganizationProfileController::class, 'update'])
+        ->middleware([EnsureRecentPasswordConfirmation::class, EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('workspace.customer-profiles.update');
 });
 
 Route::middleware([

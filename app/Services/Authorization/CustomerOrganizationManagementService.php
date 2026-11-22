@@ -165,6 +165,121 @@ final readonly class CustomerOrganizationManagementService
         }, 3);
     }
 
+    /** @return LengthAwarePaginator<int, CustomerOrganization> */
+    public function customerProfileOrganizations(User $actor): LengthAwarePaginator
+    {
+        $activeActor = User::query()
+            ->whereKey($actor->getKey())
+            ->where('status', 'active')
+            ->exists();
+
+        if (! $activeActor) {
+            return new LengthAwarePaginator([], 0, 25);
+        }
+
+        return CustomerOrganization::query()
+            ->where('status', 'active')
+            ->whereHas('vendorAccount', static fn ($query) => $query->where('status', 'active'))
+            ->whereHas('memberships', static function ($membership) use ($actor): void {
+                $membership
+                    ->where('user_id', $actor->getKey())
+                    ->where('status', 'active')
+                    ->whereHas('roles', static function ($role): void {
+                        $role
+                            ->where('scope', 'customer')
+                            ->whereHas('permissions', static fn ($permission) => $permission
+                                ->where('scope', 'customer')
+                                ->where('name', 'customer.organization.profile.manage'));
+                    });
+            })
+            ->with(['vendorAccount:id,display_name,status'])
+            ->orderBy('display_name')
+            ->orderBy('id')
+            ->paginate(25);
+    }
+
+    /**
+     * @param  array{display_name: string, billing_email: ?string}  $attributes
+     */
+    public function updateCustomerOwnedProfile(
+        User $actor,
+        CustomerOrganization $organization,
+        array $attributes,
+        string $reason,
+        string $requestId,
+    ): CustomerOrganization {
+        return DB::transaction(function () use ($actor, $organization, $attributes, $reason, $requestId): CustomerOrganization {
+            $vendor = VendorAccount::query()
+                ->whereKey($organization->vendor_account_id)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $vendor instanceof VendorAccount) {
+                throw new ModelNotFoundException('The customer organization vendor is not available.');
+            }
+
+            $current = CustomerOrganization::query()
+                ->whereKey($organization->getKey())
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $current instanceof CustomerOrganization) {
+                throw new ModelNotFoundException('The customer organization is not available for profile updates.');
+            }
+
+            $activeActor = User::query()
+                ->whereKey($actor->getKey())
+                ->where('status', 'active')
+                ->exists();
+
+            if (
+                ! $activeActor
+                || $this->platformAuthorization->isBootstrapSuperAdmin($actor)
+                || ! $this->authorization->customerCan($actor, $current, 'customer.organization.profile.manage')
+            ) {
+                throw new AuthorizationException('The actor cannot manage this customer organization profile.');
+            }
+
+            $changes = [
+                'display_name' => trim($attributes['display_name']),
+                'billing_email' => isset($attributes['billing_email']) && $attributes['billing_email'] !== ''
+                    ? mb_strtolower(trim($attributes['billing_email']))
+                    : null,
+            ];
+            $requestedChanges = $changes;
+            $changes = [];
+
+            if ($current->display_name !== $requestedChanges['display_name']) {
+                $changes['display_name'] = $requestedChanges['display_name'];
+            }
+
+            if ($current->billing_email !== $requestedChanges['billing_email']) {
+                $changes['billing_email'] = $requestedChanges['billing_email'];
+            }
+
+            if ($changes === []) {
+                return $current;
+            }
+
+            $current->fill($changes)->save();
+
+            CustomerOrganizationProfileEvent::query()->create([
+                'customer_organization_id' => $current->getKey(),
+                'actor_user_id' => $actor->getKey(),
+                'event_type' => 'profile_updated',
+                'reason' => trim($reason),
+                'changed_fields' => array_keys($changes),
+                'request_id' => $this->normalizeRequestId($requestId),
+                'created_at' => now(),
+            ]);
+
+            return $current->refresh();
+        }, 3);
+    }
+
     private function authorizeManager(User $actor, VendorAccount $vendor): void
     {
         $activeActor = User::query()
