@@ -353,6 +353,15 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             'pending',
             now()->addDay(),
         );
+        $activeMember = $this->createVendorInvitation(
+            $actor,
+            $vendor,
+            'workspace-vendor-active-member',
+            'sent',
+            now()->addDay(),
+            'active',
+            now(),
+        );
 
         $this->enableWorkspaceAuthentication($actor);
         $session = $this->workspaceSession($actor);
@@ -367,6 +376,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('name="_token"', false);
         $response->assertSee($invitation->invited_email);
         $response->assertSee($pendingInvitation->invited_email);
+        $response->assertSee('Active vendor members');
+        $response->assertSee($activeMember->invited_email);
         $response->assertSee('Delivery pending');
         $response->assertSee('Created');
         $response->assertSee('support_agent');
@@ -394,6 +405,14 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             'failed',
             now()->subDay(),
         );
+        $activeMember = $this->createUser('workspace-customer-active-member');
+        $activeMembership = CustomerMembership::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'user_id' => $activeMember->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $activeMembership->roles()->attach($this->role('customer', 'customer_member'));
 
         $this->enableWorkspaceAuthentication($actor);
         $session = $this->workspaceSession($actor);
@@ -405,6 +424,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($invitation->invited_email);
+        $response->assertSee('Active customer members');
+        $response->assertSee($activeMember->email);
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/revoke');
