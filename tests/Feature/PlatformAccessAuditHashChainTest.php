@@ -62,6 +62,11 @@ final class PlatformAccessAuditHashChainTest extends TestCase
 
         $hasher = app(PlatformAccessAuditChainHasher::class);
         foreach ([$first, $second] as $event) {
+            // Hash the raw persisted timestamp, not Eloquent's timezone-aware Carbon cast.
+            $persistedCreatedAt = (string) DB::table('platform_access_audit_events')
+                ->where('id', $event->getKey())
+                ->value('created_at');
+
             $this->assertSame(
                 $event->event_hash,
                 $hasher->hashEvent(
@@ -76,7 +81,7 @@ final class PlatformAccessAuditHashChainTest extends TestCase
                     (string) $event->outcome,
                     (string) $event->reason_code,
                     (string) $event->request_id,
-                    (string) $event->created_at,
+                    $persistedCreatedAt,
                 ),
                 'Persisted event hash must match its canonical database representation.',
             );
