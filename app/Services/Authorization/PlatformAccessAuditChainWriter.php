@@ -61,7 +61,7 @@ final readonly class PlatformAccessAuditChainWriter
                 $createdAt,
             );
 
-            $event = new PlatformAccessAuditEvent();
+            $event = new PlatformAccessAuditEvent;
             $event->forceFill([
                 'id' => $id,
                 'sequence' => $sequence,
