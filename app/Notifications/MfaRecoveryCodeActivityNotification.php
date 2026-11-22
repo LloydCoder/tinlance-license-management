@@ -15,13 +15,13 @@ final class MfaRecoveryCodeActivityNotification extends Notification
     /**
      * @return list<string>
      */
-    public function via($notifiable): array
+    public function via(mixed $notifiable): array
     {
         return ['mail'];
     }
 
     /** @param User $notifiable */
-    public function toMail($notifiable): MailMessage
+    public function toMail(mixed $notifiable): MailMessage
     {
         return (new MailMessage())
             ->subject('TLMS security alert: MFA recovery-code activity')
