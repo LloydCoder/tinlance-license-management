@@ -67,6 +67,13 @@ Route::middleware([
     Route::get('/workspace', WorkspaceController::class)
         ->name('workspace.home');
 
+    Route::get('/workspace/vendor-profile', [VendorAccountProfileController::class, 'index'])
+        ->name('workspace.vendor-profile.index');
+
+    Route::patch('/workspace/vendor-profile', [VendorAccountProfileController::class, 'update'])
+        ->middleware([EnsureRecentPasswordConfirmation::class, EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('workspace.vendor-profile.update');
+
     Route::get('/workspace/customer-profiles', [CustomerOrganizationProfileController::class, 'index'])
         ->name('workspace.customer-profiles.index');
 
