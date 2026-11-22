@@ -196,7 +196,7 @@ final class CustomerOrganizationProfilePortalTest extends TestCase
                 'vendor_account_id' => $vendor->getKey(),
                 'external_reference' => 'profile-pagination-'.$index,
                 'legal_name' => 'Pagination Customer '.$index.' Limited',
-                'display_name' => 'Pagination Customer '.$index,
+                'display_name' => sprintf('Pagination Customer %02d', $index),
                 'status' => 'active',
                 'billing_email' => 'pagination-'.$index.'@example.test',
             ]);
