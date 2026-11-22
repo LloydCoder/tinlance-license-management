@@ -108,7 +108,7 @@ final class ProductCatalogController
             'expected_version' => ['required', 'integer', 'min:1'],
             'name' => ['required', 'string', 'min:2', 'max:160'],
             'slug' => ['required', 'string', 'alpha_dash:ascii', 'min:2', 'max:80'],
-            'description' => ['nullable', 'string', 'max:2000'],
+            'description' => ['present', 'nullable', 'string', 'max:2000'],
             'reason' => ['required', 'string', 'min:5', 'max:500'],
             'vendor_account_id' => ['prohibited'],
             'public_id' => ['prohibited'],
