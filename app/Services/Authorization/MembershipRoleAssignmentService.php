@@ -15,6 +15,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipRoleEvent;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 final readonly class MembershipRoleAssignmentService
@@ -36,6 +37,28 @@ final readonly class MembershipRoleAssignmentService
         'customer_technical_admin',
         'customer_member',
     ];
+
+    /** @return Collection<int, Role> */
+    public function assignableVendorRoles(): Collection
+    {
+        return Role::query()
+            ->where('scope', 'vendor')
+            ->whereIn('slug', self::ASSIGNABLE_VENDOR_ROLES)
+            ->orderBy('name')
+            ->orderBy('slug')
+            ->get();
+    }
+
+    /** @return Collection<int, Role> */
+    public function assignableCustomerRoles(): Collection
+    {
+        return Role::query()
+            ->where('scope', 'customer')
+            ->whereIn('slug', self::ASSIGNABLE_CUSTOMER_ROLES)
+            ->orderBy('name')
+            ->orderBy('slug')
+            ->get();
+    }
 
     public function __construct(private MembershipAuthorization $authorization) {}
 
