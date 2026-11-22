@@ -221,7 +221,7 @@ final readonly class ProductCatalogService
                 Product::query()
                     ->where('vendor_account_id', $vendor->getKey())
                     ->where('slug', $normalized['slug'])
-                    ->whereKeyNot($current->getKey())
+                    ->where('id', '<>', $current->getKey())
                     ->exists()
             ) {
                 throw new InvalidArgumentException('A product with this slug already exists for the vendor.');
