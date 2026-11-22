@@ -49,6 +49,13 @@ final class MembershipRoleAssignmentTest extends TestCase
         $this->assertTrue($authorization->vendorCan($firstAdmin, $vendor, 'vendor.account.read'));
         $this->assertTrue($authorization->vendorCan($firstAdmin, $vendor, 'admins.manage'));
         $this->assertTrue($authorization->vendorCan($firstAdmin, $vendor, 'audit.read'));
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $firstMembership->getKey(),
+            'role_id' => $vendorAdminRole->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'action' => 'assigned',
+            'reason' => 'Bootstrap the first tenant-scoped vendor administrator.',
+        ]);
 
         foreach ([
             'platform.settings.manage',
