@@ -31,8 +31,6 @@ final readonly class MembershipDirectoryQuery
                 'user_id',
                 'status',
                 'joined_at',
-                'created_at',
-                'updated_at',
             ])
             ->where('vendor_account_id', $vendor->getKey())
             ->where('status', 'active')
@@ -40,7 +38,7 @@ final readonly class MembershipDirectoryQuery
             ->whereHas('vendorAccount', static fn (Builder $tenant) => $tenant->where('status', 'active'))
             ->with([
                 'user:id,name,email,status',
-                'roles:id,scope,slug,name',
+                'roles' => static fn (Builder $roles) => $roles->where('scope', 'vendor'),
             ])
             ->orderByDesc('joined_at')
             ->orderByDesc('id')
@@ -61,8 +59,6 @@ final readonly class MembershipDirectoryQuery
                 'user_id',
                 'status',
                 'joined_at',
-                'created_at',
-                'updated_at',
             ])
             ->where('customer_organization_id', $organization->getKey())
             ->where('status', 'active')
@@ -74,7 +70,7 @@ final readonly class MembershipDirectoryQuery
             })
             ->with([
                 'user:id,name,email,status',
-                'roles:id,scope,slug,name',
+                'roles' => static fn (Builder $roles) => $roles->where('scope', 'customer'),
             ])
             ->orderByDesc('joined_at')
             ->orderByDesc('id')
