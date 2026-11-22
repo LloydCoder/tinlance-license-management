@@ -89,7 +89,7 @@ final readonly class CustomerOrganizationManagementService
     }
 
     /**
-     * @param array{legal_name: string, display_name: string, external_reference: ?string, billing_email: ?string} $attributes
+     * @param  array{legal_name: string, display_name: string, external_reference: ?string, billing_email: ?string}  $attributes
      */
     public function update(
         User $actor,
