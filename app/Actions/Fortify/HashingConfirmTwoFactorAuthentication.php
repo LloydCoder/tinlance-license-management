@@ -44,17 +44,18 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
             ])->errorBag('confirmTwoFactorAuthentication');
         }
 
-        DB::transaction(function () use ($user): void {
+        $codes = DB::transaction(function () use ($user): array {
             $user->forceFill([
                 'two_factor_confirmed_at' => now(),
             ])->save();
 
             $codes = $this->vault->replaceAll($user);
-            $this->request->session()->flash('mfa.recovery_codes_once', $codes);
+            DB::afterCommit(static fn () => TwoFactorAuthenticationConfirmed::dispatch($user));
 
-            TwoFactorAuthenticationConfirmed::dispatch($user);
+            return $codes;
         }, 3);
 
+        $this->request->session()->flash('mfa.recovery_codes_once', $codes);
         RateLimiter::clear($key);
     }
 }
