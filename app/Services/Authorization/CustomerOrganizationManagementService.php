@@ -166,29 +166,37 @@ final readonly class CustomerOrganizationManagementService
         }, 3);
     }
 
-    /** @return Collection<int, CustomerOrganization> */
-    public function customerProfileOrganizations(User $actor): Collection
+    /** @return LengthAwarePaginator<int, CustomerOrganization> */
+    public function customerProfileOrganizations(User $actor): LengthAwarePaginator
     {
-        $organizations = [];
-
-        $memberships = $actor->customerMemberships()
+        $activeActor = User::query()
+            ->whereKey($actor->getKey())
             ->where('status', 'active')
-            ->with(['customerOrganization.vendorAccount'])
-            ->orderBy('created_at')
-            ->get();
+            ->exists();
 
-        foreach ($memberships as $membership) {
-            $organization = $membership->customerOrganization;
-
-            if (
-                $organization instanceof CustomerOrganization
-                && $this->authorization->customerCan($actor, $organization, 'customer.organization.profile.manage')
-            ) {
-                $organizations[(string) $organization->getKey()] = $organization;
-            }
+        if (! $activeActor) {
+            return new LengthAwarePaginator([], 0, 25);
         }
 
-        return collect(array_values($organizations));
+        return CustomerOrganization::query()
+            ->where('status', 'active')
+            ->whereHas('vendorAccount', static fn ($query) => $query->where('status', 'active'))
+            ->whereHas('memberships', static function ($membership) use ($actor): void {
+                $membership
+                    ->where('user_id', $actor->getKey())
+                    ->where('status', 'active')
+                    ->whereHas('roles', static function ($role): void {
+                        $role
+                            ->where('scope', 'customer')
+                            ->whereHas('permissions', static fn ($permission) => $permission
+                                ->where('scope', 'customer')
+                                ->where('name', 'customer.organization.profile.manage'));
+                    });
+            })
+            ->with(['vendorAccount:id,display_name,status'])
+            ->orderBy('display_name')
+            ->orderBy('id')
+            ->paginate(25);
     }
 
     /**
