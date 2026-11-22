@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -142,7 +143,16 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         );
 
         $this->assertFalse(Gate::forUser($user)->allows('view', $otherVendor));
-        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $user->getKey(),
+            'action' => 'vendor.read',
+            'resource_type' => 'vendor_account',
+            'resource_id' => $otherVendor->getKey(),
+            'tenant_vendor_account_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     public function test_bootstrap_super_admin_loses_cross_tenant_read_authority_when_the_super_admin_role_is_revoked(): void
