@@ -209,7 +209,7 @@ final class CustomerOrganizationManagementTest extends TestCase
             'vendor_account_id' => $vendor->getKey(),
             'external_reference' => $reference,
             'legal_name' => 'Customer '.$reference.' Limited',
-            'display_name' => str($reference)->replace('-', ' ')->title().' Customer',
+            'display_name' => ucwords(str_replace('-', ' ', $reference)).' Customer',
             'status' => 'active',
             'billing_email' => 'billing-'.$reference.'@example.test',
         ]);
