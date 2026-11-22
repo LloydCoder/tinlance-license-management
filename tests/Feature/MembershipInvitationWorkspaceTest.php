@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerOrganization;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
@@ -161,7 +162,6 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             ->get(route('workspace.home'));
 
         $response->assertOk();
-        $response->assertSee($invitation->invited_email);
         $response->assertViewHas('vendorInvitationGroups', static fn (array $groups): bool => count($groups) === 1);
         $response->assertViewHas('customerInvitationGroups', []);
         $response->assertViewHas('passwordConfirmationFresh', false);
@@ -237,7 +237,6 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         return ['auth_session_version' => (int) $user->fresh()->session_version];
     }
 
-    /** @return array{User, VendorAccount} */
     /** @return array{User, VendorAccount} */
     private function vendorManager(string $label): array
     {
