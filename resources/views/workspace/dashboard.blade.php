@@ -149,15 +149,15 @@
                             </td>
                             <td>
                                 <div class="actions">
-                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->
-                @csrfgetKey().'/memberships/'.$invitation->vendor_membership_id.'/invitation/resend') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitation->vendor_membership_id.'/invitation/resend') }}">
+                                        @csrf
                                         <label for="vendor-resend-reason-{{ $invitation->getKey() }}">Resend reason</label>
                                         <input id="vendor-resend-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Resend</button>
                                         <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
                                     </form>
-                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->
-                @csrfgetKey().'/memberships/'.$invitation->vendor_membership_id.'/revoke') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitation->vendor_membership_id.'/revoke') }}">
+                                        @csrf
                                         <label for="vendor-revoke-reason-{{ $invitation->getKey() }}">Revocation reason</label>
                                         <input id="vendor-revoke-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="1" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Cancel invitation</button>
@@ -236,15 +236,15 @@
                             </td>
                             <td>
                                 <div class="actions">
-                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->
-                @csrfgetKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="resend" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend') }}">
+                                        @csrf
                                         <label for="customer-resend-reason-{{ $invitation->getKey() }}">Resend reason</label>
                                         <input id="customer-resend-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Resend</button>
                                         <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
                                     </form>
-                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->
-                @csrfgetKey().'/memberships/'.$invitation->customer_membership_id.'/revoke') }}">
+                                    <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="revoke" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/revoke') }}">
+                                        @csrf
                                         <label for="customer-revoke-reason-{{ $invitation->getKey() }}">Revocation reason</label>
                                         <input id="customer-revoke-reason-{{ $invitation->getKey() }}" name="reason" type="text" minlength="1" maxlength="500" required>
                                         <button type="submit" @disabled(! $canManageMembershipWrites)>Cancel invitation</button>
