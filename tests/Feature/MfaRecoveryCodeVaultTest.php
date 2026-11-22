@@ -91,6 +91,59 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         }
     }
 
+    public function test_legacy_encrypted_fortify_codes_are_backfilled_to_hashes_idempotently(): void
+    {
+        $user = $this->createMfaUser();
+        $legacyCodes = array_map(
+            static fn (): string => str()->random(10).'-'.str()->random(10),
+            range(1, 8),
+        );
+
+        $user->forceFill([
+            'two_factor_recovery_codes' => encrypt(json_encode($legacyCodes, JSON_THROW_ON_ERROR)),
+        ])->save();
+
+        $migration = require base_path('database/migrations/2026_11_22_000001_create_mfa_recovery_codes_table.php');
+        $migration->up();
+        $migration->up();
+
+        foreach ($legacyCodes as $legacyCode) {
+            $this->assertDatabaseHas('mfa_recovery_codes', [
+                'user_id' => $user->getKey(),
+                'code_hash' => hash('sha256', strtolower($legacyCode)),
+                'consumed_at' => null,
+            ]);
+        }
+
+        $this->assertSame(
+            '[]',
+            Fortify::currentEncrypter()->decrypt(
+                (string) DB::table('users')->where('id', $user->getKey())->value('two_factor_recovery_codes'),
+            ),
+        );
+        $this->assertSame(8, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->count());
+    }
+
+    public function test_replacing_with_legacy_fortify_format_codes_stores_only_normalized_digests(): void
+    {
+        $user = $this->createMfaUser();
+        $legacyCodes = array_map(
+            static fn (): string => str()->random(10).'-'.str()->random(10),
+            range(1, 8),
+        );
+
+        $normalized = app(MfaRecoveryCodeVault::class)->replaceWithCodes($user, $legacyCodes);
+
+        $this->assertCount(8, $normalized);
+        foreach ($legacyCodes as $legacyCode) {
+            $this->assertDatabaseHas('mfa_recovery_codes', [
+                'user_id' => $user->getKey(),
+                'code_hash' => hash('sha256', strtolower($legacyCode)),
+                'consumed_at' => null,
+            ]);
+        }
+    }
+
     public function test_fortify_recovery_code_endpoint_never_discloses_saved_codes(): void
     {
         $user = $this->createMfaUser();
