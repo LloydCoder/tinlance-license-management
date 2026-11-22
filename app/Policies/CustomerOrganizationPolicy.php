@@ -37,8 +37,8 @@ final class CustomerOrganizationPolicy
         if (
             ! $currentOrganization instanceof CustomerOrganization
             || $currentOrganization->status !== 'active'
-            || $currentOrganization->vendorAccount?->installation_key !== 'primary'
-            || $currentOrganization->vendorAccount?->status !== 'active'
+            || $currentOrganization->vendorAccount->installation_key !== 'primary'
+            || $currentOrganization->vendorAccount->status !== 'active'
         ) {
             return false;
         }

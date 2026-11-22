@@ -37,11 +37,9 @@ final class CustomerOrganizationProfileEvent extends BaseModel
             }
 
             if (
-                ! is_string($event->reason)
-                || trim($event->reason) === ''
+                trim($event->reason) === ''
                 || mb_strlen($event->reason) > 500
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
-                || ! is_array($event->changed_fields)
             ) {
                 throw new LogicException('Customer organization profile event metadata is invalid.');
             }
