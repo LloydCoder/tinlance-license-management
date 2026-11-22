@@ -19,6 +19,7 @@ final readonly class CustomerOrganizationManagementService
     public function __construct(
         private MembershipAuthorization $authorization,
         private PlatformSuperAdminAuthorization $platformAuthorization,
+        private PlatformAccessAuditChainWriter $auditWriter,
     ) {}
 
     public function primaryVendor(): VendorAccount
@@ -77,15 +78,28 @@ final readonly class CustomerOrganizationManagementService
                 'status' => 'active',
             ]);
 
+            $normalizedRequestId = $this->normalizeRequestId($requestId);
+
             CustomerOrganizationProfileEvent::query()->create([
                 'customer_organization_id' => $organization->getKey(),
                 'actor_user_id' => $actor->getKey(),
                 'event_type' => 'created',
                 'reason' => trim($reason),
                 'changed_fields' => ['legal_name', 'display_name', 'external_reference', 'billing_email'],
-                'request_id' => $this->normalizeRequestId($requestId),
+                'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
+
+            $this->auditWriter->append(
+                (string) $actor->getKey(),
+                'customer_organization.created',
+                'customer_organization',
+                (string) $organization->getKey(),
+                (string) $vendor->getKey(),
+                'allowed',
+                'vendor_customer_management',
+                $normalizedRequestId,
+            );
 
             return $organization;
         }, 3);
@@ -150,6 +164,7 @@ final readonly class CustomerOrganizationManagementService
             }
 
             $current->fill($changes)->save();
+            $normalizedRequestId = $this->normalizeRequestId($requestId);
 
             CustomerOrganizationProfileEvent::query()->create([
                 'customer_organization_id' => $current->getKey(),
@@ -157,9 +172,31 @@ final readonly class CustomerOrganizationManagementService
                 'event_type' => 'profile_updated',
                 'reason' => trim($reason),
                 'changed_fields' => array_keys($changes),
-                'request_id' => $this->normalizeRequestId($requestId),
+                'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
+
+            $this->auditWriter->append(
+                (string) $actor->getKey(),
+                'customer_organization.profile_updated',
+                'customer_organization',
+                (string) $current->getKey(),
+                (string) $vendor->getKey(),
+                'allowed',
+                'vendor_customer_management',
+                $normalizedRequestId,
+            );
+
+            $this->auditWriter->append(
+                (string) $actor->getKey(),
+                'customer_organization.profile_updated',
+                'customer_organization',
+                (string) $current->getKey(),
+                (string) $vendor->getKey(),
+                'allowed',
+                'customer_owner_profile_management',
+                $normalizedRequestId,
+            );
 
             return $current->refresh();
         }, 3);
@@ -265,6 +302,7 @@ final readonly class CustomerOrganizationManagementService
             }
 
             $current->fill($changes)->save();
+            $normalizedRequestId = $this->normalizeRequestId($requestId);
 
             CustomerOrganizationProfileEvent::query()->create([
                 'customer_organization_id' => $current->getKey(),
@@ -272,7 +310,7 @@ final readonly class CustomerOrganizationManagementService
                 'event_type' => 'profile_updated',
                 'reason' => trim($reason),
                 'changed_fields' => array_keys($changes),
-                'request_id' => $this->normalizeRequestId($requestId),
+                'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
 
