@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\Models\User;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Models\User;
 
 final class MfaRecoveryCodeActivityNotification extends Notification
 {
@@ -23,7 +23,7 @@ final class MfaRecoveryCodeActivityNotification extends Notification
     /** @param User $notifiable */
     public function toMail(mixed $notifiable): MailMessage
     {
-        return (new MailMessage())
+        return (new MailMessage)
             ->subject('TLMS security alert: MFA recovery-code activity')
             ->greeting('Hello '.$notifiable->name)
             ->line($this->activity)
