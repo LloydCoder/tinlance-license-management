@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Fortify;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
@@ -17,7 +18,8 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
         parent::__construct($provider);
     }
 
-    public function __invoke($user, $force = false): void
+    /** @param User $user */
+    public function __invoke(mixed $user, mixed $force = false): void
     {
         if (! empty($user->two_factor_secret) && $force !== true) {
             return;
