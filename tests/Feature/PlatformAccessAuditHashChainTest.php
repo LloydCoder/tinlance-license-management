@@ -59,7 +59,7 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $this->assertSame(2, (int) $head->last_sequence);
         $this->assertSame($second->event_hash, $head->last_hash);
 
-        $hasher = app(\\App\\Services\\Authorization\\PlatformAccessAuditChainHasher::class);
+        $hasher = app(\App\\Services\\Authorization\\PlatformAccessAuditChainHasher::class);
         foreach ([$first, $second] as $event) {
             $this->assertSame(
                 $event->event_hash,
