@@ -43,18 +43,45 @@ final class PlatformAccessAuditEvent extends BaseModel
                 throw new LogicException('Platform access audit outcome is invalid.');
             }
 
-            if (! in_array($event->action, ['vendor.read', 'customer_organization.read'], true)) {
+            if (! in_array($event->action, [
+                'vendor.read',
+                'customer_organization.read',
+                'customer_organization.created',
+                'customer_organization.profile_updated',
+            ], true)) {
                 throw new LogicException('Platform access audit action is invalid.');
             }
 
             $expectedResourceType = match ($event->action) {
                 'vendor.read' => 'vendor_account',
-                'customer_organization.read' => 'customer_organization',
+                'customer_organization.read',
+                'customer_organization.created',
+                'customer_organization.profile_updated' => 'customer_organization',
             };
+
+            $allowedReasons = match ($event->action) {
+                'vendor.read', 'customer_organization.read' => [
+                    'platform_super_admin',
+                    'actor_not_platform_super_admin',
+                    'resource_inactive',
+                    'tenant_inactive',
+                ],
+                'customer_organization.created' => ['vendor_customer_management'],
+                'customer_organization.profile_updated' => [
+                    'vendor_customer_management',
+                    'customer_owner_profile_management',
+                ],
+            };
+
+            $mutationAction = in_array($event->action, [
+                'customer_organization.created',
+                'customer_organization.profile_updated',
+            ], true);
 
             if (
                 $event->resource_type !== $expectedResourceType
-                || ! in_array($event->reason_code, ['platform_super_admin', 'actor_not_platform_super_admin', 'resource_inactive', 'tenant_inactive'], true)
+                || ! in_array($event->reason_code, $allowedReasons, true)
+                || ($mutationAction && $event->outcome !== 'allowed')
             ) {
                 throw new LogicException('Platform access audit resource metadata is invalid.');
             }

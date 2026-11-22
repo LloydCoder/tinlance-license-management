@@ -10,6 +10,7 @@ use App\Models\CustomerOrganizationProfileEvent;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -69,6 +70,18 @@ final class CustomerOrganizationProfilePortalTest extends TestCase
             ->latest('created_at')
             ->firstOrFail();
         $this->assertEqualsCanonicalizing(['display_name', 'billing_email'], $event->changed_fields);
+
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $owner->getKey(),
+            'action' => 'customer_organization.profile_updated',
+            'resource_type' => 'customer_organization',
+            'resource_id' => $organization->getKey(),
+            'tenant_vendor_account_id' => $organization->vendor_account_id,
+            'outcome' => 'allowed',
+            'reason_code' => 'customer_owner_profile_management',
+            'request_id' => 'customer-owner-profile-0001',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     public function test_customer_owner_cannot_change_legal_identity_tenant_ownership_or_lifecycle_status(): void
