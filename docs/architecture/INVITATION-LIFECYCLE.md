@@ -1,6 +1,6 @@
 # Membership invitation lifecycle
 
-**Status:** Implemented API and acceptance flow; pending-invitation management UI and reinstatement remain outstanding.
+**Status:** Invitation APIs, acceptance flow and tenant-admin management workspace implemented; explicit membership reinstatement remains outstanding.
 
 ## Scope
 
@@ -17,6 +17,16 @@ Invitation creation and resend are privileged tenant actions. The HTTP routes re
 5. **Accept existing account:** A verified invitee must sign in to the exact invited account and complete recent password confirmation before accepting. A different authenticated account cannot complete either acceptance path.
 6. **Expire, resend or revoke:** The default invitation lifetime is 72 hours, bounded to 1–168 hours. Resend revokes earlier pending tokens and creates a fresh token. Revoking the invited membership invalidates its pending invitations. Accepted invitations cannot be reused.
 
+## Tenant-admin workspace
+
+The authenticated workspace groups invitations by the active vendor account or customer organization. The controller revalidates the actor's tenant permissions through database-backed authorization before invoking the invitation workspace query. Each tenant receives its own paginated result set; the query includes pending, expired and failed-delivery invitations and excludes accepted or revoked invitations.
+
+The workspace displays the invitee email, assigned role, delivery state, creation time and expiry. It offers create, resend and revoke actions through the existing tenant-scoped JSON APIs. The UI does not create an alternate mutation path or authorize requests from client-supplied tenant identifiers. Direct invitation role choices come from the same allowlists as the invitation service; maker-checker-only roles are not offered.
+
+All invitation mutations remain disabled until recent password confirmation and a fresh five-minute TOTP or enrolled-passkey step-up are present. The server-side APIs independently enforce the same assurance, tenant authorization, CSRF protection and throttling. Browser interactions use same-origin POST requests with CSRF headers; the no-JavaScript form fallback is POST-only and does not put invitation data in a URL. The workspace query never selects or renders raw invitation tokens or token hashes.
+
+The passkey and invitation JavaScript entry points are compiled into public/build/ during release packaging. Node.js 22.16.0 or newer and npm are build-time requirements for CI/release packaging only; the cPanel customer runtime does not require Node.js, npm, Composer or a persistent worker.
+
 ## Security invariants
 
 - Generate 32 random bytes per invitation; expose the raw token only in the email URL and persist only its 64-character SHA-256 hexadecimal hash.
@@ -30,11 +40,11 @@ Invitation creation and resend are privileged tenant actions. The HTTP routes re
 
 ## Shared-hosting behavior
 
-Invitation email delivery is synchronous and does not require Redis, a queue worker, Node.js or a persistent process. Production requires a valid HTTPS `APP_URL` and functioning outbound mail transport. A future durable outbox, retry scheduler, bounce tracking and delivery monitoring are not part of this increment.
+Invitation email delivery is synchronous and does not require Redis, a queue worker or a persistent process. Node.js/npm are used only by the CI/release builder to compile browser bundles; they are removed from the production ZIP and are not required on customer hosting. Production requires a valid HTTPS `APP_URL` and functioning outbound mail transport. A future durable outbox, retry scheduler, bounce tracking and delivery monitoring are not part of this increment.
 
 ## Remaining work
 
-- Build tenant-admin UI for listing pending, expired, accepted and failed-delivery invitations, with controlled resend and revoke actions.
+- Add explicit, separately audited membership reinstatement; reinstatement is not an invitation resend and must not reuse an invalidated token.
 - Add explicit membership reinstatement as a separate audited workflow.
 - Add mail transport configuration validation, provider-specific delivery telemetry and operational retry controls.
 - Add broader concurrency tests for simultaneous invite creation, resend, acceptance and membership revocation on MySQL and MariaDB.
