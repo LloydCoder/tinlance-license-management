@@ -20,9 +20,10 @@ return new class extends Migration
                 $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
                 $table->char('code_hash', 64);
                 $table->timestamp('consumed_at')->nullable();
+                $table->timestamp('invalidated_at')->nullable();
                 $table->timestamp('created_at')->useCurrent();
                 $table->unique(['user_id', 'code_hash'], 'mfa_recovery_codes_user_hash_unique');
-                $table->index(['user_id', 'consumed_at'], 'mfa_recovery_codes_user_consumed_idx');
+                $table->index(['user_id', 'consumed_at', 'invalidated_at'], 'mfa_recovery_codes_user_active_idx');
             });
         }
 
@@ -53,6 +54,7 @@ return new class extends Migration
                             'user_id' => $user->id,
                             'code_hash' => hash('sha256', strtolower(trim($code))),
                             'consumed_at' => null,
+                            'invalidated_at' => null,
                             'created_at' => $now,
                         ];
                     }
