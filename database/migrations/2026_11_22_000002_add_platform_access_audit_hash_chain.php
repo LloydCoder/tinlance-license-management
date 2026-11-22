@@ -100,7 +100,7 @@ return new class extends Migration
     }
 
     /**
-     * @throws \JsonException
+     * @throws JsonException
      */
     private function hashEvent(
         int $sequence,
