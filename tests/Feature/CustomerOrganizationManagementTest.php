@@ -158,7 +158,6 @@ final class CustomerOrganizationManagementTest extends TestCase
             ->assertSessionHasErrors('external_reference');
     }
 
-
     public function test_customer_profile_audit_events_cannot_be_updated_through_eloquent(): void
     {
         [$admin, $vendor] = $this->createSuperAdmin();

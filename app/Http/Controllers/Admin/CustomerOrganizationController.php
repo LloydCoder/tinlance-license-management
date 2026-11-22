@@ -107,7 +107,7 @@ final class CustomerOrganizationController
     }
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      * @return array{legal_name: string, display_name: string, external_reference: ?string, billing_email: ?string}
      */
     private function attributes(array $validated): array
