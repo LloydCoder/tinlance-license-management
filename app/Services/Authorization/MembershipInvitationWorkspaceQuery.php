@@ -98,4 +98,76 @@ final readonly class MembershipInvitationWorkspaceQuery
             ->orderByDesc('id')
             ->paginate(25, ['*'], 'customer_'.$organization->getKey().'_page');
     }
+
+    /** @return LengthAwarePaginator<int, VendorMembership> */
+    public function vendorRevokedMemberships(User $actor, VendorAccount $vendor): LengthAwarePaginator
+    {
+        if (! $this->authorization->vendorCan($actor, $vendor, 'admins.manage')) {
+            throw new AuthorizationException('The vendor revoked memberships cannot be viewed by this actor.');
+        }
+
+        return VendorMembership::query()
+            ->select([
+                'id',
+                'vendor_account_id',
+                'user_id',
+                'status',
+                'invited_by',
+                'joined_at',
+                'created_at',
+                'updated_at',
+            ])
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('status', 'revoked')
+            ->whereHas('user', static fn (Builder $user) => $user->where('status', 'active'))
+            ->whereHas('vendorAccount', static fn (Builder $tenant) => $tenant->where('status', 'active'))
+            ->whereHas('latestLifecycleEvent', static fn (Builder $event) => $event->where('to_status', 'revoked'))
+            ->with([
+                'user:id,name,email,status',
+                'roles:id,scope,slug,name',
+                'latestLifecycleEvent:id,vendor_membership_id,actor_user_id,from_status,to_status,reason,created_at',
+            ])
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(25, ['*'], 'vendor_revoked_'.$vendor->getKey().'_page');
+    }
+
+    /** @return LengthAwarePaginator<int, CustomerMembership> */
+    public function customerRevokedMemberships(User $actor, CustomerOrganization $organization): LengthAwarePaginator
+    {
+        if (! $this->authorization->customerCan($actor, $organization, 'customer.members.manage')) {
+            throw new AuthorizationException('The customer revoked memberships cannot be viewed by this actor.');
+        }
+
+        return CustomerMembership::query()
+            ->select([
+                'id',
+                'customer_organization_id',
+                'user_id',
+                'status',
+                'invited_by',
+                'joined_at',
+                'created_at',
+                'updated_at',
+            ])
+            ->where('customer_organization_id', $organization->getKey())
+            ->where('status', 'revoked')
+            ->whereHas('user', static fn (Builder $user) => $user->where('status', 'active'))
+            ->whereHas('customerOrganization', static function (Builder $tenant): void {
+                $tenant
+                    ->where('status', 'active')
+                    ->whereHas('vendorAccount', static fn (Builder $vendor) => $vendor->where('status', 'active'));
+            })
+            ->whereHas('latestLifecycleEvent', static fn (Builder $event) => $event->where('to_status', 'revoked'))
+            ->with([
+                'user:id,name,email,status',
+                'roles:id,scope,slug,name',
+                'latestLifecycleEvent:id,customer_membership_id,actor_user_id,from_status,to_status,reason,created_at',
+            ])
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(25, ['*'], 'customer_revoked_'.$organization->getKey().'_page');
+    }
+
+
 }
