@@ -14,8 +14,8 @@ final readonly class PlatformAccessAuditChainVerifier
     {
         return DB::transaction(function (): bool {
             $head = DB::table('platform_access_audit_chain_heads')
-            ->where('stream_key', 'platform_access')
-            ->first();
+                ->where('stream_key', 'platform_access')
+                ->first();
 
             if ($head === null) {
                 return false;
@@ -34,19 +34,19 @@ final readonly class PlatformAccessAuditChainVerifier
                 }
 
                 $expectedHash = $this->hasher->hashEvent(
-                (int) $event->sequence,
-                $event->previous_hash === null ? null : (string) $event->previous_hash,
-                (string) $event->id,
-                (string) $event->actor_user_id,
-                (string) $event->action,
-                (string) $event->resource_type,
-                (string) $event->resource_id,
-                (string) $event->tenant_vendor_account_id,
-                (string) $event->outcome,
-                (string) $event->reason_code,
-                (string) $event->request_id,
-                (string) $event->created_at,
-            );
+                    (int) $event->sequence,
+                    $event->previous_hash === null ? null : (string) $event->previous_hash,
+                    (string) $event->id,
+                    (string) $event->actor_user_id,
+                    (string) $event->action,
+                    (string) $event->resource_type,
+                    (string) $event->resource_id,
+                    (string) $event->tenant_vendor_account_id,
+                    (string) $event->outcome,
+                    (string) $event->reason_code,
+                    (string) $event->request_id,
+                    (string) $event->created_at,
+                );
 
                 if (! hash_equals((string) $event->event_hash, $expectedHash)) {
                     return false;
