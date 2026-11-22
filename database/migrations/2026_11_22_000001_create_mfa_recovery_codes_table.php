@@ -13,7 +13,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('mfa_recovery_codes', function (Blueprint $table): void {
+        if (! Schema::hasTable('mfa_recovery_codes')) {
+            Schema::create('mfa_recovery_codes', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
             $table->char('code_hash', 64);
@@ -21,7 +22,8 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
             $table->unique(['user_id', 'code_hash'], 'mfa_recovery_codes_user_hash_unique');
             $table->index(['user_id', 'consumed_at'], 'mfa_recovery_codes_user_consumed_idx');
-        });
+            });
+        }
 
         DB::table('users')
             ->select(['id', 'two_factor_recovery_codes'])
