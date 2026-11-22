@@ -166,7 +166,6 @@ final readonly class CustomerOrganizationManagementService
         }, 3);
     }
 
-
     /** @return Collection<int, CustomerOrganization> */
     public function customerProfileOrganizations(User $actor): Collection
     {
