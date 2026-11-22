@@ -222,6 +222,7 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         $this->assertFalse(Gate::forUser($superAdmin)->allows('update', $vendor));
         $this->assertFalse(Gate::forUser($superAdmin)->allows('delete', $vendor));
         $this->assertFalse(Gate::forUser($superAdmin)->allows('viewAny', CustomerOrganization::class));
+        $this->assertFalse(Gate::forUser($superAdmin)->allows('create', CustomerOrganization::class));
         $this->assertFalse(Gate::forUser($superAdmin)->allows('update', $organization));
         $this->assertFalse(Gate::forUser($superAdmin)->allows('delete', $organization));
     }

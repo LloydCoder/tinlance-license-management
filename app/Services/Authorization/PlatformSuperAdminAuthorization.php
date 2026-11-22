@@ -60,7 +60,7 @@ final readonly class PlatformSuperAdminAuthorization
         return $allowed;
     }
 
-    private function isBootstrapSuperAdmin(User $actor): bool
+    public function isBootstrapSuperAdmin(User $actor): bool
     {
         if (! User::query()->whereKey($actor->getKey())->where('status', 'active')->exists()) {
             return false;

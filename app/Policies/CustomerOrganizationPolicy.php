@@ -17,6 +17,50 @@ final class CustomerOrganizationPolicy
         private readonly PlatformSuperAdminAuthorization $platformAuthorization,
     ) {}
 
+    public function viewAny(User $user): bool
+    {
+        return $this->canManagePrimaryVendorCustomers($user);
+    }
+
+    public function create(User $user): bool
+    {
+        return $this->canManagePrimaryVendorCustomers($user);
+    }
+
+    public function update(User $user, CustomerOrganization $organization): bool
+    {
+        $currentOrganization = CustomerOrganization::query()
+            ->whereKey($organization->getKey())
+            ->first();
+
+        if (! $currentOrganization instanceof CustomerOrganization || $currentOrganization->status !== 'active') {
+            return false;
+        }
+
+        $vendor = $currentOrganization->vendorAccount()->first();
+
+        if (! $vendor instanceof VendorAccount || $vendor->installation_key !== 'primary' || $vendor->status !== 'active') {
+            return false;
+        }
+
+        return $this->canManagePrimaryVendorCustomers($user);
+    }
+
+    private function canManagePrimaryVendorCustomers(User $user): bool
+    {
+        if ($this->platformAuthorization->isBootstrapSuperAdmin($user)) {
+            return false;
+        }
+
+        $primaryVendor = VendorAccount::query()
+            ->where('installation_key', 'primary')
+            ->where('status', 'active')
+            ->first();
+
+        return $primaryVendor instanceof VendorAccount
+            && $this->authorization->vendorCan($user, $primaryVendor, 'customers.manage');
+    }
+
     public function view(User $user, CustomerOrganization $organization): bool
     {
         $currentOrganization = CustomerOrganization::query()

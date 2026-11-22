@@ -11,9 +11,9 @@ const responseMessages = {
     503: 'The invitation was saved but email delivery failed. Refresh the workspace and retry delivery after mail transport is restored.',
 };
 
-async function postJson(url, payload) {
+async function postJson(url, payload, method = 'POST') {
     const response = await fetch(url, {
-        method: 'POST',
+        method,
         credentials: 'same-origin',
         headers: {
             Accept: 'application/json',
@@ -205,6 +205,57 @@ document.addEventListener('submit', async (event) => {
             status.textContent = error instanceof Error
                 ? error.message
                 : 'The membership action could not be completed.';
+        }
+    } finally {
+        if (submit instanceof HTMLButtonElement) {
+            submit.disabled = false;
+            submit.textContent = originalLabel ?? '';
+        }
+    }
+});
+
+
+document.addEventListener('submit', async (event) => {
+    const form = event.target;
+
+    if (!(form instanceof HTMLFormElement) || !form.matches('[data-customer-organization-form]')) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const endpoint = form.dataset.endpoint;
+    const method = form.dataset.method;
+    const status = form.querySelector('[data-form-status]');
+    const submit = form.querySelector('button[type="submit"]');
+
+    if (!endpoint || !['POST', 'PATCH'].includes(method ?? '')) {
+        if (status) status.textContent = 'This customer organization action is not configured.';
+        return;
+    }
+
+    const formData = new FormData(form);
+    formData.delete('_token');
+    formData.delete('_method');
+    const payload = Object.fromEntries(formData.entries());
+    const originalLabel = submit instanceof HTMLButtonElement ? submit.textContent : '';
+
+    if (submit instanceof HTMLButtonElement) {
+        submit.disabled = true;
+        submit.textContent = 'Working…';
+    }
+
+    if (status) status.textContent = 'Submitting customer profile securely…';
+
+    try {
+        await postJson(endpoint, payload, method);
+        if (status) status.textContent = 'Customer profile saved. Refreshing the workspace…';
+        window.location.reload();
+    } catch (error) {
+        if (status) {
+            status.textContent = error instanceof Error
+                ? error.message
+                : 'The customer profile could not be saved.';
         }
     } finally {
         if (submit instanceof HTMLButtonElement) {
