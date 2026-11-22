@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorAccountProfileEvent;
-use Illuminate\\Database\\QueryException;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorAccountProfileEvent;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use LogicException;
-use Tests\\TestCase;
+use Tests\TestCase;
 
 final class VendorAccountProfileEventImmutabilityTest extends TestCase
 {
