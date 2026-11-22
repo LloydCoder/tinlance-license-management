@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::create('customer_organization_profile_events', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->foreignUlid('customer_organization_id')
-                ->constrained('customer_organizations')
+                ->constrained('customer_organizations', 'id', 'cust_org_profile_events_org_fk')
                 ->restrictOnDelete();
-            $table->foreignUlid('actor_user_id')->constrained('users')->restrictOnDelete();
+            $table->foreignUlid('actor_user_id')
+                ->constrained('users', 'id', 'cust_org_profile_events_actor_fk')
+                ->restrictOnDelete();
             $table->string('event_type', 32);
             $table->string('reason', 500);
             $table->json('changed_fields');
