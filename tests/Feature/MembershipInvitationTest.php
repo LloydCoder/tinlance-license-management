@@ -6,11 +6,13 @@ namespace Tests\Feature;
 
 use App\Mail\MembershipInvitationMail;
 use App\Models\CustomerMembership;
+use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerOrganization;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Models\VendorMembershipInvitation;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -453,6 +455,204 @@ final class MembershipInvitationTest extends TestCase
 
         $this->assertDatabaseMissing('users', ['email' => $email]);
         Mail::assertNothingSent();
+    }
+
+    public function test_vendor_admin_can_reinstate_a_revoked_member_with_a_new_invitation_and_role_history(): void
+    {
+        Mail::fake();
+        [$actor, $vendor] = $this->vendorActor();
+        $invitee = $this->createVerifiedUser('vendor-reinstatement');
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'active',
+            'joined_at' => now()->subDays(10),
+        ]);
+        $oldRole = $this->role('vendor', 'security_auditor');
+        $membership->roles()->attach($oldRole);
+        $oldToken = str()->random(64);
+        $oldInvitation = VendorMembershipInvitation::query()->create([
+            'vendor_membership_id' => $membership->getKey(),
+            'invited_by_user_id' => $actor->getKey(),
+            'invited_email' => $invitee->email,
+            'reason' => 'Original access grant.',
+            'token_hash' => hash('sha256', $oldToken),
+            'expires_at' => now()->addDay(),
+            'sent_at' => now(),
+            'delivery_status' => 'sent',
+        ]);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/revoke', [
+                'reason' => 'Previous access was removed.',
+            ])
+            ->assertOk();
+
+        $this->assertNotNull($oldInvitation->refresh()->revoked_at);
+
+        $response = $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'support_agent',
+                'reason' => 'Restore access after review.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'invited')
+            ->assertJsonMissingPath('data.token')
+            ->assertJsonMissingPath('data.token_hash');
+
+        $this->assertSame('invited', $membership->refresh()->status);
+        $this->assertNull($membership->joined_at);
+        $this->assertSame($actor->getKey(), $membership->invited_by);
+        $this->assertFalse($membership->roles()->whereKey($oldRole->getKey())->exists());
+        $this->assertTrue($membership->roles()->where('slug', 'support_agent')->exists());
+        $this->assertDatabaseHas('vendor_membership_lifecycle_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'revoked',
+            'to_status' => 'invited',
+            'reason' => 'Restore access after review.',
+        ]);
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $oldRole->getKey(),
+            'action' => 'revoked',
+        ]);
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $this->role('vendor', 'support_agent')->getKey(),
+            'action' => 'assigned',
+        ]);
+
+        $tokens = $this->sentInvitationTokens($invitee->email);
+        $this->assertCount(1, $tokens);
+        $newToken = $tokens[0];
+        $this->assertNotSame($oldToken, $newToken);
+
+        $newInvitation = VendorMembershipInvitation::query()
+            ->where('vendor_membership_id', $membership->getKey())
+            ->whereNull('revoked_at')
+            ->latest('created_at')
+            ->firstOrFail();
+
+        $this->assertSame(hash('sha256', $newToken), $newInvitation->token_hash);
+        $this->assertNotSame($oldInvitation->token_hash, $newInvitation->token_hash);
+        $this->assertSame('sent', $newInvitation->delivery_status);
+        $this->assertSame($membership->getKey(), (string) $response->json('data.membership_id'));
+    }
+
+    public function test_customer_owner_can_reinstate_a_revoked_member_with_a_new_invitation_and_role_history(): void
+    {
+        Mail::fake();
+        [$actor, $organization] = $this->customerActor();
+        $invitee = $this->createVerifiedUser('customer-reinstatement');
+        $membership = CustomerMembership::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'active',
+            'joined_at' => now()->subDays(10),
+        ]);
+        $oldRole = $this->role('customer', 'customer_technical_admin');
+        $membership->roles()->attach($oldRole);
+        $oldToken = str()->random(64);
+        $oldInvitation = CustomerMembershipInvitation::query()->create([
+            'customer_membership_id' => $membership->getKey(),
+            'invited_by_user_id' => $actor->getKey(),
+            'invited_email' => $invitee->email,
+            'reason' => 'Original customer access grant.',
+            'token_hash' => hash('sha256', $oldToken),
+            'expires_at' => now()->addDay(),
+            'sent_at' => now(),
+            'delivery_status' => 'sent',
+        ]);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$membership->getKey().'/revoke', [
+                'reason' => 'Previous customer access was removed.',
+            ])
+            ->assertOk();
+
+        $this->assertNotNull($oldInvitation->refresh()->revoked_at);
+
+        $response = $this->authenticatedJson($actor)
+            ->postJson('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'customer_member',
+                'reason' => 'Restore customer access after review.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'invited')
+            ->assertJsonMissingPath('data.token')
+            ->assertJsonMissingPath('data.token_hash');
+
+        $this->assertSame('invited', $membership->refresh()->status);
+        $this->assertNull($membership->joined_at);
+        $this->assertSame($actor->getKey(), $membership->invited_by);
+        $this->assertFalse($membership->roles()->whereKey($oldRole->getKey())->exists());
+        $this->assertTrue($membership->roles()->where('slug', 'customer_member')->exists());
+        $this->assertDatabaseHas('customer_membership_lifecycle_events', [
+            'customer_membership_id' => $membership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'revoked',
+            'to_status' => 'invited',
+            'reason' => 'Restore customer access after review.',
+        ]);
+        $this->assertDatabaseHas('customer_membership_role_events', [
+            'customer_membership_id' => $membership->getKey(),
+            'role_id' => $oldRole->getKey(),
+            'action' => 'revoked',
+        ]);
+        $this->assertDatabaseHas('customer_membership_role_events', [
+            'customer_membership_id' => $membership->getKey(),
+            'role_id' => $this->role('customer', 'customer_member')->getKey(),
+            'action' => 'assigned',
+        ]);
+
+        $tokens = $this->sentInvitationTokens($invitee->email);
+        $this->assertCount(1, $tokens);
+        $newToken = $tokens[0];
+        $this->assertNotSame($oldToken, $newToken);
+
+        $newInvitation = CustomerMembershipInvitation::query()
+            ->where('customer_membership_id', $membership->getKey())
+            ->whereNull('revoked_at')
+            ->latest('created_at')
+            ->firstOrFail();
+
+        $this->assertSame(hash('sha256', $newToken), $newInvitation->token_hash);
+        $this->assertNotSame($oldInvitation->token_hash, $newInvitation->token_hash);
+        $this->assertSame('sent', $newInvitation->delivery_status);
+        $this->assertSame($membership->getKey(), (string) $response->json('data.membership_id'));
+    }
+
+    public function test_reinstatement_rejects_a_membership_that_is_not_revoked(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $membership = $this->vendorMembership($vendor, $this->createUser('not-revoked'));
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'support_agent',
+                'reason' => 'Only revoked memberships may be reinstated.',
+            ])
+            ->assertConflict();
+
+        $this->assertSame('active', $membership->refresh()->status);
+    }
+
+    public function test_reinstatement_rejects_vendor_roles_that_require_maker_checker(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $membership = $this->vendorMembership($vendor, $this->createUser('privileged-reinstatement'));
+        $membership->forceFill(['status' => 'revoked'])->save();
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'finance_admin',
+                'reason' => 'High-risk grants must use maker-checker.',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('revoked', $membership->refresh()->status);
+        $this->assertDatabaseMissing('vendor_membership_invitations', ['vendor_membership_id' => $membership->getKey()]);
     }
 
     /**
