@@ -6,6 +6,4 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-final class ProductVersionConflictException extends RuntimeException
-{
-}
+final class ProductVersionConflictException extends RuntimeException {}
