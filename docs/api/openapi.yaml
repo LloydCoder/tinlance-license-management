@@ -1005,7 +1005,8 @@ paths:
         required: true
         schema:
           type: string
-          pattern: '^[0-9A-HJKMNP-TV-Z]{26}  /licences:
+          pattern: '^[0-9A-HJKMNP-TV-Z]{26}
+  /licences:
     post:
       tags: [Licences]
       operationId: issueLicence
@@ -1331,7 +1332,8 @@ components:
       properties:
         id:
           type: string
-          pattern: '^[0-9A-HJKMNP-TV-Z]{26}      type: object
+          pattern: '^[0-9A-HJKMNP-TV-Z]{26}
+      type: object
       required: [data, meta, request_id]
       properties:
         data:
@@ -2840,7 +2842,8 @@ components:
           maxLength: 160
         slug:
           type: string
-          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*      type: object
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*
+      type: object
       required: [data, meta, request_id]
       properties:
         data:
@@ -4367,7 +4370,8 @@ components:
           maxLength: 160
         slug:
           type: string
-          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*      type: object
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*
+      type: object
       required: [data, meta, request_id]
       properties:
         data:
@@ -5889,7 +5893,8 @@ components:
           maxLength: 160
         slug:
           type: string
-          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*      type: object
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*
+      type: object
       required: [data, meta, request_id]
       properties:
         data:
