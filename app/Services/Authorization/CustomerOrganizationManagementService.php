@@ -187,17 +187,6 @@ final readonly class CustomerOrganizationManagementService
                 $normalizedRequestId,
             );
 
-            $this->auditWriter->append(
-                (string) $actor->getKey(),
-                'customer_organization.profile_updated',
-                'customer_organization',
-                (string) $current->getKey(),
-                (string) $vendor->getKey(),
-                'allowed',
-                'customer_owner_profile_management',
-                $normalizedRequestId,
-            );
-
             return $current->refresh();
         }, 3);
     }
@@ -313,6 +302,17 @@ final readonly class CustomerOrganizationManagementService
                 'request_id' => $normalizedRequestId,
                 'created_at' => now(),
             ]);
+
+            $this->auditWriter->append(
+                (string) $actor->getKey(),
+                'customer_organization.profile_updated',
+                'customer_organization',
+                (string) $current->getKey(),
+                (string) $vendor->getKey(),
+                'allowed',
+                'customer_owner_profile_management',
+                $normalizedRequestId,
+            );
 
             return $current->refresh();
         }, 3);
