@@ -84,8 +84,8 @@ final class ProductCatalogFoundationTest extends TestCase
 
     public function test_product_manager_cannot_read_another_managers_product_or_cross_tenant_product(): void
     {
-        [$owner] = $this->createActor('vendor_product_manager');
-        [$otherManager] = $this->createActor('vendor_product_manager');
+        [$owner, $vendor] = $this->createActor('vendor_product_manager');
+        [$otherManager] = $this->createActor('vendor_product_manager', 'primary', $vendor);
         $product = $this->createProduct($owner);
 
         $this->authenticated($otherManager)
@@ -270,9 +270,12 @@ final class ProductCatalogFoundationTest extends TestCase
     /**
      * @return array{User, VendorAccount}
      */
-    private function createActor(string $roleSlug, string $installationKey = 'primary'): array
-    {
-        $vendor = VendorAccount::query()->create([
+    private function createActor(
+        string $roleSlug,
+        string $installationKey = 'primary',
+        ?VendorAccount $existingVendor = null,
+    ): array {
+        $vendor = $existingVendor ?? VendorAccount::query()->create([
             'installation_key' => $installationKey,
             'legal_name' => str()->headline($installationKey).' Limited',
             'display_name' => str()->headline($installationKey),
