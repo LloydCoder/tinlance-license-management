@@ -303,6 +303,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
 
     public function test_totp_confirmation_issues_hashed_recovery_codes_after_authenticator_proof(): void
     {
+        Notification::fake();
         $user = User::query()->create([
             'name' => 'MFA Enable Test User',
             'email' => 'mfa-enable-'.str()->random(12).'@example.test',
@@ -332,6 +333,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
 
         $this->assertSame(8, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->whereNull('consumed_at')->whereNull('invalidated_at')->count());
         $this->assertTrue(session()->has('mfa.recovery_codes_once'));
+        Notification::assertSentTo($user, MfaRecoveryCodeActivityNotification::class);
     }
 
     private function createMfaUser(?string $password = null): User
