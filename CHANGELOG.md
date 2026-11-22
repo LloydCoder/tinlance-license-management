@@ -20,6 +20,9 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Expanded membership lifecycle regression coverage for invited-member cancellation, self-revocation denial, cross-organization isolation, suspended-vendor denial and immutable lifecycle-event evidence (PR #57).
 - Serialized customer-membership revocation against concurrent parent-vendor suspension by locking and revalidating the persisted vendor row (PR #58).
 - Vendor/customer membership invitations with hashed single-use tokens, HTTPS-only email links, expiry, resend, acceptance, verification and revocation invalidation; fresh MFA-gated inviter actions and session-confusion protection for account setup (PR #63).
+- Tenant-scoped pending-invitation query and workspace view model for vendor/customer managers, including tenant pagination, allowlisted roles, password-confirmation and fresh MFA assurance flags (PRs #66–#67).
+- Vendor/customer invitation management UI with create/resend/revoke controls, delivery/expiry/creation metadata, TOTP/passkey step-up UX, same-origin CSRF-protected interactions and token-material exclusion (PR #68).
+- Reproducible cPanel release packaging now compiles passkey and invitation browser bundles with pinned Node.js/npm, verifies their presence and build metadata, and removes Node build tooling from the production ZIP (PR #68).
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
@@ -31,8 +34,9 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Bootstrap credentials are never persisted or flashed to browser input; successful setup requires removal of the environment secret and clearing cached configuration.
 - MFA management and recovery-code retrieval require recent password confirmation; recovery codes are returned only after an explicit user action and are not embedded in rendered pages by default.
 - Password resets and global session revocation execute in one database transaction; successful login upgrades supported weaker legacy password hashes to the configured stronger driver without downgrading stronger hashes.
-- Production artifact verification rejects environment files, package-authentication files and private-key material.
+- Production artifact verification rejects environment files, package-authentication files, private-key material and Node/npm build tooling; the generated package includes the compiled browser entry points but has no Node.js runtime dependency.
+- Invitation workspace forms use POST-only CSRF-protected fallbacks, and browser code removes the hidden form token before serializing JSON. The UI remains a usability layer; server-side tenant authorization and assurance checks are authoritative.
 - Pull-request CI artifacts are not cryptographically signed or published as releases. The tag-only signed release workflow has not yet been exercised with a real protected version tag; independent consumer verification remains outstanding.
 
 ### Not yet released
-No production TLMS service or production software package is published. Generalized maker-checker and privileged step-up for operations beyond high-risk vendor role grants, resource-level ABAC, customer/vendor portals, product and licence lifecycle, payment processing, cryptographic signing, secure updates, customer SDK, Talyvane integration and live cPanel provider qualification remain in development.
+No production TLMS service or production software package is published. Explicit membership reinstatement, generalized maker-checker and privileged step-up for operations beyond high-risk vendor role grants, resource-level ABAC, customer/vendor portals, product and licence lifecycle, payment processing, cryptographic signing, secure updates, customer SDK, Talyvane integration and live cPanel provider qualification remain in development.
