@@ -122,8 +122,16 @@ final readonly class VendorAccountProfileManagementService
 
     private function authorizeManager(User $actor, VendorAccount $vendor): void
     {
+        $membership = VendorMembership::query()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('user_id', $actor->getKey())
+            ->where('status', 'active')
+            ->lockForUpdate()
+            ->first();
+
         if (
-            $this->platformAuthorization->isBootstrapSuperAdmin($actor)
+            ! $membership instanceof VendorMembership
+            || $this->platformAuthorization->isBootstrapSuperAdmin($actor)
             || ! $this->membershipAuthorization->vendorCan($actor, $vendor, 'vendor.account.profile.manage')
         ) {
             throw new AuthorizationException('The actor cannot manage this vendor profile.');
