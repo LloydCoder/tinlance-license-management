@@ -55,17 +55,21 @@
             </form>
         @else
             <p class="status">Authenticator app is enabled.</p>
-            <p>Recovery codes are sensitive backup credentials. Reveal them only when needed, store them in a secure password manager, and regenerate them immediately if exposed. Each code can be used once.</p>
-            <div
-                class="stack"
-                data-recovery-codes
-                data-view-url="{{ route('two-factor.recovery-codes') }}"
-                data-regenerate-url="{{ route('two-factor.regenerate-recovery-codes') }}"
-            >
-                <button type="button" class="secondary" data-recovery-codes-action="view">Reveal recovery codes</button>
-                <button type="button" class="secondary" data-recovery-codes-action="regenerate">Regenerate recovery codes</button>
+            <p>Recovery codes are stored as one-way SHA-256 digests and cannot be retrieved after issuance. Store the codes offline in a secure password manager. Each code is single-use; using one issues a replacement that is shown once after sign-in.</p>
+            @if (session()->has('mfa.recovery_codes_once'))
+                <section class="panel warning" aria-labelledby="new-recovery-codes-heading">
+                    <h3 id="new-recovery-codes-heading">New recovery codes — shown once</h3>
+                    <p>Save these codes now. They will not be displayed again. Regenerating the set invalidates every previously issued code.</p>
+                    <ul>
+                        @foreach (session('mfa.recovery_codes_once') as $recoveryCode)
+                            <li><code>{{ $recoveryCode }}</code></li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endif
+            <div class="stack" data-recovery-codes data-regenerate-url="{{ route('two-factor.regenerate-recovery-codes') }}">
+                <button type="button" class="secondary" data-recovery-codes-action="regenerate">Generate new recovery codes</button>
                 <p class="muted" data-recovery-codes-status role="status" aria-live="polite"></p>
-                <div class="stack" data-recovery-codes-output hidden></div>
             </div>
             <form method="post" action="{{ route('two-factor.disable') }}">
                 @csrf
