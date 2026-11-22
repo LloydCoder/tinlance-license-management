@@ -52,7 +52,7 @@ final class CustomerOrganizationProfileEvent extends BaseModel
 
             $allowedFields = ['legal_name', 'display_name', 'external_reference', 'billing_email'];
             foreach ($event->changed_fields as $field) {
-                if (! is_string($field) || ! in_array($field, $allowedFields, true)) {
+                if (! in_array($field, $allowedFields, true)) {
                     throw new LogicException('Customer organization profile event contains an invalid field.');
                 }
             }
