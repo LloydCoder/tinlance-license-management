@@ -103,3 +103,14 @@ See the official project sources:
 - A separate immutable vendor profile event stores the reason, changed-field list and a digest of canonical before/after values. A version-2 platform audit event references the event; verification checks actor, vendor/resource/tenant, request ID, event type, reason, changed fields and digest.
 - Eloquent guards and MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect the event table. Tests cover model-level and raw database mutation rejection.
 - The payload digest and platform chain are unkeyed SHA-256. They detect partial/cross-record changes but do not prevent a privileged database administrator from rewriting all records and recomputing the chain. External anchoring and separate retention remain open controls.
+
+
+## Product registry controls (PR #98)
+
+- Products are tenant-owned by vendor_account_id. Vendor-scoped slug uniqueness is enforced in the database; a stable public UUID is distinct from the internal ULID.
+- Product managers are scoped to products they created (initial assignment); vendor Super Admins can access all products in their own vendor. Cross-manager and cross-tenant reads are concealed as 404 responses.
+- Product creation and draft updates require recent password confirmation and fresh five-minute TOTP/passkey step-up. The write transaction locks the vendor, then locks and revalidates the active vendor membership before mutation.
+- Updates require expected_version and increment the version under row lock. Stale writes return 409. Vendor ownership, public ID, creator and lifecycle status are not mutable through the API.
+- Product create/update events store the reason, changed fields and SHA-256 digest of canonical before/after values. The version-2 platform audit event references the immutable product event; verification cross-checks product, vendor/tenant, actor, event type, request ID and digest.
+- Eloquent guards and MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect product event rows. No product delete endpoint exists.
+- The product digest and platform chain remain unkeyed SHA-256 and externally unanchored. They detect partial/cross-record tampering but do not prevent a privileged database administrator from rewriting the complete database and recomputing the chain. Explicit product assignments, release publication, approval controls and external anchoring remain open.
