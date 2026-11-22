@@ -85,6 +85,7 @@ final class AuthorizationCatalogSeeder extends Seeder
             'backups.restore' => 'Initiate controlled backup restoration with step-up and recorded approval.',
             'system.maintenance.manage' => 'Manage installation maintenance operations with step-up.',
             'customer.members.manage' => 'Manage members within the caller customer organization.',
+            'customer.organization.profile.manage' => 'Update the customer organization display name and billing contact for the caller organization.',
             'customer.billing.read' => 'Read billing and invoice information for the caller organization.',
             'customer.licences.read' => 'Read licences belonging to the caller organization.',
             'customer.activations.manage' => 'Manage permitted activation operations for the caller organization.',
@@ -139,7 +140,7 @@ final class AuthorizationCatalogSeeder extends Seeder
             'customer' => [
                 'customer_owner' => [
                     'name' => 'Customer Organization Owner',
-                    'permissions' => ['customer.members.manage', 'customer.billing.read', 'customer.licences.read', 'customer.activations.manage'],
+                    'permissions' => ['customer.members.manage', 'customer.organization.profile.manage', 'customer.billing.read', 'customer.licences.read', 'customer.activations.manage'],
                 ],
                 'customer_billing_admin' => [
                     'name' => 'Customer Billing Admin',

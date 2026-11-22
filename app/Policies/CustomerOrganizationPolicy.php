@@ -39,11 +39,26 @@ final class CustomerOrganizationPolicy
 
         $vendor = $currentOrganization->vendorAccount()->first();
 
-        if (! $vendor instanceof VendorAccount || $vendor->installation_key !== 'primary' || $vendor->status !== 'active') {
+        if (
+            ! $vendor instanceof VendorAccount
+            || $vendor->status !== 'active'
+            || $this->platformAuthorization->isBootstrapSuperAdmin($user)
+        ) {
             return false;
         }
 
-        return $this->canManagePrimaryVendorCustomers($user);
+        if (
+            $vendor->installation_key === 'primary'
+            && $this->authorization->vendorCan($user, $vendor, 'customers.manage')
+        ) {
+            return true;
+        }
+
+        return $this->authorization->customerCan(
+            $user,
+            $currentOrganization,
+            'customer.organization.profile.manage',
+        );
     }
 
     private function canManagePrimaryVendorCustomers(User $user): bool

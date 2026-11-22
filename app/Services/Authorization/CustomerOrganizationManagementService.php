@@ -11,6 +11,7 @@ use App\Models\VendorAccount;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -144,6 +145,109 @@ final readonly class CustomerOrganizationManagementService
                     $changes[$field] = $value;
                 }
             }
+
+            if ($changes === []) {
+                return $current;
+            }
+
+            $current->fill($changes)->save();
+
+            CustomerOrganizationProfileEvent::query()->create([
+                'customer_organization_id' => $current->getKey(),
+                'actor_user_id' => $actor->getKey(),
+                'event_type' => 'profile_updated',
+                'reason' => trim($reason),
+                'changed_fields' => array_keys($changes),
+                'request_id' => $this->normalizeRequestId($requestId),
+                'created_at' => now(),
+            ]);
+
+            return $current->refresh();
+        }, 3);
+    }
+
+
+    /** @return Collection<int, CustomerOrganization> */
+    public function customerProfileOrganizations(User $actor): Collection
+    {
+        $organizations = [];
+
+        $memberships = $actor->customerMemberships()
+            ->where('status', 'active')
+            ->with(['customerOrganization.vendorAccount'])
+            ->orderBy('created_at')
+            ->get();
+
+        foreach ($memberships as $membership) {
+            $organization = $membership->customerOrganization;
+
+            if (
+                $organization instanceof CustomerOrganization
+                && $this->authorization->customerCan($actor, $organization, 'customer.organization.profile.manage')
+            ) {
+                $organizations[(string) $organization->getKey()] = $organization;
+            }
+        }
+
+        return collect(array_values($organizations));
+    }
+
+    /**
+     * @param  array{display_name: string, billing_email: ?string}  $attributes
+     */
+    public function updateCustomerOwnedProfile(
+        User $actor,
+        CustomerOrganization $organization,
+        array $attributes,
+        string $reason,
+        string $requestId,
+    ): CustomerOrganization {
+        return DB::transaction(function () use ($actor, $organization, $attributes, $reason, $requestId): CustomerOrganization {
+            $vendor = VendorAccount::query()
+                ->whereKey($organization->vendor_account_id)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $vendor instanceof VendorAccount) {
+                throw new ModelNotFoundException('The customer organization vendor is not available.');
+            }
+
+            $current = CustomerOrganization::query()
+                ->whereKey($organization->getKey())
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $current instanceof CustomerOrganization) {
+                throw new ModelNotFoundException('The customer organization is not available for profile updates.');
+            }
+
+            $activeActor = User::query()
+                ->whereKey($actor->getKey())
+                ->where('status', 'active')
+                ->exists();
+
+            if (
+                ! $activeActor
+                || $this->platformAuthorization->isBootstrapSuperAdmin($actor)
+                || ! $this->authorization->customerCan($actor, $current, 'customer.organization.profile.manage')
+            ) {
+                throw new AuthorizationException('The actor cannot manage this customer organization profile.');
+            }
+
+            $changes = [
+                'display_name' => trim($attributes['display_name']),
+                'billing_email' => isset($attributes['billing_email']) && $attributes['billing_email'] !== ''
+                    ? mb_strtolower(trim($attributes['billing_email']))
+                    : null,
+            ];
+            $changes = array_filter(
+                $changes,
+                static fn (mixed $value, string $field): bool => $current->getAttribute($field) !== $value,
+                ARRAY_FILTER_USE_BOTH,
+            );
 
             if ($changes === []) {
                 return $current;
