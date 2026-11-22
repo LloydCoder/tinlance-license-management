@@ -32,7 +32,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
                 'two_factor_confirmed_at' => null,
             ])->save();
 
-            TwoFactorAuthenticationEnabled::dispatch($user);
+            DB::afterCommit(static fn () => TwoFactorAuthenticationEnabled::dispatch($user));
         }, 3);
     }
 }
