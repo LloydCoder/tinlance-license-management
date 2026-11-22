@@ -79,6 +79,37 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         $this->assertArrayNotHasKey('token_hash', $paginator->items()[0]->toArray());
     }
 
+    public function test_directories_never_render_roles_from_the_other_tenant_scope(): void
+    {
+        [$vendorActor, $vendor] = $this->vendorManager('directory-cross-scope-vendor');
+        $vendorMember = $this->createVendorMember($vendor, 'directory-cross-scope-vendor-member', 'active', 'support_agent');
+        $vendorMember->roles()->attach($this->role('customer', 'customer_member'));
+
+        [$customerActor, $organization] = $this->customerOwner('directory-cross-scope-customer');
+        $customerMember = $this->createCustomerMember($organization, 'directory-cross-scope-customer-member', 'active', 'customer_member');
+        $customerMember->roles()->attach($this->role('vendor', 'support_agent'));
+
+        $vendorRows = app(MembershipDirectoryQuery::class)->vendorMembers($vendorActor, $vendor)->getCollection();
+        $customerRows = app(MembershipDirectoryQuery::class)->customerMembers($customerActor, $organization)->getCollection();
+
+        $this->assertSame(
+            ['vendor_admin'],
+            $vendorRows->firstWhere('user_id', $vendorActor->getKey())?->roles->pluck('slug')->all(),
+        );
+        $this->assertSame(
+            ['support_agent'],
+            $vendorRows->firstWhere('id', $vendorMember->getKey())?->roles->pluck('slug')->all(),
+        );
+        $this->assertSame(
+            ['customer_owner'],
+            $customerRows->firstWhere('user_id', $customerActor->getKey())?->roles->pluck('slug')->all(),
+        );
+        $this->assertSame(
+            ['customer_member'],
+            $customerRows->firstWhere('id', $customerMember->getKey())?->roles->pluck('slug')->all(),
+        );
+    }
+
     public function test_directory_queries_deny_actors_without_tenant_membership_management_permission(): void
     {
         [$manager, $vendor] = $this->vendorManager('directory-deny-vendor');
