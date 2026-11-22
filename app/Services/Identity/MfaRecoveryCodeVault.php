@@ -63,6 +63,7 @@ final class MfaRecoveryCodeVault
                 ->where('user_id', $lockedUser->getKey())
                 ->where('code_hash', $codeHash)
                 ->whereNull('consumed_at')
+                ->whereNull('invalidated_at')
                 ->lockForUpdate()
                 ->first();
 
@@ -86,6 +87,7 @@ final class MfaRecoveryCodeVault
                 'user_id' => $lockedUser->getKey(),
                 'code_hash' => hash('sha256', $replacement),
                 'consumed_at' => null,
+                'invalidated_at' => null,
                 'created_at' => now(),
             ]);
 
@@ -142,7 +144,8 @@ final class MfaRecoveryCodeVault
         DB::table('mfa_recovery_codes')
             ->where('user_id', $user->getKey())
             ->whereNull('consumed_at')
-            ->update(['consumed_at' => $now]);
+            ->whereNull('invalidated_at')
+            ->update(['invalidated_at' => $now]);
 
         $rows = [];
 
@@ -152,6 +155,7 @@ final class MfaRecoveryCodeVault
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', $code),
                 'consumed_at' => null,
+                'invalidated_at' => null,
                 'created_at' => $now,
             ];
         }
