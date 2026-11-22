@@ -14,87 +14,22 @@ Passkeys.configure({
 
 document.addEventListener('click', async (event) => {
     const target = event.target instanceof Element
-        ? event.target.closest('[data-passkey-action]')
-        : null;
-
-    if (!(target instanceof HTMLButtonElement)) {
-        return;
-    }
-
-    const action = target.dataset.passkeyAction;
-    const status = document.querySelector('[data-passkey-status]');
-    const originalLabel = target.textContent ?? '';
-
-    target.disabled = true;
-
-    try {
-        if (action === 'verify') {
-            const response = await Passkeys.verify({ remember: true });
-
-            if (response && typeof response.redirect === 'string') {
-                window.location.assign(response.redirect);
-            } else {
-                window.location.reload();
-            }
-
-            return;
-        }
-
-        if (action === 'register') {
-            const nameInput = document.querySelector('[data-passkey-name]');
-            const name = nameInput instanceof HTMLInputElement ? nameInput.value.trim() : '';
-
-            if (name.length === 0) {
-                throw new Error('Enter a name for this passkey.');
-            }
-
-            await Passkeys.register({ name });
-
-            if (status) {
-                status.textContent = 'Passkey registered successfully.';
-            }
-
-            window.location.reload();
-        }
-    } catch (error) {
-        if (status) {
-            status.textContent = error instanceof Error
-                ? error.message
-                : 'The passkey operation could not be completed.';
-        }
-    } finally {
-        target.disabled = false;
-        target.textContent = originalLabel;
-    }
-});
-
-
-document.addEventListener('click', async (event) => {
-    const target = event.target instanceof Element
         ? event.target.closest('[data-recovery-codes-action]')
         : null;
 
-    if (!(target instanceof HTMLButtonElement)) {
+    if (!(target instanceof HTMLButtonElement) || target.dataset.recoveryCodesAction !== 'regenerate') {
         return;
     }
 
     const container = target.closest('[data-recovery-codes]');
-    const output = container?.querySelector('[data-recovery-codes-output]');
     const status = container?.querySelector('[data-recovery-codes-status]');
-    const action = target.dataset.recoveryCodesAction;
+    const regenerateUrl = container instanceof HTMLElement ? container.dataset.regenerateUrl : null;
 
-    if (!(container instanceof HTMLElement) || !(output instanceof HTMLElement)) {
+    if (!regenerateUrl) {
         return;
     }
 
-    const viewUrl = container.dataset.viewUrl;
-    const regenerateUrl = container.dataset.regenerateUrl;
-
-    if (!viewUrl || !regenerateUrl || !['view', 'regenerate'].includes(action ?? '')) {
-        return;
-    }
-
-    if (action === 'regenerate' && !window.confirm('Regenerate recovery codes? All existing codes will stop working.')) {
+    if (!window.confirm('Generate new recovery codes? All existing recovery codes will immediately stop working.')) {
         return;
     }
 
@@ -102,54 +37,22 @@ document.addEventListener('click', async (event) => {
     target.disabled = true;
 
     try {
-        const headers = {
-            Accept: 'application/json',
-            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
-        };
-
-        if (action === 'regenerate') {
-            const regenerateResponse = await fetch(regenerateUrl, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers,
-            });
-
-            if (!regenerateResponse.ok) {
-                throw new Error('Recovery codes could not be regenerated. Confirm your password and try again.');
-            }
-        }
-
-        const response = await fetch(viewUrl, {
-            method: 'GET',
+        const response = await fetch(regenerateUrl, {
+            method: 'POST',
             credentials: 'same-origin',
-            headers,
+            headers: {
+                Accept: 'application/json',
+                ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+            },
         });
 
         if (!response.ok) {
-            throw new Error('Recovery codes could not be retrieved. Confirm your password and try again.');
+            throw new Error(response.status === 423
+                ? 'Complete a fresh MFA verification before regenerating recovery codes.'
+                : 'Recovery codes could not be regenerated. Confirm your password and try again.');
         }
 
-        const codes = await response.json();
-
-        if (!Array.isArray(codes) || !codes.every((code) => typeof code === 'string')) {
-            throw new Error('The recovery-code response was invalid.');
-        }
-
-        output.replaceChildren();
-
-        for (const code of codes) {
-            const item = document.createElement('code');
-            item.textContent = code;
-            output.append(item);
-        }
-
-        output.hidden = false;
-
-        if (status) {
-            status.textContent = codes.length > 0
-                ? 'Recovery codes are visible only in this page session. Store them securely before leaving.'
-                : 'No recovery codes are currently available.';
-        }
+        window.location.reload();
     } catch (error) {
         if (status) {
             status.textContent = error instanceof Error
