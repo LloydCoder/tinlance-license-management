@@ -91,12 +91,128 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         }
     }
 
-    private function createMfaUser(): User
+    public function test_fortify_recovery_code_endpoint_never_discloses_saved_codes(): void
+    {
+        $user = $this->createMfaUser();
+        app(MfaRecoveryCodeVault::class)->replaceAll($user);
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->get(route('two-factor.recovery-codes'))
+            ->assertOk()
+            ->assertExactJson([]);
+    }
+
+    public function test_recovery_code_regeneration_requires_recent_password_and_fresh_mfa_step_up(): void
+    {
+        $user = $this->createMfaUser();
+        $vault = app(MfaRecoveryCodeVault::class);
+        $oldCodes = $vault->replaceAll($user);
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->postJson(route('two-factor.regenerate-recovery-codes'))
+            ->assertStatus(423);
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+                'auth.mfa_step_up_at' => now()->timestamp,
+                'auth.mfa_step_up_method' => 'totp',
+            ])
+            ->postJson(route('two-factor.regenerate-recovery-codes'))
+            ->assertOk();
+
+        $this->assertSessionHas('mfa.recovery_codes_once');
+        $newCodes = session('mfa.recovery_codes_once');
+        $this->assertIsArray($newCodes);
+        $this->assertCount(8, $newCodes);
+
+        foreach ($oldCodes as $oldCode) {
+            $this->assertNull($vault->consumeAndReplace($user, $oldCode));
+        }
+
+        foreach ($newCodes as $newCode) {
+            $this->assertDatabaseHas('mfa_recovery_codes', [
+                'user_id' => $user->getKey(),
+                'code_hash' => hash('sha256', $newCode),
+                'consumed_at' => null,
+            ]);
+        }
+    }
+
+    public function test_fortify_login_consumes_a_hashed_recovery_code_and_issues_one_replacement(): void
+    {
+        $password = str()->random(48);
+        $user = $this->createMfaUser($password);
+        $vault = app(MfaRecoveryCodeVault::class);
+        $codes = $vault->replaceAll($user);
+        $usedCode = $codes[0];
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => $password,
+        ])->assertRedirect(route('two-factor.login'));
+
+        $this->post('/two-factor-challenge', [
+            'recovery_code' => $usedCode,
+        ])->assertRedirect('/workspace');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull(
+            DB::table('mfa_recovery_codes')
+                ->where('user_id', $user->getKey())
+                ->where('code_hash', hash('sha256', $usedCode))
+                ->value('consumed_at'),
+        );
+        $this->assertSessionHas('mfa.recovery_code_replacement_once');
+
+        $replacement = session('mfa.recovery_code_replacement_once');
+        $this->assertIsString($replacement);
+        $this->assertDatabaseHas('mfa_recovery_codes', [
+            'user_id' => $user->getKey(),
+            'code_hash' => hash('sha256', $replacement),
+            'consumed_at' => null,
+        ]);
+    }
+
+    public function test_enabling_totp_persists_only_hashed_recovery_codes(): void
+    {
+        $user = User::query()->create([
+            'name' => 'MFA Enable Test User',
+            'email' => 'mfa-enable-'.str()->random(12).'@example.test',
+            'password' => str()->random(48),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'auth_session_version' => 0,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->post(route('two-factor.enable'))
+            ->assertRedirect();
+
+        $this->assertSame(8, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->whereNull('consumed_at')->count());
+        $this->assertSame('[]', Fortify::currentEncrypter()->decrypt(
+            (string) DB::table('users')->where('id', $user->getKey())->value('two_factor_recovery_codes'),
+        ));
+        $this->assertSessionHas('mfa.recovery_codes_once');
+    }
+
+    private function createMfaUser(?string $password = null): User
     {
         $user = User::query()->create([
             'name' => 'MFA Recovery Test User',
             'email' => 'mfa-recovery-'.str()->random(12).'@example.test',
-            'password' => str()->random(48),
+            'password' => $password ?? str()->random(48),
             'status' => 'active',
         ]);
 
