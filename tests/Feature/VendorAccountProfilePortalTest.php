@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\PlatformInstallation;
-use App\\Models\\PlatformAccessAuditEvent;
-use App\\Models\\Role;
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorMembership;
-use App\\Models\\VendorAccountProfileEvent;
-use App\\Services\\Authorization\\PlatformAccessAuditChainVerifier;
-use Database\\Seeders\\AuthorizationCatalogSeeder;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\DB;
-use Tests\\TestCase;
+use App\Models\PlatformInstallation;
+use App\Models\PlatformAccessAuditEvent;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use App\Models\VendorAccountProfileEvent;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
+use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 final class VendorAccountProfilePortalTest extends TestCase
 {
@@ -60,7 +60,7 @@ final class VendorAccountProfilePortalTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame(['display_name'], $event->changed_fields);
-        $this->assertMatchesRegularExpression('/\\A[a-f0-9]{64}\\z/', $event->change_digest);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $event->change_digest);
         $this->assertSame(2, $audit->hash_version);
         $this->assertSame($event->getKey(), $audit->details_ref_id);
         $this->assertSame('vendor_account.profile_updated', $audit->action);
