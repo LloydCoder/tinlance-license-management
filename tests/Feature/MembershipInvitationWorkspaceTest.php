@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
 use App\Models\CustomerMembershipLifecycleEvent;
-use App\Models\CustomerMembershipLifecycleEvent;
 use App\Models\CustomerOrganization;
 use App\Models\Role;
 use App\Models\User;
