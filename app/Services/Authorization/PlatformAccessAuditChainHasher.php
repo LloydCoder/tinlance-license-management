@@ -77,7 +77,7 @@ final class PlatformAccessAuditChainHasher
     public function hashProfileChangeSet(array $changes): string
     {
         foreach (['before', 'after'] as $side) {
-            $values = $changes[$side] ?? [];
+            $values = $changes[$side];
             ksort($values, SORT_STRING);
             $changes[$side] = $values;
         }
