@@ -74,6 +74,23 @@
                 </section>
             @endif
             <p>Recovery codes are stored as one-way SHA-256 digests and cannot be retrieved after issuance. Store the codes offline in a secure password manager. Each code is single-use; using one issues a replacement that is shown once after sign-in.</p>
+            @if (! $mfaStepUpFresh)
+                <section class="panel warning" aria-labelledby="recovery-step-up-heading">
+                    <h3 id="recovery-step-up-heading">Verify your identity before regenerating codes</h3>
+                    @if ($totpEnabled)
+                        <form method="post" action="{{ route('security.mfa.enroll') }}" data-step-up-totp class="stack">
+                            @csrf
+                            <label for="recovery-step-up-code">Authenticator code</label>
+                            <input id="recovery-step-up-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
+                            <button type="submit">Verify authenticator</button>
+                        </form>
+                    @endif
+                    @if ($hasPasskeys)
+                        <button type="button" data-passkey-action="verify">Verify with passkey</button>
+                    @endif
+                    <p class="muted" role="status" aria-live="polite" data-invitation-status></p>
+                </section>
+            @endif
             <div class="stack" data-recovery-codes data-regenerate-url="{{ route('two-factor.regenerate-recovery-codes') }}">
                 <button type="button" class="secondary" data-recovery-codes-action="regenerate">Generate new recovery codes</button>
                 <p class="muted" data-recovery-codes-status role="status" aria-live="polite"></p>
