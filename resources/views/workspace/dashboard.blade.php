@@ -4,30 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
+    <meta name="theme-color" content="#0A0C0B">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ asset('brand/tlms-brand.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Your TLMS workspace</title>
-    <style>
-        :root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#0b1220;color:#e5edf8}
-        *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:28px 16px;background:#0b1220}
-        main{width:min(100%,1080px);margin:0 auto}h1{font-size:1.7rem;margin:0 0 8px}h2{font-size:1.15rem;margin:26px 0 12px}
-        h3{font-size:1rem;margin:0 0 8px}p{color:#a9bad0;line-height:1.55}.muted{font-size:.88rem;color:#9cafc7}
-        .panel{border:1px solid #293b53;border-radius:14px;background:#101c2d;padding:18px;margin:12px 0}
-        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-        .role{display:inline-block;margin:6px 6px 0 0;padding:4px 8px;border:1px solid #40536b;border-radius:999px;color:#d9e5f3;font-size:.8rem}
-        form{margin-top:16px}label{display:block;margin:10px 0 5px;color:#c8d5e5;font-size:.9rem}
-        input,select,textarea{width:100%;max-width:100%;padding:10px 11px;border:1px solid #40536b;border-radius:8px;background:#0b1524;color:#f4f7fb;font:inherit}
-        textarea{min-height:76px;resize:vertical}button{padding:10px 14px;border:1px solid #55708f;border-radius:9px;background:#23466e;color:#fff;font:inherit;cursor:pointer}
-        button:disabled{opacity:.48;cursor:not-allowed}a{color:#9dc8ff}.table-wrap{width:100%;overflow-x:auto}
-        table{width:100%;border-collapse:collapse;min-width:620px}th,td{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid #293b53}
-        th{font-size:.8rem;color:#9cafc7;font-weight:600}td{font-size:.9rem}.actions{display:grid;gap:8px;min-width:190px}
-        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-        .status{min-height:1.5em;color:#c9d9ed}.warning{border-color:#745a32}.muted-note{font-size:.82rem;color:#9cafc7}
-        @media(max-width:600px){body{padding:20px 12px}.panel{padding:14px}h1{font-size:1.45rem}}
-    </style>
 </head>
 <body>
-<main>
-    <div class="muted">TINLANCE LICENSE MANAGEMENT SYSTEM</div>
+<main class="tlms-shell">
+    <img class="tlms-brand-lockup" src="{{ asset('brand/tlms-lockup-horizontal-dark.svg') }}" alt="TLMS — Tinlance License Management System" width="232" height="78">
     <h1>Your TLMS workspace</h1>
     <p>Signed in as <strong>{{ $user->name }}</strong>. This workspace shows your active memberships and invitations for tenants you are authorized to manage.</p>
 
