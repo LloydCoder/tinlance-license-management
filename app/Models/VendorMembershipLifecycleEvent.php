@@ -31,7 +31,8 @@ final class VendorMembershipLifecycleEvent extends BaseModel
             $fromStatus = $event->getAttribute('from_status');
             $toStatus = $event->getAttribute('to_status');
             $validTransition = ($fromStatus === 'invited' && in_array($toStatus, ['active', 'revoked'], true))
-                || ($fromStatus === 'active' && $toStatus === 'revoked');
+                || ($fromStatus === 'active' && $toStatus === 'revoked')
+                || ($fromStatus === 'revoked' && $toStatus === 'invited');
 
             if (
                 ! $validTransition
