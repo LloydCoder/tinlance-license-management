@@ -55,6 +55,9 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $this->assertSame(2, (int) $head->last_sequence);
         $this->assertSame($events[1]->event_hash, $head->last_hash);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+        $this->artisan('tlms:audit:verify')
+            ->expectsOutput('Platform access audit hash chain is valid.')
+            ->assertExitCode(0);
     }
 
     public function test_verifier_detects_modified_audit_event_content(): void
@@ -73,6 +76,9 @@ final class PlatformAccessAuditHashChainTest extends TestCase
             ->update(['reason_code' => 'resource_inactive']);
 
         $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
+        $this->artisan('tlms:audit:verify')
+            ->expectsOutput('Platform access audit hash chain verification failed.')
+            ->assertExitCode(1);
     }
 
     public function test_verifier_detects_chain_head_replacement(): void
