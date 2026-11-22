@@ -22,9 +22,12 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
 
     public function __invoke($user, $force = false): void
     {
+        $shouldGenerate = $user instanceof User
+            && (empty($user->two_factor_secret) || $force === true);
+
         parent::__invoke($user, $force);
 
-        if (! $user instanceof User || ! is_string($user->two_factor_recovery_codes)) {
+        if (! $shouldGenerate || ! $user instanceof User || ! is_string($user->two_factor_recovery_codes)) {
             return;
         }
 
