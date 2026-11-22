@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\PlatformAccessAuditEvent;
-use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use App\Models\User;
 use App\Models\VendorAccount;
+use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
