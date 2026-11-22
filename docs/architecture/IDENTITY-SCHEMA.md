@@ -1,6 +1,6 @@
 # Identity and organization persistence baseline
 
-**Status:** Identity/membership persistence, role catalogue, membership-level authorization, Super Admin authentication, fresh MFA step-up for membership role changes, maker-checker for high-risk vendor role grants and tenant-admin membership revocation are implemented. PR #55 adds transactional `invited|active -> revoked` transitions and immutable lifecycle evidence. Complete resource-level ABAC, generalized privileged step-up/approval and full portals remain unimplemented; invitation creation/acceptance/expiry and workspace flows are now implemented.
+**Status:** Identity/membership persistence, role catalogue, membership-level authorization, Super Admin authentication, fresh MFA step-up for membership role changes, maker-checker for high-risk vendor role grants and tenant-admin membership revocation are implemented. PR #55 adds transactional `invited|active -> revoked` transitions and immutable lifecycle evidence. Complete resource-level ABAC, generalized privileged step-up/approval and full portals remain unimplemented; invitation creation/acceptance/expiry, pending/revoked invitation workspace flows and active membership directory reads are now implemented. Active-member role/revocation UI remains a separate follow-on.
 
 ## Deployment and ownership model
 
