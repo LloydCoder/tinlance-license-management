@@ -7,6 +7,7 @@ namespace App\Actions\Fortify;
 use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Fortify;
@@ -27,24 +28,32 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
         $shouldGenerate = $user instanceof User
             && (empty($user->two_factor_secret) || $force === true);
 
-        parent::__invoke($user, $force);
+        if (! $shouldGenerate || ! $user instanceof User) {
+            parent::__invoke($user, $force);
 
-        if (! $shouldGenerate || ! $user instanceof User || ! is_string($user->two_factor_recovery_codes)) {
             return;
         }
 
-        $codes = json_decode(
-            Fortify::currentEncrypter()->decrypt($user->two_factor_recovery_codes),
-            true,
-            512,
-            JSON_THROW_ON_ERROR,
-        );
+        DB::transaction(function () use ($user, $force): void {
+            parent::__invoke($user, $force);
 
-        if (! is_array($codes) || ! array_is_list($codes) || count($codes) !== 8) {
-            throw new RuntimeException('Fortify did not generate a complete recovery-code set.');
-        }
+            if (! is_string($user->two_factor_recovery_codes)) {
+                throw new RuntimeException('Fortify did not persist the recovery-code set.');
+            }
 
-        $hashedCodes = $this->vault->replaceWithCodes($user, $codes);
-        $this->request->session()->flash('mfa.recovery_codes_once', $hashedCodes);
+            $codes = json_decode(
+                Fortify::currentEncrypter()->decrypt($user->two_factor_recovery_codes),
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+
+            if (! is_array($codes) || ! array_is_list($codes) || count($codes) !== 8) {
+                throw new RuntimeException('Fortify did not generate a complete recovery-code set.');
+            }
+
+            $hashedCodes = $this->vault->replaceWithCodes($user, $codes);
+            $this->request->session()->flash('mfa.recovery_codes_once', $hashedCodes);
+        }, 3);
     }
 }
