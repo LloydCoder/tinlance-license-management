@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Illuminate\\Database\\Migrations\\Migration;
-use Illuminate\\Database\\Schema\\Blueprint;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Facades\\Schema;
-use Laravel\\Fortify\\Fortify;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Laravel\Fortify\Fortify;
 use RuntimeException;
 
 return new class extends Migration
@@ -46,7 +46,7 @@ return new class extends Migration
                         }
 
                         $rows[] = [
-                            'id' => (string) Illuminate\\Support\\Str::ulid(),
+                            'id' => (string) Illuminate\Support\Str::ulid(),
                             'user_id' => $user->id,
                             'code_hash' => hash('sha256', strtolower(trim($code))),
                             'consumed_at' => null,
