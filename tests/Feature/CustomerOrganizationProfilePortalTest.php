@@ -189,7 +189,7 @@ final class CustomerOrganizationProfilePortalTest extends TestCase
             ->where('slug', 'customer_owner')
             ->firstOrFail();
 
-        $lastOrganization = null;
+        $lastOrganization = $firstOrganization;
 
         for ($index = 1; $index <= 25; $index++) {
             $organization = CustomerOrganization::query()->create([
