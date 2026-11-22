@@ -242,6 +242,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($invitation->invited_email);
+        $response->assertSee('Created');
         $response->assertSee('support_agent');
         $response->assertSee('security_auditor');
         $response->assertSee('vendor_developer');
@@ -281,7 +282,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/revoke');
-        $response->assertSee('failed');
+        $response->assertSee('Delivery failed');
+        $response->assertSee('Expired');
         $response->assertDontSee($invitation->token_hash);
     }
 
