@@ -37,8 +37,10 @@ final class Product extends BaseModel
                 || (int) $product->version !== 1
                 || preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/iD', (string) $product->public_id) !== 1
                 || preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/D', (string) $product->slug) !== 1
-                || trim((string) $product->name) === ''
+                || mb_strlen(trim((string) $product->name)) < 2
                 || mb_strlen((string) $product->name) > 160
+                || mb_strlen((string) $product->slug) > 80
+                || ($product->description !== null && mb_strlen((string) $product->description) > 2000)
             ) {
                 throw new LogicException('Product creation metadata is invalid.');
             }
