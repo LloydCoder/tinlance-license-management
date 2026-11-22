@@ -154,4 +154,5 @@ final readonly class PlatformAccessAuditChainVerifier
         );
 
         return hash_equals($detailsHash, $expectedDetailsHash);
-    }}
+    }
+}
