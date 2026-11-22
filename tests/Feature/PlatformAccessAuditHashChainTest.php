@@ -58,6 +58,30 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $this->assertNotNull($head);
         $this->assertSame(2, (int) $head->last_sequence);
         $this->assertSame($second->event_hash, $head->last_hash);
+
+        $hasher = app(\\App\\Services\\Authorization\\PlatformAccessAuditChainHasher::class);
+        foreach ([$first, $second] as $event) {
+            $this->assertSame(
+                $event->event_hash,
+                $hasher->hashEvent(
+                    (int) $event->sequence,
+                    $event->previous_hash === null ? null : (string) $event->previous_hash,
+                    (string) $event->id,
+                    (string) $event->actor_user_id,
+                    (string) $event->action,
+                    (string) $event->resource_type,
+                    (string) $event->resource_id,
+                    (string) $event->tenant_vendor_account_id,
+                    (string) $event->outcome,
+                    (string) $event->reason_code,
+                    (string) $event->request_id,
+                    (string) $event->created_at,
+                ),
+                'Persisted event hash must match its canonical database representation.',
+            );
+            $this->assertSame(1, (int) $event->hash_version);
+        }
+
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
         $this->assertSame(0, Artisan::call('tlms:audit:verify'));
         $this->assertStringContainsString('Platform access audit hash chain is valid.', Artisan::output());
