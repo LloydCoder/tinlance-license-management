@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\\Actions\\Fortify;
+namespace App\Actions\Fortify;
 
-use App\\Models\\User;
-use App\\Services\\Identity\\MfaRecoveryCodeVault;
-use Illuminate\\Http\\Request;
-use Laravel\\Fortify\\Actions\\EnableTwoFactorAuthentication;
-use Laravel\\Fortify\\Contracts\\TwoFactorAuthenticationProvider;
-use Laravel\\Fortify\\Fortify;
+use App\Models\User;
+use App\Services\Identity\MfaRecoveryCodeVault;
+use Illuminate\Http\Request;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Fortify;
 use RuntimeException;
 
 final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthentication
