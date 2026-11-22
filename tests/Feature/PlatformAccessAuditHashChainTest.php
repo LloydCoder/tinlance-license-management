@@ -12,6 +12,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -53,6 +54,38 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $this->assertNotNull($head);
         $this->assertSame(2, (int) $head->last_sequence);
         $this->assertSame($events[1]->event_hash, $head->last_hash);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_verifier_detects_modified_audit_event_content(): void
+    {
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $this->markTestSkipped('MySQL/MariaDB triggers prevent event mutation; SQLite exercises verifier tamper detection.');
+        }
+
+        $superAdmin = $this->bootstrapSuperAdmin();
+        $vendor = $this->createVendor('tamper-detection');
+        Gate::forUser($superAdmin)->allows('view', $vendor);
+        $event = PlatformAccessAuditEvent::query()->sole();
+
+        DB::table('platform_access_audit_events')
+            ->where('id', $event->getKey())
+            ->update(['reason_code' => 'resource_inactive']);
+
+        $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_verifier_detects_chain_head_replacement(): void
+    {
+        $superAdmin = $this->bootstrapSuperAdmin();
+        $vendor = $this->createVendor('head-tamper-detection');
+        Gate::forUser($superAdmin)->allows('view', $vendor);
+
+        DB::table('platform_access_audit_chain_heads')
+            ->where('stream_key', 'platform_access')
+            ->update(['last_hash' => str_repeat('0', 64)]);
+
+        $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     private function bootstrapSuperAdmin(): User
