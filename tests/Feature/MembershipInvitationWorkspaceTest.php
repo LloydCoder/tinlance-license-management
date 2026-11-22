@@ -503,6 +503,19 @@ final class MembershipInvitationWorkspaceTest extends TestCase
     {
         [$actor, $vendor] = $this->vendorManager('workspace-vendor-assurance');
         $this->createVendorInvitation($actor, $vendor, 'workspace-vendor-assurance-invitee', 'sent', now()->addDay());
+        $revokedUser = $this->createUser('workspace-vendor-assurance-revoked');
+        $revokedMembership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $revokedUser->getKey(),
+            'status' => 'revoked',
+        ]);
+        VendorMembershipLifecycleEvent::query()->create([
+            'vendor_membership_id' => $revokedMembership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Assurance test revocation.',
+        ]);
         $this->enableWorkspaceAuthentication($actor);
 
         $response = $this->actingAs($actor)
@@ -514,6 +527,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('data-step-up-totp', false);
         $response->assertSee('Verify authenticator');
         $response->assertSee('disabled', false);
+        $response->assertSee('data-action="reinstate"', false);
+        $this->assertMatchesRegularExpression('/data-action="reinstate".*?<button[^>]*disabled/s', (string) $response->getContent());
         $response->assertViewHas('passwordConfirmationFresh', false);
         $response->assertViewHas('mfaStepUpFresh', false);
         $response->assertViewHas('canManageMembershipWrites', false);
