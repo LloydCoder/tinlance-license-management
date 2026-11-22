@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\PlatformAccessAuditChainHasher;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use Database\Seeders\AuthorizationCatalogSeeder;
@@ -59,7 +60,7 @@ final class PlatformAccessAuditHashChainTest extends TestCase
         $this->assertSame(2, (int) $head->last_sequence);
         $this->assertSame($second->event_hash, $head->last_hash);
 
-        $hasher = app(\App\\Services\\Authorization\\PlatformAccessAuditChainHasher::class);
+        $hasher = app(PlatformAccessAuditChainHasher::class);
         foreach ([$first, $second] as $event) {
             $this->assertSame(
                 $event->event_hash,
