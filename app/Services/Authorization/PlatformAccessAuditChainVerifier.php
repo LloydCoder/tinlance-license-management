@@ -71,18 +71,29 @@ final readonly class PlatformAccessAuditChainVerifier
         });
     }
 
-    /**
-     * @param object{action: string, details_ref_id: mixed, details_hash: mixed, resource_id: string, actor_user_id: string, tenant_vendor_account_id: string, request_id: string} $auditEvent
-     */
     private function verifyCustomerProfileDetails(object $auditEvent): bool
     {
+        $row = (array) $auditEvent;
+        $action = $row['action'] ?? null;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+
         if (
-            ! in_array($auditEvent->action, [
+            ! is_string($action)
+            || ! in_array($action, [
                 'customer_organization.created',
                 'customer_organization.profile_updated',
             ], true)
-            || ! is_string($auditEvent->details_ref_id)
-            || ! is_string($auditEvent->details_hash)
+            || ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
         ) {
             return false;
         }
@@ -94,7 +105,7 @@ final readonly class PlatformAccessAuditChainVerifier
                 '=',
                 'customer_organization_profile_events.customer_organization_id',
             )
-            ->where('customer_organization_profile_events.id', $auditEvent->details_ref_id)
+            ->where('customer_organization_profile_events.id', $detailsReferenceId)
             ->first([
                 'customer_organization_profile_events.id',
                 'customer_organization_profile_events.customer_organization_id',
@@ -108,19 +119,19 @@ final readonly class PlatformAccessAuditChainVerifier
                 'customer_organizations.vendor_account_id',
             ]);
 
-        $expectedEventType = $auditEvent->action === 'customer_organization.created'
+        $expectedEventType = $action === 'customer_organization.created'
             ? 'created'
             : 'profile_updated';
 
         if (
             $profileEvent === null
             || $profileEvent->event_type !== $expectedEventType
-            || (string) $profileEvent->customer_organization_id !== (string) $auditEvent->resource_id
-            || (string) $profileEvent->actor_user_id !== (string) $auditEvent->actor_user_id
-            || (string) $profileEvent->vendor_account_id !== (string) $auditEvent->tenant_vendor_account_id
-            || (string) $profileEvent->request_id !== (string) $auditEvent->request_id
+            || (string) $profileEvent->customer_organization_id !== $resourceId
+            || (string) $profileEvent->actor_user_id !== $actorUserId
+            || (string) $profileEvent->vendor_account_id !== $tenantVendorAccountId
+            || (string) $profileEvent->request_id !== $requestId
             || ! is_string($profileEvent->change_digest)
-            || preg_match('/\A[a-f0-9]{64}\z/D', $profileEvent->change_digest) !== 1
+            || preg_match('/\\A[a-f0-9]{64}\\z/D', $profileEvent->change_digest) !== 1
         ) {
             return false;
         }
@@ -142,6 +153,5 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $profileEvent->created_at,
         );
 
-        return hash_equals((string) $auditEvent->details_hash, $expectedDetailsHash);
-    }
-}
+        return hash_equals($detailsHash, $expectedDetailsHash);
+    }}
