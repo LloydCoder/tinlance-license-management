@@ -55,10 +55,6 @@ final class WorkspaceController
 
         $vendorInvitationGroups = [];
         foreach ($vendorMemberships as $membership) {
-            if (! $membership instanceof VendorMembership) {
-                continue;
-            }
-
             $vendor = $membership->vendorAccount;
             if ($vendor === null || ! $authorization->vendorCan($user, $vendor, 'admins.manage')) {
                 continue;
@@ -73,10 +69,6 @@ final class WorkspaceController
 
         $customerInvitationGroups = [];
         foreach ($customerMemberships as $membership) {
-            if (! $membership instanceof CustomerMembership) {
-                continue;
-            }
-
             $organization = $membership->customerOrganization;
             if ($organization === null || ! $authorization->customerCan($user, $organization, 'customer.members.manage')) {
                 continue;
