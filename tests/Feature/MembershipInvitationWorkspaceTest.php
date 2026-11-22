@@ -298,7 +298,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertOk();
         $response->assertSee(route('password.confirm'));
         $response->assertSee('data-step-up-totp', false);
-        $response->assertSee('data-passkey-action="verify"', false);
+        $response->assertSee('Verify authenticator');
         $response->assertSee('disabled', false);
         $response->assertViewHas('passwordConfirmationFresh', false);
         $response->assertViewHas('mfaStepUpFresh', false);
