@@ -113,7 +113,7 @@ final class PlatformAccessAuditHashChainTest extends TestCase
                 bin2hex(random_bytes(16)),
             );
             $this->fail('An unsupported audit action must not be appended.');
-        } catch (\\LogicException) {
+        } catch (\LogicException) {
             $this->addToAssertionCount(1);
         }
 
