@@ -183,7 +183,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
             ->postJson(route('two-factor.regenerate-recovery-codes'))
             ->assertOk();
 
-        $this->assertSessionHas('mfa.recovery_codes_once');
+        $this->assertTrue(session()->has('mfa.recovery_codes_once'));
         $newCodes = session('mfa.recovery_codes_once');
         $this->assertIsArray($newCodes);
         $this->assertCount(8, $newCodes);
@@ -241,7 +241,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
                 ->where('code_hash', hash('sha256', $usedCode))
                 ->value('consumed_at'),
         );
-        $this->assertSessionHas('mfa.recovery_code_replacement_once');
+        $this->assertTrue(session()->has('mfa.recovery_code_replacement_once'));
 
         $replacement = session('mfa.recovery_code_replacement_once');
         $this->assertIsString($replacement);
