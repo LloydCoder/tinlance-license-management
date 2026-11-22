@@ -82,13 +82,13 @@ final class ProductCatalogController
         ], 201);
     }
 
-    public function show(Request $request, string $product, ProductCatalogService $catalog): JsonResponse
+    public function show(Request $request, string $product): JsonResponse
     {
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
 
         $record = Product::query()->findOrFail($product);
-        Gate::forUser($actor)->authorize('view', $record);
+        abort_unless(Gate::forUser($actor)->allows('view', $record), 404);
 
         return response()->json([
             'data' => $this->serialize($record),
@@ -102,7 +102,7 @@ final class ProductCatalogController
         abort_unless($actor instanceof User, 401);
 
         $record = Product::query()->findOrFail($product);
-        Gate::forUser($actor)->authorize('update', $record);
+        abort_unless(Gate::forUser($actor)->allows('update', $record), 404);
 
         $validated = $request->validate([
             'expected_version' => ['required', 'integer', 'min:1'],
