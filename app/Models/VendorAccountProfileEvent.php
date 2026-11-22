@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\\Models;
+namespace App\Models;
 
-use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 /**
@@ -47,8 +47,8 @@ final class VendorAccountProfileEvent extends BaseModel
             if (
                 trim($event->reason) === ''
                 || mb_strlen($event->reason) > 500
-                || preg_match('/\\A[A-Za-z0-9._:-]{1,128}\\z/D', (string) $event->request_id) !== 1
-                || preg_match('/\\A[a-f0-9]{64}\\z/D', (string) $event->change_digest) !== 1
+                || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
+                || preg_match('/\A[a-f0-9]{64}\z/D', (string) $event->change_digest) !== 1
             ) {
                 throw new LogicException('Vendor account profile event metadata is invalid.');
             }
