@@ -6,6 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
 use RuntimeException;
 
@@ -15,13 +16,13 @@ return new class extends Migration
     {
         if (! Schema::hasTable('mfa_recovery_codes')) {
             Schema::create('mfa_recovery_codes', function (Blueprint $table): void {
-            $table->ulid('id')->primary();
-            $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->char('code_hash', 64);
-            $table->timestamp('consumed_at')->nullable();
-            $table->timestamp('created_at')->useCurrent();
-            $table->unique(['user_id', 'code_hash'], 'mfa_recovery_codes_user_hash_unique');
-            $table->index(['user_id', 'consumed_at'], 'mfa_recovery_codes_user_consumed_idx');
+                $table->ulid('id')->primary();
+                $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
+                $table->char('code_hash', 64);
+                $table->timestamp('consumed_at')->nullable();
+                $table->timestamp('created_at')->useCurrent();
+                $table->unique(['user_id', 'code_hash'], 'mfa_recovery_codes_user_hash_unique');
+                $table->index(['user_id', 'consumed_at'], 'mfa_recovery_codes_user_consumed_idx');
             });
         }
 
@@ -48,7 +49,7 @@ return new class extends Migration
                         }
 
                         $rows[] = [
-                            'id' => (string) Illuminate\Support\Str::ulid(),
+                            'id' => (string) Str::ulid(),
                             'user_id' => $user->id,
                             'code_hash' => hash('sha256', strtolower(trim($code))),
                             'consumed_at' => null,
