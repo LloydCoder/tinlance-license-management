@@ -330,7 +330,6 @@ final class CustomerOrganizationPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($customer)->allows('update', $organization));
     }
 
-
     public function test_customer_owner_can_update_only_its_own_organization_profile(): void
     {
         $vendor = $this->createVendor('profile-owner');
