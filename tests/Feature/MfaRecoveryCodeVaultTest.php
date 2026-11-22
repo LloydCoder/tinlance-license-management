@@ -324,7 +324,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         ));
         $this->assertFalse(session()->has('mfa.recovery_codes_once'));
 
-        $provider = \\Mockery::mock(TwoFactorAuthenticationProvider::class);
+        $provider = \Mockery::mock(TwoFactorAuthenticationProvider::class);
         $provider->shouldReceive('verify')->once()->andReturnTrue();
         app()->instance(TwoFactorAuthenticationProvider::class, $provider);
 
