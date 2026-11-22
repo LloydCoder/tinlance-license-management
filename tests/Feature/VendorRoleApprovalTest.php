@@ -55,6 +55,50 @@ final class VendorRoleApprovalTest extends TestCase
         ]);
     }
 
+    public function test_vendor_admin_grant_requires_maker_checker_after_the_first_admin_bootstrap(): void
+    {
+        $vendor = $this->createVendor();
+        $superAdmin = $this->createActor($vendor);
+        $firstAdmin = $this->createUser();
+        $firstMembership = $this->createMembership($vendor, $firstAdmin);
+        $vendorAdminRole = $this->role('vendor_admin');
+
+        $this->assertTrue(app(MembershipRoleAssignmentService::class)->assignVendorRole(
+            $superAdmin,
+            $vendor,
+            $firstMembership,
+            $vendorAdminRole,
+            'Bootstrap the first tenant-scoped vendor administrator.',
+        ));
+
+        $secondAdmin = $this->createUser();
+        $secondMembership = $this->createMembership($vendor, $secondAdmin);
+
+        $request = $this->createApprovalRequest(
+            $firstAdmin,
+            $vendor,
+            $secondMembership,
+            $vendorAdminRole,
+            'vendor-admin-maker-0001',
+        );
+        $request->assertAccepted()->assertJsonPath('data.role_slug', 'vendor_admin');
+
+        $requestId = $request->json('data.id');
+        $this->authenticatedJson($superAdmin)
+            ->postJson($this->approvalPath($vendor, $requestId, 'approve'), [
+                'reason' => 'Independent approval of the second vendor administrator.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'approved');
+
+        $authorization = app(\\App\\Services\\Authorization\\MembershipAuthorization::class);
+        $this->assertTrue($authorization->vendorCan($secondAdmin, $vendor, 'admins.manage'));
+        $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'approvals.review'));
+        $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'platform.settings.manage'));
+        $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'payments.read'));
+        $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'releases.publish'));
+    }
+
     public function test_second_super_admin_can_approve_and_apply_high_risk_role_grant(): void
     {
         $vendor = $this->createVendor();
