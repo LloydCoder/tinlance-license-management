@@ -1,6 +1,6 @@
 # Identity and organization persistence baseline
 
-**Status:** Identity/membership persistence, role catalogue, membership-level authorization, Super Admin authentication, fresh MFA step-up for membership role changes, maker-checker for high-risk vendor role grants and tenant-admin membership revocation are implemented. PR #55 adds transactional `invited|active -> revoked` transitions and immutable lifecycle evidence. Complete resource-level ABAC, invitation creation/acceptance/expiry, generalized privileged step-up/approval and full portals remain unimplemented.
+**Status:** Identity/membership persistence, role catalogue, membership-level authorization, Super Admin authentication, fresh MFA step-up for membership role changes, maker-checker for high-risk vendor role grants and tenant-admin membership revocation are implemented. PR #55 adds transactional `invited|active -> revoked` transitions and immutable lifecycle evidence. Complete resource-level ABAC, generalized privileged step-up/approval and full portals remain unimplemented; invitation creation/acceptance/expiry and workspace flows are now implemented.
 
 ## Deployment and ownership model
 
@@ -64,6 +64,15 @@ The vendor account is identified by a non-user-editable installation key whose i
 - MFA settings require recent password confirmation. Fresh step-up and maker-checker are narrow controls, not a complete privileged-action framework: refunds, ledger adjustments, licence transfers, release publication, signing-key rotation and operational actions remain to be covered. Authorization is deny-by-default at the implemented membership boundary; resource-level ABAC remains outstanding.
 - Provider secrets, licence signing roots, passwords, MFA seeds and recovery codes must never be returned in API responses or written to logs.
 
+## Platform access audit persistence
+
+- `platform_access_audit_events` stores allowed and denied platform-bootstrap Super Admin resource-read decisions, including actor, action, resource, tenant, outcome, reason code, request correlation ID, monotonic sequence, predecessor hash, event hash and hash version.
+- `platform_access_audit_chain_heads` stores the current sequence and hash for the `platform_access` stream. The writer appends the event and advances the head in one transaction under a row lock; the verifier locks the same head while checking the chain.
+- Existing events are deterministically backfilled by migration. MySQL 8.4 and MariaDB 10.11 immutable-row triggers remain installed for UPDATE/DELETE protection, in addition to Eloquent model guards.
+- PR #82 records denied platform-fallback reads by non-bootstrap actors when the actor and target tenant still exist. It does not grant read access. Missing actor/tenant rows cannot be recorded because the audit event requires valid foreign-key context.
+- Verification command: `php artisan tlms:audit:verify`.
+- The chain uses unkeyed SHA-256 and has no independent external anchor. It detects partial event/sequence/predecessor/head tampering but cannot stop a privileged database administrator from rewriting all events and recomputing the chain. External anchoring/asymmetric signing and separate retention remain Phase 14 work.
+
 ## Implemented tables
 
 - vendor_accounts
@@ -82,6 +91,8 @@ The vendor account is identified by a non-user-editable installation key whose i
 - vendor_membership_lifecycle_events (actor-attributed; immutable lifecycle transitions)
 - customer_membership_lifecycle_events (actor-attributed; immutable lifecycle transitions)
 - platform_installations
+- platform_access_audit_events (platform-read decisions with SHA-256 chain metadata; append-only at Eloquent and MySQL/MariaDB trigger boundaries)
+- platform_access_audit_chain_heads (serialized sequence/hash head for the platform-access stream)
 - sessions (encrypted database-backed browser sessions)
 - passkeys (WebAuthn credential records)
 
@@ -96,4 +107,4 @@ PR #23 exact head `9d742211701501e5d7a2b1b2272d6d7b1ab70d5c` passed [CI](https:/
 3. Add explicit TOTP replay prevention tests and evaluate a separate hashed recovery-verifier ledger instead of relying only on encrypted Fortify recovery-code storage.
 4. Implement invitation creation, email delivery, account-bound acceptance, expiry/resend and reinstatement; then add full customer/vendor portals and administrative Control Center workflows.
 5. Add cross-customer IDOR tests for future reads, writes, exports and nested resources, plus concurrency tests for simultaneous role assignment, role revocation and membership lifecycle transitions.
-6. Integrate global append-only/hash-chained audit anchoring; membership-role events are a local transactional audit precursor only.
+6. Integrate global append-only/hash-chained audit anchoring and independent retention. The platform access read stream now has a local hash chain and operator verifier (PRs #80–#82), but membership-role/lifecycle events and other business audit streams are not yet part of a global ledger.
