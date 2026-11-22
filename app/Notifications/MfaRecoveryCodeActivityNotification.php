@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Models\User;
 
 final class MfaRecoveryCodeActivityNotification extends Notification
 {
-    use Queueable;
-
     public function __construct(private readonly string $activity) {}
 
     /**
      * @return list<string>
      */
-    public function via(object $notifiable): array
+    public function via($notifiable): array
     {
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    /** @param User $notifiable */
+    public function toMail($notifiable): MailMessage
     {
         return (new MailMessage())
             ->subject('TLMS security alert: MFA recovery-code activity')
