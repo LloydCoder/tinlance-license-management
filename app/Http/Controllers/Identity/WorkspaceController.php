@@ -9,6 +9,7 @@ use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\MembershipDirectoryQuery;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
+use App\Services\Authorization\VendorAccountProfileManagementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
