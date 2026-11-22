@@ -38,6 +38,14 @@ The initial bootstrap is a setup-only capability, not an authentication endpoint
 
 The design follows Laravel's request-forgery and rate-limiting middleware guidance and OWASP ASVS 5.0 authentication requirements. ASVS 6.2.5 advises against composition rules, and 6.2.1 strongly recommends a 15-character minimum.
 
+## Platform access audit-chain integrity boundary (PR #80)
+
+- Platform access events are appended in a single transaction with a monotonic sequence, predecessor hash, SHA-256 event hash and persisted chain head. Appends and verification serialize on the chain-head row.
+- The operator command `tlms:audit:verify` checks sequence continuity, event contents, predecessor links, hash version and chain-head agreement. Existing events are backfilled deterministically during migration.
+- Eloquent instance guards and MySQL/MariaDB BEFORE UPDATE and BEFORE DELETE triggers prevent ordinary application mutation of event rows.
+- **Important limitation:** the event chain uses unkeyed SHA-256. It is tamper-evident against partial row edits, deletion/gaps, predecessor substitution and chain-head mismatch, but an administrator able to rewrite all event rows and the head can recompute the chain. It is not an independently anchored immutable log.
+- Remaining hardening: external hash anchoring or asymmetric signing, separate append-only log storage/retention, independent monitoring and recovery/verification procedures. Do not describe the current implementation as HSM-backed, externally immutable or resistant to a fully privileged database administrator.
+
 ## Production artifact delivery boundary
 
 The CI job builds and verifies the production-only cPanel ZIP on pushes and pull requests. It does not upload the package by default. Temporary Actions artifact upload requires an explicit manual workflow dispatch on `main` and expires after seven days. The ZIP carries a source/lockfile provenance manifest and SHA-256 checksum, but it is not cryptographically signed; checksum verification is not publisher authentication. Do not treat this package as a commercial deployment licence or as a signed release.
