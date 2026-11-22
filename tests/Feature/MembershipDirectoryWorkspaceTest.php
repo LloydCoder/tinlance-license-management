@@ -47,7 +47,9 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         $this->assertNotContains($revoked->getKey(), $ids);
         $this->assertNotContains($inactive->getKey(), $ids);
         $this->assertNotContains($otherTenant->getKey(), $ids);
-        $this->assertSame('support_agent', $paginator->getCollection()->firstWhere('id', $active->getKey())->roles->sole()->slug);
+        $activeRow = $paginator->getCollection()->firstWhere('id', $active->getKey());
+        $this->assertNotNull($activeRow);
+        $this->assertSame('support_agent', $activeRow->roles->sole()->slug);
         $this->assertSame(25, $paginator->perPage());
         $this->assertSame('vendor_members_'.$vendor->getKey().'_page', $paginator->getPageName());
         $this->assertArrayNotHasKey('token_hash', $paginator->items()[0]->toArray());
@@ -74,7 +76,9 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         $this->assertNotContains($revoked->getKey(), $ids);
         $this->assertNotContains($inactive->getKey(), $ids);
         $this->assertNotContains($otherTenant->getKey(), $ids);
-        $this->assertSame('customer_member', $paginator->getCollection()->firstWhere('id', $active->getKey())->roles->sole()->slug);
+        $activeRow = $paginator->getCollection()->firstWhere('id', $active->getKey());
+        $this->assertNotNull($activeRow);
+        $this->assertSame('customer_member', $activeRow->roles->sole()->slug);
         $this->assertSame('customer_members_'.$organization->getKey().'_page', $paginator->getPageName());
         $this->assertArrayNotHasKey('token_hash', $paginator->items()[0]->toArray());
     }
@@ -172,6 +176,7 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         $this->assertTrue($paginator->hasMorePages());
     }
 
+    /** @return array{User, VendorAccount} */
     private function vendorManager(string $label): array
     {
         $actor = $this->createUser($label);
@@ -181,6 +186,7 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         return [$actor, $vendor];
     }
 
+    /** @return array{User, CustomerOrganization} */
     private function customerOwner(string $label): array
     {
         $actor = $this->createUser($label);
