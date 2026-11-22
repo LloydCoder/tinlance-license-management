@@ -326,7 +326,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         $this->assertFalse(session()->has('mfa.recovery_codes_once'));
 
         $provider = \Mockery::mock(TwoFactorAuthenticationProvider::class);
-        $provider->shouldReceive('verify')->once()->andReturnTrue();
+        $provider->shouldReceive('verify')->once()->andReturn(true);
         app()->instance(TwoFactorAuthenticationProvider::class, $provider);
 
         $this->post(route('two-factor.confirm'), ['code' => '123456'])->assertRedirect();
