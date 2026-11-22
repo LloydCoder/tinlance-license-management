@@ -626,7 +626,12 @@ final class MembershipInvitationTest extends TestCase
     public function test_reinstatement_rejects_a_membership_that_is_not_revoked(): void
     {
         [$actor, $vendor] = $this->vendorActor();
-        $membership = $this->vendorMembership($vendor, $this->createUser('not-revoked'));
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $this->createUser('not-revoked')->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
 
         $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
@@ -641,9 +646,12 @@ final class MembershipInvitationTest extends TestCase
     public function test_reinstatement_rejects_vendor_roles_that_require_maker_checker(): void
     {
         [$actor, $vendor] = $this->vendorActor();
-        $membership = $this->vendorMembership($vendor, $this->createUser('privileged-reinstatement'));
-        $membership->forceFill(['status' => 'revoked'])->save();
-
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $this->createUser('privileged-reinstatement')->getKey(),
+            'status' => 'revoked',
+            'joined_at' => null,
+        ]);
         $this->authenticatedJson($actor)
             ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
                 'role_slug' => 'finance_admin',
