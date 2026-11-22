@@ -208,7 +208,7 @@
 
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th scope="col">Invitee</th><th scope="col">Role</th><th scope="col">Delivery</th><th scope="col">Expiry</th><th scope="col">Actions</th></tr></thead>
+                    <thead><tr><th scope="col">Invitee</th><th scope="col">Role</th><th scope="col">Delivery</th><th scope="col">Created</th><th scope="col">Expiry</th><th scope="col">Actions</th></tr></thead>
                     <tbody>
                     @forelse ($group['invitations'] as $invitation)
                         <tr>
@@ -221,6 +221,7 @@
                                 @endforelse
                             </td>
                             <td>{{ $invitation->delivery_status === 'failed' ? 'Delivery failed' : 'Sent' }}</td>
+                            <td>{{ $invitation->created_at?->format('Y-m-d H:i T') }}</td>
                             <td>
                                 @if ($invitation->expires_at?->isPast())
                                     Expired
