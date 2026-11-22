@@ -16,6 +16,28 @@ final class VendorAccountPolicy
         private readonly PlatformSuperAdminAuthorization $platformAuthorization,
     ) {}
 
+    public function update(User $user, VendorAccount $vendor): bool
+    {
+        $currentVendor = VendorAccount::query()
+            ->whereKey($vendor->getKey())
+            ->first();
+
+        if (
+            ! $currentVendor instanceof VendorAccount
+            || $currentVendor->installation_key !== 'primary'
+            || $currentVendor->status !== 'active'
+            || $this->platformAuthorization->isBootstrapSuperAdmin($user)
+        ) {
+            return false;
+        }
+
+        return $this->authorization->vendorCan(
+            $user,
+            $currentVendor,
+            'vendor.account.profile.manage',
+        );
+    }
+
     public function view(User $user, VendorAccount $vendor): bool
     {
         if ($this->authorization->vendorCan($user, $vendor, 'vendor.account.read')) {

@@ -63,6 +63,7 @@ final class AuthorizationCatalogSeeder extends Seeder
     {
         return [
             'vendor.account.read' => 'Read non-secret vendor account profile and operational status.',
+            'vendor.account.profile.manage' => 'Update the primary vendor display name with fresh authentication and immutable audit evidence.',
             'platform.settings.manage' => 'Manage installation-wide platform settings.',
             'admins.manage' => 'Manage vendor administrator accounts and memberships.',
             'customers.manage' => 'Manage customer organizations and their account lifecycle.',
@@ -102,7 +103,7 @@ final class AuthorizationCatalogSeeder extends Seeder
             'vendor' => [
                 'vendor_admin' => [
                     'name' => 'Vendor Administrator',
-                    'permissions' => ['vendor.account.read', 'admins.manage', 'audit.read'],
+                    'permissions' => ['vendor.account.read', 'vendor.account.profile.manage', 'admins.manage', 'audit.read'],
                 ],
                 'super_admin' => [
                     'name' => 'Super Admin',

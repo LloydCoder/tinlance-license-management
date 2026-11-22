@@ -9,6 +9,7 @@ use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\MembershipDirectoryQuery;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
+use App\Services\Authorization\VendorAccountProfileManagementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,6 +22,7 @@ final class WorkspaceController
         MembershipInvitationWorkspaceQuery $invitations,
         MembershipDirectoryQuery $directory,
         MembershipRoleAssignmentService $roles,
+        VendorAccountProfileManagementService $vendorProfiles,
     ): Response|RedirectResponse {
         $user = $request->user();
         abort_unless($user instanceof User && $user->status === 'active', 403);
@@ -87,6 +89,8 @@ final class WorkspaceController
             ];
         }
 
+        $vendorProfileVendor = $vendorProfiles->manageableVendor($user);
+
         $now = (int) now()->getTimestamp();
         $passwordConfirmedAt = $request->session()->get('auth.password_confirmed_at');
         $passwordTimestamp = is_numeric($passwordConfirmedAt) ? (int) $passwordConfirmedAt : null;
@@ -117,6 +121,7 @@ final class WorkspaceController
             'user' => $user,
             'mfaRecoveryCodeReplacement' => $request->session()->get('mfa.recovery_code_replacement_once'),
             'vendorMemberships' => $vendorMemberships,
+            'vendorProfileVendor' => $vendorProfileVendor,
             'customerMemberships' => $customerMemberships,
             'vendorInvitationGroups' => $vendorInvitationGroups,
             'customerInvitationGroups' => $customerInvitationGroups,

@@ -23,6 +23,14 @@
         </section>
     @endif
 
+    @if ($vendorProfileVendor !== null)
+        <section class="panel" aria-labelledby="vendor-profile-link-heading">
+            <h2 id="vendor-profile-link-heading">Vendor account profile</h2>
+            <p class="muted">Manage the customer-facing display name for {{ $vendorProfileVendor->display_name }}. Legal identity, installation identity, commercial defaults and lifecycle state are protected.</p>
+            <p><a class="button" href="{{ route('workspace.vendor-profile.index') }}">Manage vendor profile</a></p>
+        </section>
+    @endif
+
     <h2>Vendor accounts</h2>
     @forelse ($vendorMemberships as $membership)
         <section class="panel">

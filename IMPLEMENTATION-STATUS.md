@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-23 (PR #95 adds versioned, payload-bound audit-chain commitments for customer-organization create/profile mutations)
+**Last reviewed:** 2026-11-23 (PR #97 adds the vendor profile administration slice and version-2 audit evidence)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -434,3 +434,15 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - The profile mutation, profile event and chain append remain inside the same outer database transaction; a failed append rolls back the mutation.
 - Historical version-1 records remain unchanged and verifiable. The hash chain remains unkeyed and externally unanchored; a privileged database administrator able to rewrite all records and recompute the chain can still defeat it.
 - Exact-head CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, browser asset build, OpenAPI validation, documentation governance and cPanel artifact verification. Security Analysis is required before merge.
+
+
+## PR #97 — vendor profile administration and payload-bound audit evidence (2026-11-23)
+
+- Adds vendor.account.profile.manage to the scoped permission catalogue and grants it to vendor_admin; vendor super_admin inherits it through the vendor permission set.
+- Adds /workspace/vendor-profile for an active primary-vendor member with the permission. The bootstrap Super Admin remains read-only at both policy and service boundaries.
+- Limits writes to the customer-facing display_name. Legal identity, installation key, account status, default currency and timezone are prohibited from this path.
+- Requires recent password confirmation and fresh five-minute TOTP/passkey step-up. The write transaction locks and revalidates the primary vendor and the caller's active vendor membership before mutation.
+- Writes a separate immutable vendor_account_profile_events record with a SHA-256 digest of canonical before/after display-name values, then appends a version-2 platform audit event referencing that record. The verifier checks actor, vendor/tenant, request ID, event type, reason, changed fields and digest.
+- Eloquent guards and MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect profile-event rows. Regression tests cover authorized and unauthorized access, bootstrap read-only behavior, prohibited fields, missing fresh MFA, payload tampering and database-level immutability.
+- Exact PR merge-ref CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, OpenAPI, browser assets, cPanel artifact, documentation governance, Larastan, Semgrep, Gitleaks and OSV-Scanner.
+- This is a narrow vendor display-profile surface, not a complete vendor portal. It does not add legal identity editing, vendor contact management, commercial defaults, billing, or generalized resource administration.
