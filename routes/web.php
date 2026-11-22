@@ -9,6 +9,7 @@ use App\Http\Controllers\Identity\MembershipLifecycleController;
 use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Identity\VendorRoleApprovalController;
 use App\Http\Controllers\Identity\WorkspaceController;
+use App\Http\Controllers\Identity\VendorAccountProfileController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
