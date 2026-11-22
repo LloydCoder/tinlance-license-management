@@ -59,16 +59,29 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'customer_organization.profile_updated' => 'customer_organization',
             };
 
-            if (
-                $event->resource_type !== $expectedResourceType
-                || ! in_array($event->reason_code, [
+            $allowedReasons = match ($event->action) {
+                'vendor.read', 'customer_organization.read' => [
                     'platform_super_admin',
                     'actor_not_platform_super_admin',
                     'resource_inactive',
                     'tenant_inactive',
+                ],
+                'customer_organization.created' => ['vendor_customer_management'],
+                'customer_organization.profile_updated' => [
                     'vendor_customer_management',
                     'customer_owner_profile_management',
-                ], true)
+                ],
+            };
+
+            $mutationAction = in_array($event->action, [
+                'customer_organization.created',
+                'customer_organization.profile_updated',
+            ], true);
+
+            if (
+                $event->resource_type !== $expectedResourceType
+                || ! in_array($event->reason_code, $allowedReasons, true)
+                || ($mutationAction && $event->outcome !== 'allowed')
             ) {
                 throw new LogicException('Platform access audit resource metadata is invalid.');
             }
