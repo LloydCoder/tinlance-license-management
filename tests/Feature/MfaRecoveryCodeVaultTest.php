@@ -30,6 +30,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', $code),
                 'consumed_at' => null,
+                'invalidated_at' => null,
             ]);
         }
 
@@ -84,11 +85,26 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         foreach ($firstSet as $oldCode) {
             $this->assertNull($vault->consumeAndReplace($user, $oldCode));
         }
+        foreach ($firstSet as $oldCode) {
+            $this->assertNotNull(
+                DB::table('mfa_recovery_codes')
+                    ->where('user_id', $user->getKey())
+                    ->where('code_hash', hash('sha256', $oldCode))
+                    ->value('invalidated_at'),
+            );
+            $this->assertNull(
+                DB::table('mfa_recovery_codes')
+                    ->where('user_id', $user->getKey())
+                    ->where('code_hash', hash('sha256', $oldCode))
+                    ->value('consumed_at'),
+            );
+        }
         foreach ($secondSet as $newCode) {
             $this->assertDatabaseHas('mfa_recovery_codes', [
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', $newCode),
                 'consumed_at' => null,
+                'invalidated_at' => null,
             ]);
         }
     }
@@ -114,6 +130,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', strtolower($legacyCode)),
                 'consumed_at' => null,
+                'invalidated_at' => null,
             ]);
         }
 
@@ -142,6 +159,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', strtolower($legacyCode)),
                 'consumed_at' => null,
+                'invalidated_at' => null,
             ]);
         }
     }
@@ -218,6 +236,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', $newCode),
                 'consumed_at' => null,
+                'invalidated_at' => null,
             ]);
         }
     }
