@@ -94,7 +94,7 @@
             <p class="muted-note">Only active users with active membership in this vendor account are listed.</p>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Joined</th></tr></thead>
+                    <thead><tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Joined</th><th scope="col">Manage</th></tr></thead>
                     <tbody>
                     @forelse ($group['members'] as $member)
                         <tr>
@@ -108,9 +108,49 @@
                                 @endforelse
                             </td>
                             <td>{{ $member->joined_at?->format('Y-m-d H:i T') ?? '—' }}</td>
+                            <td>
+                                @if ($member->user_id !== $user->getKey())
+                                    <div class="actions">
+                                        <form method="post" action="{{ route('workspace.home') }}" data-membership-form data-action="assign-role" data-endpoint-template="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$member->getKey().'/roles/{role}') }}">
+                                            @csrf
+                                            <label for="vendor-assign-role-{{ $member->getKey() }}">Add role</label>
+                                            <select id="vendor-assign-role-{{ $member->getKey() }}" name="role_id" required>
+                                                <option value="">Choose a role</option>
+                                                @foreach ($group['roles'] as $roleOption)
+                                                    <option value="{{ $roleOption->getKey() }}">{{ $roleOption->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <label for="vendor-assign-reason-{{ $member->getKey() }}">Reason</label>
+                                            <input id="vendor-assign-reason-{{ $member->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
+                                            <button type="submit" @disabled(! $canManageMembershipWrites)>Assign role</button>
+                                            <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                        </form>
+                                        @foreach ($member->roles as $role)
+                                            @if ($group['revocableRoles']->contains('id', $role->getKey()))
+                                                <form method="post" action="{{ route('workspace.home') }}" data-membership-form data-action="revoke-role" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$member->getKey().'/roles/'.$role->getKey().'/revoke') }}">
+                                                    @csrf
+                                                    <label for="vendor-revoke-role-reason-{{ $member->getKey() }}-{{ $role->getKey() }}">Remove {{ $role->name }}</label>
+                                                    <input id="vendor-revoke-role-reason-{{ $member->getKey() }}-{{ $role->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
+                                                    <button type="submit" @disabled(! $canManageMembershipWrites)>Remove role</button>
+                                                    <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                                </form>
+                                            @endif
+                                        @endforeach
+                                        <form method="post" action="{{ route('workspace.home') }}" data-membership-form data-action="revoke-member" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$member->getKey().'/revoke') }}">
+                                            @csrf
+                                            <label for="vendor-revoke-member-reason-{{ $member->getKey() }}">Membership revocation reason</label>
+                                            <input id="vendor-revoke-member-reason-{{ $member->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
+                                            <button type="submit" @disabled(! $canManageMembershipWrites)>Revoke membership</button>
+                                            <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                        </form>
+                                    </div>
+                                @else
+                                    <span class="muted">Your membership cannot be changed here.</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="muted">No active members for this vendor account.</td></tr>
+                        <tr><td colspan="5" class="muted">No active members for this vendor account.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -260,7 +300,7 @@
             <p class="muted-note">Only active users with active membership in this customer organization are listed.</p>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Joined</th></tr></thead>
+                    <thead><tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Joined</th><th scope="col">Manage</th></tr></thead>
                     <tbody>
                     @forelse ($group['members'] as $member)
                         <tr>
@@ -274,9 +314,49 @@
                                 @endforelse
                             </td>
                             <td>{{ $member->joined_at?->format('Y-m-d H:i T') ?? '—' }}</td>
+                            <td>
+                                @if ($member->user_id !== $user->getKey())
+                                    <div class="actions">
+                                        <form method="post" action="{{ route('workspace.home') }}" data-membership-form data-action="assign-role" data-endpoint-template="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$member->getKey().'/roles/{role}') }}">
+                                            @csrf
+                                            <label for="customer-assign-role-{{ $member->getKey() }}">Add role</label>
+                                            <select id="customer-assign-role-{{ $member->getKey() }}" name="role_id" required>
+                                                <option value="">Choose a role</option>
+                                                @foreach ($group['roles'] as $roleOption)
+                                                    <option value="{{ $roleOption->getKey() }}">{{ $roleOption->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <label for="customer-assign-reason-{{ $member->getKey() }}">Reason</label>
+                                            <input id="customer-assign-reason-{{ $member->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
+                                            <button type="submit" @disabled(! $canManageMembershipWrites)>Assign role</button>
+                                            <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                        </form>
+                                        @foreach ($member->roles as $role)
+                                            @if ($group['revocableRoles']->contains('id', $role->getKey()))
+                                                <form method="post" action="{{ route('workspace.home') }}" data-membership-form data-action="revoke-role" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$member->getKey().'/roles/'.$role->getKey().'/revoke') }}">
+                                                    @csrf
+                                                    <label for="customer-revoke-role-reason-{{ $member->getKey() }}-{{ $role->getKey() }}">Remove {{ $role->name }}</label>
+                                                    <input id="customer-revoke-role-reason-{{ $member->getKey() }}-{{ $role->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
+                                                    <button type="submit" @disabled(! $canManageMembershipWrites)>Remove role</button>
+                                                    <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                                </form>
+                                            @endif
+                                        @endforeach
+                                        <form method="post" action="{{ route('workspace.home') }}" data-membership-form data-action="revoke-member" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$member->getKey().'/revoke') }}">
+                                            @csrf
+                                            <label for="customer-revoke-member-reason-{{ $member->getKey() }}">Membership revocation reason</label>
+                                            <input id="customer-revoke-member-reason-{{ $member->getKey() }}" name="reason" type="text" minlength="5" maxlength="500" required>
+                                            <button type="submit" @disabled(! $canManageMembershipWrites)>Revoke membership</button>
+                                            <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                        </form>
+                                    </div>
+                                @else
+                                    <span class="muted">Your membership cannot be changed here.</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="muted">No active members for this customer organization.</td></tr>
+                        <tr><td colspan="5" class="muted">No active members for this customer organization.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

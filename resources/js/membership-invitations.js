@@ -131,3 +131,85 @@ document.addEventListener('submit', async (event) => {
         if (submit instanceof HTMLButtonElement) submit.disabled = false;
     }
 });
+
+
+document.addEventListener('submit', async (event) => {
+    const form = event.target;
+
+    if (!(form instanceof HTMLFormElement) || !form.matches('[data-membership-form]')) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const action = form.dataset.action;
+    const status = form.querySelector('[data-form-status]');
+    const submit = form.querySelector('button[type="submit"]');
+
+    if (!['assign-role', 'revoke-role', 'revoke-member'].includes(action ?? '')) {
+        if (status) status.textContent = 'This membership action is not configured.';
+        return;
+    }
+
+    if (action === 'revoke-role' && !window.confirm('Remove this role from the member? The change will be recorded in the membership role history.')) {
+        return;
+    }
+
+    if (action === 'revoke-member' && !window.confirm('Revoke this membership? The user will lose access to this tenant and the change will be recorded.')) {
+        return;
+    }
+
+    const formData = new FormData(form);
+    formData.delete('_token');
+    const payload = Object.fromEntries(formData.entries());
+    let endpoint = form.dataset.endpoint;
+
+    if (action === 'assign-role') {
+        const roleId = payload.role_id;
+        delete payload.role_id;
+
+        if (typeof roleId !== 'string' || roleId.length === 0 || !form.dataset.endpointTemplate) {
+            if (status) status.textContent = 'Choose a valid role before submitting.';
+            return;
+        }
+
+        endpoint = form.dataset.endpointTemplate.replace('{role}', encodeURIComponent(roleId));
+    }
+
+    if (!endpoint) {
+        if (status) status.textContent = 'This membership action is not configured.';
+        return;
+    }
+
+    const originalLabel = submit instanceof HTMLButtonElement ? submit.textContent : '';
+
+    if (submit instanceof HTMLButtonElement) {
+        submit.disabled = true;
+        submit.textContent = 'Working…';
+    }
+
+    if (status) status.textContent = 'Submitting securely…';
+
+    try {
+        await postJson(endpoint, payload);
+        if (status) {
+            status.textContent = action === 'assign-role'
+                ? 'Role assigned. Refreshing the workspace…'
+                : action === 'revoke-role'
+                    ? 'Role removed. Refreshing the workspace…'
+                    : 'Membership revoked. Refreshing the workspace…';
+        }
+        window.location.reload();
+    } catch (error) {
+        if (status) {
+            status.textContent = error instanceof Error
+                ? error.message
+                : 'The membership action could not be completed.';
+        }
+    } finally {
+        if (submit instanceof HTMLButtonElement) {
+            submit.disabled = false;
+            submit.textContent = originalLabel ?? '';
+        }
+    }
+});

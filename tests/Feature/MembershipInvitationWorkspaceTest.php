@@ -382,6 +382,13 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('Created');
         $response->assertSee('support_agent');
         $response->assertSee('vendor_developer');
+        $response->assertSee('data-membership-form', false);
+        $response->assertSee('data-action="assign-role"', false);
+        $response->assertSee('data-action="revoke-role"', false);
+        $response->assertSee('data-action="revoke-member"', false);
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$activeMember->vendor_membership_id.'/roles/{role}', false);
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$activeMember->vendor_membership_id.'/roles/'.$this->role('vendor', 'support_agent')->getKey().'/revoke');
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$activeMember->vendor_membership_id.'/revoke');
         $response->assertDontSee('vendor_admin');
         $response->assertDontSee('finance_admin');
         $response->assertDontSee('vendor_product_manager');
@@ -426,6 +433,13 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee($invitation->invited_email);
         $response->assertSee('Active customer members');
         $response->assertSee($activeMember->email);
+        $response->assertSee('data-membership-form', false);
+        $response->assertSee('data-action="assign-role"', false);
+        $response->assertSee('data-action="revoke-role"', false);
+        $response->assertSee('data-action="revoke-member"', false);
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$activeMembership->getKey().'/roles/{role}', false);
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$activeMembership->getKey().'/roles/'.$this->role('customer', 'customer_member')->getKey().'/revoke');
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$activeMembership->getKey().'/revoke');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/invitations');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/invitation/resend');
         $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$invitation->customer_membership_id.'/revoke');
