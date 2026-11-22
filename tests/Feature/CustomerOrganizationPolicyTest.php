@@ -349,5 +349,4 @@ final class CustomerOrganizationPolicyTest extends TestCase
         $this->assertFalse(Gate::forUser($admin)->allows('update', $foreign));
         $this->assertFalse(Gate::forUser($admin)->allows('update', $suspended));
     }
-
 }
