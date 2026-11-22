@@ -25,8 +25,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
 
     public function __invoke($user, $force = false): void
     {
-        $shouldGenerate = $user instanceof User
-            && (empty($user->two_factor_secret) || $force === true);
+        $shouldGenerate = empty($user->two_factor_secret) || $force === true;
 
         if (! $shouldGenerate) {
             parent::__invoke($user, $force);
