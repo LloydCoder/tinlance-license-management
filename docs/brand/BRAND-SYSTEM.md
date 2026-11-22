@@ -2,7 +2,7 @@
 
 **Authority:** TLMS Brand Kit v1.0 and TLMS Usage Sheet v1.0 (prepared 20 November 2026).
 **Owner:** Tinlance Limited.
-**Status:** Brand specification baseline; asset integration must use the supplied files.
+**Status:** Specification established; core application-shell assets integrated (PR #72); full asset acceptance remains incomplete.
 
 This document translates the supplied visual identity into implementation rules for the Laravel application, customer-facing surfaces, release artifacts and repository metadata. The supplied SVG/PNG assets remain authoritative: do not redraw, retype, recolour or approximate the mark or wordmark.
 
@@ -118,19 +118,19 @@ When the corresponding application surfaces are implemented, apply the approved 
 
 Do not claim an asset is integrated merely because it exists in the uploaded archive. Record the exact destination path and verify the rendered result for each surface.
 
-## 10. Brand acceptance checklist
+## 10. Current integration status\n\nImported unchanged into the repository:\n- `public/brand/tlms-lockup-horizontal-light.svg` and `public/brand/tlms-lockup-horizontal-dark.svg` — horizontal light/dark lockups.\n- `public/brand/tlms-tile-ink.svg` — ink app tile.\n- `public/favicon.svg` — SVG browser favicon.\n- `public/brand/tlms-brand.css` — canonical palette tokens and responsive shell styles.\n\nApplied to `resources/views/layouts/auth.blade.php`, `resources/views/workspace/dashboard.blade.php`, `resources/views/setup/super-admin.blade.php` and `resources/views/setup/super-admin-complete.blade.php`. This covers authentication/recovery/MFA pages that extend the shared auth layout, the tenant workspace and the initial setup screens. Existing application behavior and security middleware are unchanged.\n\nNot yet integrated: descriptor and stacked lockups, pinned-tab/ICO and PNG favicon variants, Android/iOS/PWA icons and manifest, admin sidebar/app icon variants, licence certificate seals, invoice/email signatures, social/OG/README artwork, and visual regression screenshots. Inter and JetBrains Mono are declared as CSS stacks with system fallbacks; the supplied archive contains no font binaries, and no third-party font CDN is loaded.\n\n## 11. Brand acceptance checklist
 
-- [ ] The supplied SVG/PNG source assets are copied without modification and their provenance is retained.
-- [ ] The canonical colour tokens are imported once and reused; no conflicting near-duplicate values are introduced.
+- [x] The selected supplied SVG source assets (horizontal light/dark lockups, ink tile and SVG favicon) are copied without modification; the source archive and usage sheet are retained as the authority.\n- [ ] Remaining supplied PNG/SVG assets are imported to their exact application destinations.
+- [x] The canonical colour tokens are imported once in `public/brand/tlms-brand.css` and reused by the integrated shells.
 - [ ] UI typography uses Inter and JetBrains Mono; logos remain outlined artwork.
-- [ ] Correct light/dark lockups are used on their intended backgrounds.
+- [x] The supplied dark horizontal lockup is used on dark authentication, workspace and setup surfaces; light lockup is imported for future light surfaces.
 - [ ] Clear space, minimum sizes and small-icon simplification are respected.
-- [ ] Lime is not used as text on Paper.
+- [x] The integrated dark shells use Lime as an accent and do not use Lime text on Paper.
 - [ ] Favicon, application icons, seals and social images use their supplied purpose-specific files.
 - [ ] Login, admin, customer and vendor surfaces are checked at desktop and mobile breakpoints.
 - [ ] Visual regression screenshots are reviewed before declaring brand integration complete.
 
-## 11. Source materials
+## 12. Source materials
 
 - Brand kit: `tlms-brand-kit.zip`, version 1.0.
 - Usage sheet: `tlms-usage-sheet.pdf`, three pages.
