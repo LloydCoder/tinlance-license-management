@@ -35,7 +35,7 @@ final class PlatformAccessAuditChainHasher
             || ($hashVersion === 1 && $detailsReferenceId !== null)
             || ($hashVersion === 2 && (
                 $detailsReferenceId === null
-                || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', $detailsReferenceId) !== 1
+                || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', strtoupper($detailsReferenceId)) !== 1
                 || preg_match('/\A[a-f0-9]{64}\z/D', $detailsHash ?? '') !== 1
             ))
         ) {
