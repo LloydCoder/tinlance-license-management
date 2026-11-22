@@ -341,20 +341,11 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - **Exact-head Security:** [run 44993865492](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993865492) — Larastan, Semgrep, Gitleaks and OSV-Scanner passed.
 - **Exact-head release artifact/SBOM:** [run 44993865449](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993865449) — production cPanel artifact and SPDX SBOM build passed. Tag-only attestation/publication was correctly skipped for this pull request.
 - The writer serializes appends on a single chain-head row; the verifier locks that row while checking sequence continuity, event hashes, predecessor links, hash version and chain-head agreement. Migration backfills existing events deterministically and reinstalls the MySQL/MariaDB immutable-row triggers.
+- A regression test exposed that Eloquent mass assignment discarded the writer-generated ULID because `id` is intentionally not fillable. The trusted chain writer now uses `forceFill` for its internally generated ID, ensuring the persisted identifier is the one hashed without widening the model's public mass-assignment surface.
 - `tlms:audit:verify` is the operator verification command.
 - **Security limitation:** SHA-256 is unkeyed. A database administrator able to rewrite every event and the chain head can recompute the chain. External anchoring/asymmetric signatures and independent log retention are still required before describing the ledger as independently tamper-evident.
 - **Post-merge main CI/Security:** [main CI run 44993982584](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993982584) passed all nine jobs, and [main Security run 44993982578](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993982578) passed all four jobs on merge commit `b3d1d432f4a76cd26fa90a98922086fd3e432541`.
 
-
-## PR #80 — verifiable platform access audit chain (2026-11-22)
-
-- Adds monotonic sequence, predecessor hash, canonical SHA-256 event hash and persisted chain head for platform access audit events.
-- Serializes appends with a row lock and atomic event/head transaction; adds consistent-snapshot verification and `tlms:audit:verify`.
-- Deterministically backfills existing records and restores MySQL/MariaDB immutable-row triggers.
-- Exact-head CI [44993860817](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993860817), Security Analysis [44993860862](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993860862), and cPanel artifact build [44993865449](https://github.com/LloydCoder/tinlance-license-management/actions/runs/44993865449) passed.
-- A test found that Eloquent discarded the writer-generated ULID because `id` was not mass assignable; the trusted writer now uses `forceFill` so the persisted identifier is exactly the one included in the hash, without widening the model's mass-assignment surface.
-- The chain is unkeyed SHA-256. It detects event/sequence/predecessor/head tampering but does not stop a privileged database administrator from rewriting the full database and recomputing the chain. External anchoring/asymmetric signing and separate retention remain outstanding.
-- Merged as `b3d1d432f4a76cd26fa90a98922086fd3e432541`.
 
 ## PR #82 — audit denied cross-tenant platform-read attempts (2026-11-22)
 
