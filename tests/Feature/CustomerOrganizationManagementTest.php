@@ -157,6 +157,44 @@ final class CustomerOrganizationManagementTest extends TestCase
             ->assertSessionHasErrors('external_reference');
     }
 
+
+    public function test_customer_profile_audit_events_cannot_be_updated_through_eloquent(): void
+    {
+        [$admin, $vendor] = $this->createSuperAdmin();
+        $organization = $this->createOrganization($vendor, 'immutable-update');
+        $event = CustomerOrganizationProfileEvent::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'actor_user_id' => $admin->getKey(),
+            'event_type' => 'profile_updated',
+            'reason' => 'Record the initial verified profile change.',
+            'changed_fields' => ['display_name'],
+            'request_id' => 'profile-event-update-0001',
+            'created_at' => now(),
+        ]);
+
+        $this->expectException(LogicException::class);
+        $event->reason = 'Tampered audit reason.';
+        $event->save();
+    }
+
+    public function test_customer_profile_audit_events_cannot_be_deleted_through_eloquent(): void
+    {
+        [$admin, $vendor] = $this->createSuperAdmin();
+        $organization = $this->createOrganization($vendor, 'immutable-delete');
+        $event = CustomerOrganizationProfileEvent::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'actor_user_id' => $admin->getKey(),
+            'event_type' => 'profile_updated',
+            'reason' => 'Record the initial verified profile change.',
+            'changed_fields' => ['display_name'],
+            'request_id' => 'profile-event-delete-0001',
+            'created_at' => now(),
+        ]);
+
+        $this->expectException(LogicException::class);
+        $event->delete();
+    }
+
     private function createSuperAdmin(): array
     {
         $vendor = $this->createVendor('primary');
