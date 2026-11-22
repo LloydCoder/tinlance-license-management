@@ -7,8 +7,8 @@ namespace App\Http\Requests\Fortify;
 use App\Models\User;
 use App\Notifications\MfaRecoveryCodeActivityNotification;
 use App\Services\Identity\MfaRecoveryCodeVault;
-use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
 use Illuminate\Support\Facades\Log;
+use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
 use Throwable;
 
 final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
