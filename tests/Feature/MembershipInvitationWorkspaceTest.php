@@ -145,7 +145,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
 
     public function test_workspace_renders_only_vendor_invitations_for_members_with_management_permission(): void
     {
-        [$actor, $vendor] = $this->vendorActor('workspace-vendor-admin');
+        [$actor, $vendor] = $this->vendorManager('workspace-vendor-admin');
         $invitation = $this->createVendorInvitation(
             $actor,
             $vendor,
@@ -238,6 +238,26 @@ final class MembershipInvitationWorkspaceTest extends TestCase
     }
 
     /** @return array{User, VendorAccount} */
+    /** @return array{User, VendorAccount} */
+    private function vendorManager(string $label): array
+    {
+        $actor = $this->createUser($label);
+        $vendor = $this->createVendor($label);
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $actor->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach($this->role('vendor', 'platform_admin'));
+        $platformAdmin = $membership->roles()->firstOrFail();
+        $platformAdmin->permissions()->attach(
+            Permission::query()->where('scope', 'vendor')->where('name', 'admins.manage')->firstOrFail(),
+        );
+
+        return [$actor, $vendor];
+    }
+
     private function vendorActor(string $label): array
     {
         $actor = $this->createUser($label);
