@@ -42,7 +42,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         }
 
         $user->refresh();
-        $this->assertSame('[]', Fortify::currentEncrypter()->decrypt($user->two_factor_recovery_codes));
+        $this->assertSame('[]', Fortify::currentEncrypter()->decrypt((string) $user->two_factor_recovery_codes));
     }
 
     public function test_consuming_a_recovery_code_is_single_use_and_issues_a_replacement(): void
