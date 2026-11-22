@@ -221,6 +221,10 @@ final readonly class MembershipRoleAssignmentService
                 throw new AuthorizationException('The requested vendor role change is not permitted.');
             }
 
+            if ($approvedGrant && $currentRole->slug === 'vendor_admin' && $target->status !== 'active') {
+                throw new AuthorizationException('Vendor administrator grants require an active membership.');
+            }
+
             if ($bootstrapVendorAdmin) {
                 $actorIsSuperAdmin = $actorMembership->roles()
                     ->where('scope', 'vendor')
@@ -229,7 +233,7 @@ final readonly class MembershipRoleAssignmentService
 
                 $existingVendorAdmin = VendorMembership::query()
                     ->where('vendor_account_id', $vendor->getKey())
-                    ->whereIn('status', ['invited', 'active'])
+                    ->where('status', 'active')
                     ->whereHas('user', static fn ($query) => $query->where('status', 'active'))
                     ->whereHas('roles', static fn ($query) => $query
                         ->where('scope', 'vendor')
