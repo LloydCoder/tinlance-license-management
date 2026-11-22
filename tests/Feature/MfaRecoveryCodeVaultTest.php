@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\User;
-use App\\Services\\Identity\\MfaRecoveryCodeVault;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\DB;
-use Laravel\\Fortify\\Fortify;
-use Tests\\TestCase;
+use App\Models\User;
+use App\Services\Identity\MfaRecoveryCodeVault;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Laravel\Fortify\Fortify;
+use Tests\TestCase;
 
 final class MfaRecoveryCodeVaultTest extends TestCase
 {
@@ -23,7 +23,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
 
         $this->assertCount(8, $codes);
         foreach ($codes as $code) {
-            $this->assertMatchesRegularExpression('/\\A[a-f0-9]{32}\\z/D', $code);
+            $this->assertMatchesRegularExpression('/\A[a-f0-9]{32}\z/D', $code);
             $this->assertDatabaseHas('mfa_recovery_codes', [
                 'user_id' => $user->getKey(),
                 'code_hash' => hash('sha256', $code),
@@ -50,7 +50,7 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         $replacement = $vault->consumeAndReplace($user, strtoupper($codes[0]));
 
         $this->assertIsString($replacement);
-        $this->assertMatchesRegularExpression('/\\A[a-f0-9]{32}\\z/D', $replacement);
+        $this->assertMatchesRegularExpression('/\A[a-f0-9]{32}\z/D', $replacement);
         $this->assertNotSame($codes[0], $replacement);
         $this->assertDatabaseHas('mfa_recovery_codes', [
             'user_id' => $user->getKey(),
