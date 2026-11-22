@@ -241,6 +241,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response = $this->actingAs($actor)->withSession($session)->get(route('workspace.home'));
 
         $response->assertOk();
+        $response->assertSee('method="post"', false);
+        $response->assertSee('name="_token"', false);
         $response->assertSee($invitation->invited_email);
         $response->assertSee('Created');
         $response->assertSee('support_agent');
