@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
@@ -14,8 +15,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthentication
 {
-    public function __construct(TwoFactorAuthenticationProvider $provider)
-    {
+    public function __construct(
+        TwoFactorAuthenticationProvider $provider,
+        private readonly MfaRecoveryCodeVault $vault,
+    ) {
         parent::__construct($provider);
     }
 
@@ -36,6 +39,8 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
                 'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt('[]'),
                 'two_factor_confirmed_at' => null,
             ])->save();
+
+            $this->vault->invalidateAll($user);
 
             DB::afterCommit(static fn () => TwoFactorAuthenticationEnabled::dispatch($user));
         }, 3);
