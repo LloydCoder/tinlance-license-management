@@ -57,7 +57,7 @@ final class CustomerOrganizationProfileEventImmutabilityTest extends TestCase
             'status' => 'active',
         ]);
         $vendor = VendorAccount::query()->create([
-            'installation_key' => 'customer-profile-audit-'.str()->random(12),
+            'installation_key' => 'cpa-'.str()->random(12),
             'legal_name' => 'Customer Profile Audit Vendor Ltd',
             'display_name' => 'Customer Profile Audit Vendor',
             'status' => 'active',
