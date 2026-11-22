@@ -144,6 +144,27 @@ final class MfaRecoveryCodeVaultTest extends TestCase
         $this->assertSame(8, DB::table('mfa_recovery_codes')->where('user_id', $user->getKey())->count());
     }
 
+    public function test_authenticator_reset_invalidates_active_recovery_codes_without_marking_them_consumed(): void
+    {
+        $user = $this->createMfaUser();
+        $vault = app(MfaRecoveryCodeVault::class);
+        $codes = $vault->replaceAll($user);
+
+        $vault->invalidateAll($user);
+
+        foreach ($codes as $code) {
+            $row = DB::table('mfa_recovery_codes')
+                ->where('user_id', $user->getKey())
+                ->where('code_hash', hash('sha256', $code))
+                ->first();
+
+            $this->assertNotNull($row);
+            $this->assertNull($row->consumed_at);
+            $this->assertNotNull($row->invalidated_at);
+            $this->assertNull($vault->consumeAndReplace($user, $code));
+        }
+    }
+
     public function test_fortify_recovery_code_endpoint_never_discloses_saved_codes(): void
     {
         $user = $this->createMfaUser();
