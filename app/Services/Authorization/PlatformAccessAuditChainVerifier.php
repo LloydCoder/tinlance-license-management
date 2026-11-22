@@ -71,6 +71,9 @@ final readonly class PlatformAccessAuditChainVerifier
         });
     }
 
+    /**
+     * @param object{action: string, details_ref_id: mixed, details_hash: mixed, resource_id: string, actor_user_id: string, tenant_vendor_account_id: string, request_id: string} $auditEvent
+     */
     private function verifyCustomerProfileDetails(object $auditEvent): bool
     {
         if (
