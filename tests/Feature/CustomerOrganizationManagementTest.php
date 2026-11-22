@@ -73,6 +73,18 @@ final class CustomerOrganizationManagementTest extends TestCase
             'reason' => 'Customer onboarding approved by the account owner.',
             'request_id' => 'customer-create-000001',
         ]);
+
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $admin->getKey(),
+            'action' => 'customer_organization.created',
+            'resource_type' => 'customer_organization',
+            'resource_id' => $organization->getKey(),
+            'tenant_vendor_account_id' => $vendor->getKey(),
+            'outcome' => 'allowed',
+            'reason_code' => 'vendor_customer_management',
+            'request_id' => 'customer-create-000001',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     public function test_super_admin_can_update_customer_profile_without_changing_tenant_ownership(): void
@@ -103,6 +115,18 @@ final class CustomerOrganizationManagementTest extends TestCase
             'event_type' => 'profile_updated',
             'request_id' => 'customer-update-000001',
         ]);
+
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $admin->getKey(),
+            'action' => 'customer_organization.profile_updated',
+            'resource_type' => 'customer_organization',
+            'resource_id' => $organization->getKey(),
+            'tenant_vendor_account_id' => $vendor->getKey(),
+            'outcome' => 'allowed',
+            'reason_code' => 'vendor_customer_management',
+            'request_id' => 'customer-update-000001',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     public function test_customer_profile_write_requires_fresh_mfa_step_up(): void
