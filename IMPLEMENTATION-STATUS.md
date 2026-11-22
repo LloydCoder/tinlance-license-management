@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-22 (main baseline `77f7682ab07ae44253d3d32ae719378a04acf056`; PRs #66–#68 merged; exact-head CI, Security and cPanel artifact verification passed)
+**Last reviewed:** 2026-11-22 (main baseline `77f7682ab07ae44253d3d32ae719378a04acf056`; PRs #66–#68 merged; PR #69 reconciles documentation and the tagged-release Node.js build prerequisite)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
