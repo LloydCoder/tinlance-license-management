@@ -143,6 +143,100 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $this->assertSame(['customer_billing_admin', 'customer_member', 'customer_technical_admin'], $customerSlugs);
     }
 
+    public function test_workspace_renders_only_vendor_invitations_for_members_with_management_permission(): void
+    {
+        [$actor, $vendor] = $this->vendorActor('workspace-vendor-admin');
+        $invitation = $this->createVendorInvitation(
+            $actor,
+            $vendor,
+            'workspace-vendor-invitee',
+            'sent',
+            now()->addDay(),
+        );
+
+        $this->enableWorkspaceAuthentication($actor);
+
+        $response = $this->actingAs($actor)
+            ->withSession($this->workspaceSession($actor))
+            ->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee($invitation->invited_email);
+        $response->assertViewHas('vendorInvitationGroups', static fn (array $groups): bool => count($groups) === 1);
+        $response->assertViewHas('customerInvitationGroups', []);
+        $response->assertViewHas('passwordConfirmationFresh', false);
+        $response->assertViewHas('mfaStepUpFresh', false);
+        $response->assertViewHas('canManageMembershipWrites', false);
+    }
+
+    public function test_workspace_does_not_render_vendor_invitations_to_members_without_management_permission(): void
+    {
+        $actor = $this->createUser('workspace-vendor-member');
+        $vendor = $this->createVendor('workspace-vendor-member');
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $actor->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $membership->roles()->attach($this->role('vendor', 'support_agent'));
+        $invitation = $this->createVendorInvitation(
+            $actor,
+            $vendor,
+            'workspace-hidden-invitee',
+            'sent',
+            now()->addDay(),
+        );
+
+        $this->enableWorkspaceAuthentication($actor);
+
+        $response = $this->actingAs($actor)
+            ->withSession($this->workspaceSession($actor))
+            ->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertDontSee($invitation->invited_email);
+        $response->assertViewHas('vendorInvitationGroups', []);
+    }
+
+    public function test_workspace_renders_customer_invitations_only_for_customer_managers(): void
+    {
+        [$actor, $organization] = $this->customerActor('workspace-customer-manager');
+        $invitation = $this->createCustomerInvitation(
+            $actor,
+            $organization,
+            'workspace-customer-invitee',
+            'sent',
+            now()->addDay(),
+        );
+
+        $this->enableWorkspaceAuthentication($actor);
+
+        $response = $this->actingAs($actor)
+            ->withSession($this->workspaceSession($actor))
+            ->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee($invitation->invited_email);
+        $response->assertViewHas('customerInvitationGroups', static fn (array $groups): bool => count($groups) === 1);
+        $response->assertViewHas('vendorInvitationGroups', []);
+    }
+
+    private function enableWorkspaceAuthentication(User $user): void
+    {
+        $user->forceFill([
+            'email_verified_at' => now(),
+            'two_factor_secret' => encrypt('workspace-test-secret'),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+    }
+
+    /** @return array<string, int> */
+    private function workspaceSession(User $user): array
+    {
+        return ['auth_session_version' => (int) $user->fresh()->session_version];
+    }
+
     /** @return array{User, VendorAccount} */
     private function vendorActor(string $label): array
     {
