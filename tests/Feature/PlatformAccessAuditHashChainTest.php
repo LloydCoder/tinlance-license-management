@@ -83,7 +83,7 @@ final class PlatformAccessAuditHashChainTest extends TestCase
                     (string) $event->request_id,
                     $persistedCreatedAt,
                 ),
-                'Persisted event hash must match its canonical database representation.',
+                'Persisted event hash must match its canonical database representation: '.json_encode($event->getAttributes(), JSON_THROW_ON_ERROR),
             );
             $this->assertSame(1, (int) $event->hash_version);
         }
