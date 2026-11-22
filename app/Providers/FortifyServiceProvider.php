@@ -21,6 +21,11 @@ final class FortifyServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->app->bind(TwoFactorLoginRequest::class, HashedTwoFactorLoginRequest::class);
+        $this->app->bind(EnableTwoFactorAuthentication::class, HashingEnableTwoFactorAuthentication::class);
+        $this->app->bind(GenerateNewRecoveryCodes::class, HashingGenerateNewRecoveryCodes::class);
+        Fortify::generateRecoveryCodesUsing(static fn (): string => bin2hex(random_bytes(16)));
+
         Fortify::authenticateUsing(static function (Request $request): ?User {
             $email = Str::lower(trim((string) $request->input(Fortify::username(), '')));
             $password = (string) $request->input('password', '');
