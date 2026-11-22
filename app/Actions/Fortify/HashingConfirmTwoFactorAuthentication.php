@@ -6,6 +6,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\Identity\MfaRecoveryCodeVault;
+use Illuminate\Database\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -43,15 +44,17 @@ final class HashingConfirmTwoFactorAuthentication extends ConfirmTwoFactorAuthen
             ])->errorBag('confirmTwoFactorAuthentication');
         }
 
+        DB::transaction(function () use ($user): void {
+            $user->forceFill([
+                'two_factor_confirmed_at' => now(),
+            ])->save();
+
+            $codes = $this->vault->replaceAll($user);
+            $this->request->session()->flash('mfa.recovery_codes_once', $codes);
+
+            TwoFactorAuthenticationConfirmed::dispatch($user);
+        }, 3);
+
         RateLimiter::clear($key);
-
-        $user->forceFill([
-            'two_factor_confirmed_at' => now(),
-        ])->save();
-
-        $codes = $this->vault->replaceAll($user);
-        $this->request->session()->flash('mfa.recovery_codes_once', $codes);
-
-        TwoFactorAuthenticationConfirmed::dispatch($user);
     }
 }
