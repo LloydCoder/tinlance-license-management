@@ -17,6 +17,7 @@ use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 use Tests\TestCase;
 
 final class ProductCatalogFoundationTest extends TestCase
@@ -89,6 +90,16 @@ final class ProductCatalogFoundationTest extends TestCase
 
         $this->authenticated($otherManager)
             ->getJson('/api/v1/products/'.$product->getKey())
+            ->assertNotFound();
+
+        $this->authenticated($otherManager)
+            ->patchJson('/api/v1/products/'.$product->getKey(), [
+                'expected_version' => 1,
+                'name' => 'Unauthorized update',
+                'slug' => $product->slug,
+                'description' => 'Another manager cannot mutate this product.',
+                'reason' => 'Test product-level creator scoping.',
+            ])
             ->assertNotFound();
 
         $this->authenticated($otherManager)
@@ -193,6 +204,21 @@ final class ProductCatalogFoundationTest extends TestCase
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
 
         $event = ProductEvent::query()->where('product_id', $product->getKey())->firstOrFail();
+
+        try {
+            $event->update(['reason' => 'Eloquent mutation attempt']);
+            $this->fail('Eloquent product event update should be rejected.');
+        } catch (LogicException) {
+            $this->addToAssertionCount(1);
+        }
+
+        try {
+            $event->delete();
+            $this->fail('Eloquent product event delete should be rejected.');
+        } catch (LogicException) {
+            $this->addToAssertionCount(1);
+        }
+
         DB::table('product_events')->where('id', $event->getKey())->update([
             'reason' => 'Tampered after append',
         ]);
