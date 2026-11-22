@@ -31,15 +31,15 @@ final class CustomerOrganizationPolicy
     {
         $currentOrganization = CustomerOrganization::query()
             ->whereKey($organization->getKey())
-            ->with('vendorAccount')
             ->first();
 
-        if (
-            ! $currentOrganization instanceof CustomerOrganization
-            || $currentOrganization->status !== 'active'
-            || $currentOrganization->vendorAccount->installation_key !== 'primary'
-            || $currentOrganization->vendorAccount->status !== 'active'
-        ) {
+        if (! $currentOrganization instanceof CustomerOrganization || $currentOrganization->status !== 'active') {
+            return false;
+        }
+
+        $vendor = $currentOrganization->vendorAccount()->first();
+
+        if (! $vendor instanceof VendorAccount || $vendor->installation_key !== 'primary' || $vendor->status !== 'active') {
             return false;
         }
 

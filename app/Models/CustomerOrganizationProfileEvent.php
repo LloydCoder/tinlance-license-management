@@ -7,6 +7,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
+/**
+ * @property list<string> $changed_fields
+ * @property string $reason
+ * @property string $event_type
+ * @property string $request_id
+ */
 final class CustomerOrganizationProfileEvent extends BaseModel
 {
     public $timestamps = false;
