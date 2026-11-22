@@ -91,7 +91,7 @@ final readonly class ProductCatalogService
             || preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/D', $slug) !== 1
             || mb_strlen($slug) > 80
             || ($description !== null && mb_strlen($description) > 2000)
-            || $reason === ''
+            || mb_strlen($reason) < 5
             || mb_strlen($reason) > 500
         ) {
             throw new InvalidArgumentException('Product catalogue metadata is invalid.');
@@ -172,7 +172,7 @@ final readonly class ProductCatalogService
     ): Product {
         $reason = trim($reason);
 
-        if ($reason === '' || mb_strlen($reason) > 500) {
+        if (mb_strlen($reason) < 5 || mb_strlen($reason) > 500) {
             throw new InvalidArgumentException('Product update reason is invalid.');
         }
 
