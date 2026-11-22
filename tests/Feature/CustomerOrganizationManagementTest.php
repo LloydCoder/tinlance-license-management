@@ -36,7 +36,7 @@ final class CustomerOrganizationManagementTest extends TestCase
             ->get('/admin/customers')
             ->assertOk()
             ->assertSee('Customer organizations')
-            ->assertSee('Own Customer')
+            ->assertSee('Own Customer Customer')
             ->assertDontSee('Foreign Customer');
     }
 
@@ -209,7 +209,7 @@ final class CustomerOrganizationManagementTest extends TestCase
             'vendor_account_id' => $vendor->getKey(),
             'external_reference' => $reference,
             'legal_name' => 'Customer '.$reference.' Limited',
-            'display_name' => ucfirst($reference).' Customer',
+            'display_name' => str($reference)->replace('-', ' ')->title().' Customer',
             'status' => 'active',
             'billing_email' => 'billing-'.$reference.'@example.test',
         ]);
