@@ -12,6 +12,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use LogicException;
 use Tests\TestCase;
 
 final class CustomerOrganizationManagementTest extends TestCase
