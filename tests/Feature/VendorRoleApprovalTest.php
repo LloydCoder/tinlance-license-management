@@ -100,6 +100,40 @@ final class VendorRoleApprovalTest extends TestCase
         $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'releases.publish'));
     }
 
+    public function test_vendor_admin_approval_request_rejects_unaccepted_membership(): void
+    {
+        $vendor = $this->createVendor();
+        $superAdmin = $this->createActor($vendor);
+        $firstAdmin = $this->createUser();
+        $firstMembership = $this->createMembership($vendor, $firstAdmin);
+        $vendorAdminRole = $this->role('vendor_admin');
+
+        $this->assertTrue(app(MembershipRoleAssignmentService::class)->assignVendorRole(
+            $superAdmin,
+            $vendor,
+            $firstMembership,
+            $vendorAdminRole,
+            'Bootstrap the first tenant-scoped vendor administrator.',
+        ));
+
+        $invitee = $this->createUser();
+        $invitedMembership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'invited',
+            'invited_by' => $superAdmin->getKey(),
+        ]);
+
+        $this->authenticatedJson($firstAdmin)
+            ->postJson($this->approvalPath($vendor, null, 'request'), [
+                'membership_id' => $invitedMembership->getKey(),
+                'role_id' => $vendorAdminRole->getKey(),
+                'reason' => 'Do not grant vendor administration before acceptance.',
+                'idempotency_key' => 'vendor-admin-invited-0001',
+            ])
+            ->assertForbidden();
+    }
+
     public function test_second_super_admin_can_approve_and_apply_high_risk_role_grant(): void
     {
         $vendor = $this->createVendor();
