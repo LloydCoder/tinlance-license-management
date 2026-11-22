@@ -28,6 +28,7 @@ All notable changes to TLMS are recorded here. This file tracks repository engin
 - Add audited vendor/customer membership reinstatement through fresh invitations, clearing historical role pivots and invalidating prior invitation tokens; expose revoked-member context and MFA-gated reinstatement controls in the tenant workspace (PRs #74–#75).
 - Add a serialized SHA-256 hash chain for platform access audit events, deterministic backfill, database-enforced immutability preservation, chain-head integrity verification and the `tlms:audit:verify` operator command (PR #80).
 - Record denied cross-tenant platform-read attempts in the same hash-chained audit stream without granting access; reload persisted actors and tenants and distinguish non-platform actors from inactive resources (PR #82).
+- Add tenant-scoped, active-user-filtered and role-scope-filtered vendor/customer membership directory queries and accessible paginated workspace tables for authorized tenant managers (PR #84).
 - One-time initial Super Admin bootstrap with a 256-bit deployment secret, HTTPS/CSRF/rate-limit controls, atomic installation-state consumption and a system-attributed membership-role event (PR #20).
 - Shared-hosting runtime preflight and reproducible production-only cPanel ZIP packaging with checksum/provenance verification (PRs #17 and #21).
 - Fortify-based Super Admin authentication foundation: login/logout, verified email, password recovery, TOTP, WebAuthn passkeys, MFA enrollment gate, database-backed sessions, session revocation and recovery-code controls (PR #23).
