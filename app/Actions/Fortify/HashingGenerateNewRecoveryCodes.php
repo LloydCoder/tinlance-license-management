@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Throwable;
 
@@ -23,12 +22,9 @@ final class HashingGenerateNewRecoveryCodes extends GenerateNewRecoveryCodes
         private readonly Request $request,
     ) {}
 
-    public function __invoke($user): void
+    /** @param User $user */
+    public function __invoke(mixed $user): void
     {
-        if (! $user instanceof User) {
-            throw new HttpException(401, 'An authenticated user is required.');
-        }
-
         if ($user->status !== 'active' || ! $user->hasEnabledTwoFactorAuthentication()) {
             throw new HttpException(403, 'Authenticator enrollment must be confirmed before recovery codes can be regenerated.');
         }
