@@ -54,7 +54,7 @@ final class PlatformAccessAuditEvent extends BaseModel
 
             if (
                 $event->resource_type !== $expectedResourceType
-                || ! in_array($event->reason_code, ['platform_super_admin', 'resource_inactive', 'tenant_inactive'], true)
+                || ! in_array($event->reason_code, ['platform_super_admin', 'actor_not_platform_super_admin', 'resource_inactive', 'tenant_inactive'], true)
             ) {
                 throw new LogicException('Platform access audit resource metadata is invalid.');
             }

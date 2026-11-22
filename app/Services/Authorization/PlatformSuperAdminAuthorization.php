@@ -25,13 +25,16 @@ final readonly class PlatformSuperAdminAuthorization
         string $resourceId,
         bool $resourceActive,
     ): bool {
-        if (! $this->isBootstrapSuperAdmin($actor)) {
+        $currentActor = User::query()->whereKey($actor->getKey())->first();
+        $currentTenant = VendorAccount::query()->whereKey($tenantVendor->getKey())->first();
+
+        if (! $currentActor instanceof User || ! $currentTenant instanceof VendorAccount) {
             return false;
         }
 
-        $currentTenant = VendorAccount::query()->whereKey($tenantVendor->getKey())->first();
-        $tenantActive = $currentTenant instanceof VendorAccount && $currentTenant->status === 'active';
-        $allowed = $tenantActive && $resourceActive;
+        $actorIsBootstrapSuperAdmin = $this->isBootstrapSuperAdmin($currentActor);
+        $tenantActive = $currentTenant->status === 'active';
+        $allowed = $actorIsBootstrapSuperAdmin && $tenantActive && $resourceActive;
 
         $candidateRequestId = $this->request->headers->get('X-Request-ID');
         $requestId = is_string($candidateRequestId)
@@ -40,13 +43,17 @@ final readonly class PlatformSuperAdminAuthorization
                 : bin2hex(random_bytes(16));
 
         $this->auditWriter->append(
-            (string) $actor->getKey(),
+            (string) $currentActor->getKey(),
             $action,
             $resourceType,
             $resourceId,
-            (string) $tenantVendor->getKey(),
+            (string) $currentTenant->getKey(),
             $allowed ? 'allowed' : 'denied',
-            $allowed ? 'platform_super_admin' : ($tenantActive ? 'resource_inactive' : 'tenant_inactive'),
+            $allowed
+                ? 'platform_super_admin'
+                : (! $actorIsBootstrapSuperAdmin
+                    ? 'actor_not_platform_super_admin'
+                    : ($tenantActive ? 'resource_inactive' : 'tenant_inactive')),
             $requestId,
         );
 

@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -113,7 +114,13 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         VendorAccount::query()->whereKey($primaryVendor->getKey())->update(['status' => 'suspended']);
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
-        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
     }
 
     public function test_cross_tenant_super_admin_read_is_denied_after_bootstrap_user_suspension(): void
@@ -124,6 +131,13 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         User::query()->whereKey($superAdmin->getKey())->update(['status' => 'suspended']);
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
     }
 
     public function test_vendor_scoped_super_admin_role_without_bootstrap_authority_cannot_read_other_tenants(): void
@@ -142,7 +156,16 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         );
 
         $this->assertFalse(Gate::forUser($user)->allows('view', $otherVendor));
-        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $user->getKey(),
+            'action' => 'vendor.read',
+            'resource_type' => 'vendor_account',
+            'resource_id' => $otherVendor->getKey(),
+            'tenant_vendor_account_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
     public function test_bootstrap_super_admin_loses_cross_tenant_read_authority_when_the_super_admin_role_is_revoked(): void
@@ -158,7 +181,13 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         );
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
-        $this->assertDatabaseCount('platform_access_audit_events', 0);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_id' => $otherVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'actor_not_platform_super_admin',
+        ]);
     }
 
     public function test_platform_access_audit_events_cannot_be_updated_or_deleted(): void
