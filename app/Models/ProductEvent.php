@@ -43,7 +43,7 @@ final class ProductEvent extends BaseModel
         self::creating(static function (self $event): void {
             if (
                 ! in_array($event->event_type, ['created', 'updated'], true)
-                || trim((string) $event->reason) === ''
+                || mb_strlen(trim((string) $event->reason)) < 5
                 || mb_strlen((string) $event->reason) > 500
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
                 || preg_match('/\A[a-f0-9]{64}\z/D', (string) $event->change_digest) !== 1
