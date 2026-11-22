@@ -645,6 +645,119 @@ final class MembershipInvitationTest extends TestCase
         $this->assertSame($membership->getKey(), (string) $response->json('data.membership_id'));
     }
 
+    public function test_vendor_super_admin_can_clear_a_protected_role_during_reinstatement(): void
+    {
+        Mail::fake();
+        [$actor, $vendor] = $this->vendorActor();
+        $invitee = $this->createVerifiedUser('protected-role-reinstatement');
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'revoked',
+            'joined_at' => null,
+        ]);
+        $protectedRole = $this->role('vendor', 'super_admin');
+        $membership->roles()->attach($protectedRole);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'support_agent',
+                'reason' => 'Restore with least-privilege after review.',
+            ])
+            ->assertCreated();
+
+        $this->assertFalse($membership->refresh()->roles()->whereKey($protectedRole->getKey())->exists());
+        $this->assertTrue($membership->roles()->where('slug', 'support_agent')->exists());
+        $this->assertDatabaseHas('vendor_membership_role_events', [
+            'vendor_membership_id' => $membership->getKey(),
+            'role_id' => $protectedRole->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'action' => 'revoked',
+        ]);
+    }
+
+    public function test_vendor_admin_cannot_clear_a_protected_role_during_reinstatement(): void
+    {
+        Mail::fake();
+        [$actor, $vendor] = $this->vendorActor();
+        $actorMembership = VendorMembership::query()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('user_id', $actor->getKey())
+            ->firstOrFail();
+        $actorMembership->roles()->detach($this->role('vendor', 'super_admin'));
+        $actorMembership->roles()->attach($this->role('vendor', 'vendor_admin'));
+
+        $invitee = $this->createVerifiedUser('protected-role-denied');
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'revoked',
+            'joined_at' => null,
+        ]);
+        $protectedRole = $this->role('vendor', 'super_admin');
+        $membership->roles()->attach($protectedRole);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'support_agent',
+                'reason' => 'A vendor administrator cannot remove protected roles.',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('revoked', $membership->refresh()->status);
+        $this->assertTrue($membership->roles()->whereKey($protectedRole->getKey())->exists());
+        $this->assertDatabaseMissing('vendor_membership_invitations', ['vendor_membership_id' => $membership->getKey()]);
+        Mail::assertNothingSent();
+    }
+
+    public function test_reinstatement_rejects_an_inactive_target_account_without_mutation(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $invitee = $this->createUser('inactive-reinstatement');
+        $invitee->forceFill(['status' => 'suspended'])->save();
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'revoked',
+            'joined_at' => null,
+        ]);
+
+        $this->authenticatedJson($actor)
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'support_agent',
+                'reason' => 'Inactive users cannot be reinstated.',
+            ])
+            ->assertForbidden();
+
+        $this->assertSame('revoked', $membership->refresh()->status);
+        $this->assertDatabaseMissing('vendor_membership_invitations', ['vendor_membership_id' => $membership->getKey()]);
+    }
+
+    public function test_reinstatement_requires_fresh_mfa_step_up(): void
+    {
+        [$actor, $vendor] = $this->vendorActor();
+        $invitee = $this->createUser('step-up-required');
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'revoked',
+            'joined_at' => null,
+        ]);
+
+        $this->actingAs($actor, 'web')
+            ->withSession([
+                'auth_session_version' => (int) $actor->session_version,
+                'auth.password_confirmed_at' => now()->timestamp,
+            ])
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate', [
+                'role_slug' => 'support_agent',
+                'reason' => 'Fresh MFA step-up is mandatory.',
+            ])
+            ->assertStatus(423);
+
+        $this->assertSame('revoked', $membership->refresh()->status);
+    }
+
     public function test_reinstatement_rejects_a_membership_that_is_not_revoked(): void
     {
         [$actor, $vendor] = $this->vendorActor();
