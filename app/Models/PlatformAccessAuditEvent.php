@@ -74,7 +74,6 @@ final class PlatformAccessAuditEvent extends BaseModel
             if (
                 (int) $event->sequence < 1
                 || (int) $event->hash_version !== 1
-                || ! is_string($event->event_hash)
                 || preg_match('/\A[a-f0-9]{64}\z/D', $event->event_hash) !== 1
                 || $previousHashInvalid
             ) {
