@@ -47,6 +47,12 @@ final class CustomerMembership extends BaseModel
         return $this->hasMany(CustomerMembershipLifecycleEvent::class, 'customer_membership_id');
     }
 
+    /** @return HasOne<CustomerMembershipLifecycleEvent, $this> */
+    public function latestLifecycleEvent(): HasOne
+    {
+        return $this->hasOne(CustomerMembershipLifecycleEvent::class, 'customer_membership_id')->latestOfMany('created_at');
+    }
+
     /** @return BelongsToMany<Role, $this> */
     public function roles(): BelongsToMany
     {
