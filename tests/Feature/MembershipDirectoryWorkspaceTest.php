@@ -32,6 +32,7 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         [$actor, $vendor] = $this->vendorManager('directory-vendor-one');
         $otherVendor = $this->createVendor('directory-vendor-two');
         $active = $this->createVendorMember($vendor, 'active-member', 'active', 'support_agent');
+        $active->roles()->attach($this->role('customer', 'customer_member'));
         $invited = $this->createVendorMember($vendor, 'invited-member', 'invited', 'support_agent');
         $revoked = $this->createVendorMember($vendor, 'revoked-member', 'revoked', 'support_agent');
         $inactive = $this->createVendorMember($vendor, 'inactive-user', 'active', 'support_agent', 'suspended');
@@ -61,6 +62,7 @@ final class MembershipDirectoryWorkspaceTest extends TestCase
         $otherVendor = $this->createVendor('directory-customer-other-vendor');
         $otherOrganization = $this->createOrganization($otherVendor, 'directory-customer-two');
         $active = $this->createCustomerMember($organization, 'active-customer-member', 'active', 'customer_member');
+        $active->roles()->attach($this->role('vendor', 'support_agent'));
         $invited = $this->createCustomerMember($organization, 'invited-customer-member', 'invited', 'customer_member');
         $revoked = $this->createCustomerMember($organization, 'revoked-customer-member', 'revoked', 'customer_member');
         $inactive = $this->createCustomerMember($organization, 'inactive-customer-user', 'active', 'customer_member', 'suspended');
