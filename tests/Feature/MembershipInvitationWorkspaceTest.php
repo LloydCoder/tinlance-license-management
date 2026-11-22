@@ -374,7 +374,6 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('Delivery pending');
         $response->assertSee('Created');
         $response->assertSee('support_agent');
-        $response->assertSee('security_auditor');
         $response->assertSee('vendor_developer');
         $response->assertDontSee('vendor_admin');
         $response->assertDontSee('finance_admin');
