@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use App\Services\Hosting\HostingPreflight;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -25,3 +26,18 @@ Artisan::command('tlms:hosting-preflight {--json : Output the report as JSON}', 
 
     return $report['ready'] ? Command::SUCCESS : Command::FAILURE;
 })->purpose('Verify TLMS shared-hosting runtime, database, security and filesystem prerequisites');
+
+
+Artisan::command('tlms:audit:verify', function (PlatformAccessAuditChainVerifier $verifier): int {
+    $valid = $verifier->verify();
+
+    if ($valid) {
+        $this->info('Platform access audit hash chain is valid.');
+
+        return Command::SUCCESS;
+    }
+
+    $this->error('Platform access audit hash chain verification failed.');
+
+    return Command::FAILURE;
+})->purpose('Verify platform access audit hash-chain integrity');
