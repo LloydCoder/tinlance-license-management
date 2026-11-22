@@ -8,6 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
+/**
+ * @property string $public_id
+ * @property string $vendor_account_id
+ * @property string $slug
+ * @property string $name
+ * @property string|null $description
+ * @property string $status
+ * @property int $version
+ * @property string $created_by_user_id
+ * @property string|null $updated_by_user_id
+ */
 final class Product extends BaseModel
 {
     protected $fillable = [
