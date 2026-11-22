@@ -60,7 +60,7 @@ final class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      * the hashed code and issued its replacement. The legacy encrypted-code mutation
      * must never run because the users column intentionally contains only an empty list.
      */
-    public function replaceRecoveryCode($code): void
+    public function replaceRecoveryCode(mixed $code): void
     {
         // Consumption and replacement are completed by MfaRecoveryCodeVault.
     }
