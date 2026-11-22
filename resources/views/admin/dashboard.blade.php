@@ -13,6 +13,7 @@
         </section>
     @endif
     <div class="stack">
+        <a class="button" href="{{ route('admin.customers.index') }}">Manage customer organizations</a>
         <a class="button" href="{{ route('security.mfa.enroll') }}">Manage multi-factor authentication</a>
         <a class="button secondary" href="{{ route('admin.security.sessions') }}">Review active sessions</a>
     </div>
