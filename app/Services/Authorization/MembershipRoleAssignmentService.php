@@ -229,7 +229,8 @@ final readonly class MembershipRoleAssignmentService
 
                 $existingVendorAdmin = VendorMembership::query()
                     ->where('vendor_account_id', $vendor->getKey())
-                    ->where('status', 'active')
+                    ->whereIn('status', ['invited', 'active'])
+                    ->whereHas('user', static fn ($query) => $query->where('status', 'active'))
                     ->whereHas('roles', static fn ($query) => $query
                         ->where('scope', 'vendor')
                         ->where('slug', 'vendor_admin'))
