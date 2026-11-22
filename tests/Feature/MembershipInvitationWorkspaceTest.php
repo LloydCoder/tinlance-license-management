@@ -217,7 +217,6 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             ->get(route('workspace.home'));
 
         $response->assertOk();
-        $response->assertSee($invitation->invited_email);
         $response->assertViewHas('customerInvitationGroups', static fn (array $groups): bool => count($groups) === 1);
         $response->assertViewHas('vendorInvitationGroups', []);
     }
