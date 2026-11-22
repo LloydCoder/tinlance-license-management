@@ -74,6 +74,7 @@ final class MfaRecoveryCodeVault
             $consumed = DB::table('mfa_recovery_codes')
                 ->where('id', $stored->id)
                 ->whereNull('consumed_at')
+                ->whereNull('invalidated_at')
                 ->update(['consumed_at' => now()]);
 
             if ($consumed !== 1) {
