@@ -12,6 +12,10 @@ final class PlatformAccessAuditEvent extends BaseModel
     public $timestamps = false;
 
     protected $fillable = [
+        'sequence',
+        'previous_hash',
+        'event_hash',
+        'hash_version',
         'actor_user_id',
         'action',
         'resource_type',
@@ -25,7 +29,11 @@ final class PlatformAccessAuditEvent extends BaseModel
 
     protected function casts(): array
     {
-        return ['created_at' => 'datetime'];
+        return [
+            'sequence' => 'integer',
+            'hash_version' => 'integer',
+            'created_at' => 'datetime',
+        ];
     }
 
     protected static function booted(): void
@@ -56,6 +64,20 @@ final class PlatformAccessAuditEvent extends BaseModel
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $event->request_id) !== 1
             ) {
                 throw new LogicException('Platform access audit metadata is invalid.');
+            }
+
+            $previousHashInvalid = (int) $event->sequence === 1
+                ? $event->previous_hash !== null
+                : ! is_string($event->previous_hash)
+                    || preg_match('/\A[a-f0-9]{64}\z/D', $event->previous_hash) !== 1;
+
+            if (
+                (int) $event->sequence < 1
+                || (int) $event->hash_version !== 1
+                || preg_match('/\A[a-f0-9]{64}\z/D', $event->event_hash) !== 1
+                || $previousHashInvalid
+            ) {
+                throw new LogicException('Platform access audit chain metadata is invalid.');
             }
         });
 

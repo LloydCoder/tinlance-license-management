@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\PlatformAccessAuditEvent;
 use App\Models\User;
 use App\Models\VendorAccount;
+use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -64,16 +65,15 @@ final class PlatformAccessAuditDatabaseImmutabilityTest extends TestCase
             'timezone' => 'Africa/Lagos',
         ]);
 
-        return PlatformAccessAuditEvent::query()->create([
-            'actor_user_id' => $actor->getKey(),
-            'action' => 'vendor.read',
-            'resource_type' => 'vendor_account',
-            'resource_id' => $vendor->getKey(),
-            'tenant_vendor_account_id' => $vendor->getKey(),
-            'outcome' => 'allowed',
-            'reason_code' => 'platform_super_admin',
-            'request_id' => bin2hex(random_bytes(16)),
-            'created_at' => now(),
-        ]);
+        return app(PlatformAccessAuditChainWriter::class)->append(
+            (string) $actor->getKey(),
+            'vendor.read',
+            'vendor_account',
+            (string) $vendor->getKey(),
+            (string) $vendor->getKey(),
+            'allowed',
+            'platform_super_admin',
+            bin2hex(random_bytes(16)),
+        );
     }
 }

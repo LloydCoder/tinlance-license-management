@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Authorization;
 
-use App\Models\PlatformAccessAuditEvent;
 use App\Models\PlatformInstallation;
 use App\Models\User;
 use App\Models\VendorAccount;
@@ -13,7 +12,10 @@ use Illuminate\Http\Request;
 
 final readonly class PlatformSuperAdminAuthorization
 {
-    public function __construct(private Request $request) {}
+    public function __construct(
+        private Request $request,
+        private PlatformAccessAuditChainWriter $auditWriter,
+    ) {}
 
     public function canReadTenantResource(
         User $actor,
@@ -37,17 +39,16 @@ final readonly class PlatformSuperAdminAuthorization
                 ? $candidateRequestId
                 : bin2hex(random_bytes(16));
 
-        PlatformAccessAuditEvent::query()->create([
-            'actor_user_id' => $actor->getKey(),
-            'action' => $action,
-            'resource_type' => $resourceType,
-            'resource_id' => $resourceId,
-            'tenant_vendor_account_id' => $tenantVendor->getKey(),
-            'outcome' => $allowed ? 'allowed' : 'denied',
-            'reason_code' => $allowed ? 'platform_super_admin' : ($tenantActive ? 'resource_inactive' : 'tenant_inactive'),
-            'request_id' => $requestId,
-            'created_at' => now(),
-        ]);
+        $this->auditWriter->append(
+            (string) $actor->getKey(),
+            $action,
+            $resourceType,
+            $resourceId,
+            (string) $tenantVendor->getKey(),
+            $allowed ? 'allowed' : 'denied',
+            $allowed ? 'platform_super_admin' : ($tenantActive ? 'resource_inactive' : 'tenant_inactive'),
+            $requestId,
+        );
 
         return $allowed;
     }
