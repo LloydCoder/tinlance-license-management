@@ -70,7 +70,7 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
-     * @param array{before: array<string, scalar|null>, after: array<string, scalar|null>} $changes
+     * @param  array{before: array<string, scalar|null>, after: array<string, scalar|null>}  $changes
      *
      * @throws JsonException
      */
@@ -89,7 +89,7 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
-     * @param list<string> $changedFields
+     * @param  list<string>  $changedFields
      *
      * @throws JsonException
      */
