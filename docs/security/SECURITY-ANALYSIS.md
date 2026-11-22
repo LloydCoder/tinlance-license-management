@@ -93,3 +93,13 @@ See the official project sources:
 - Historical version-1 events are verified using their original canonical form; version-2 verification does not silently reinterpret historical hashes.
 - Mutation, profile event and chain append share one outer database transaction. The unique reference index prevents multiple chain entries from reusing one profile event.
 - The digest is an unkeyed commitment, not encryption or a digital signature. The overall chain remains vulnerable to a privileged database administrator rewriting the complete database and recomputing all hashes. External anchoring and separate log retention remain open controls.
+
+
+## Vendor profile administration and audit commitments (PR #97)
+
+- Only active primary-vendor members with vendor.account.profile.manage can open the vendor profile surface. The permission is granted to vendor_admin; the bootstrap Super Admin is explicitly denied mutation even when its role catalogue includes the permission.
+- The only mutable attribute is display_name. Legal name, installation key, account status, default currency and timezone are prohibited by request validation and are not mass-assigned.
+- Writes require recent password confirmation and fresh five-minute TOTP/passkey step-up. The transaction locks the primary vendor and the caller's active membership, then reloads and rechecks authorization before mutation.
+- A separate immutable vendor profile event stores the reason, changed-field list and a digest of canonical before/after values. A version-2 platform audit event references the event; verification checks actor, vendor/resource/tenant, request ID, event type, reason, changed fields and digest.
+- Eloquent guards and MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect the event table. Tests cover model-level and raw database mutation rejection.
+- The payload digest and platform chain are unkeyed SHA-256. They detect partial/cross-record changes but do not prevent a privileged database administrator from rewriting all records and recomputing the chain. External anchoring and separate retention remain open controls.
