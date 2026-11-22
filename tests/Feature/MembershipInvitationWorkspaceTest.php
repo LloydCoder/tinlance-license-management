@@ -88,7 +88,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             app(MembershipInvitationWorkspaceQuery::class)->vendorInvitations($member, $vendor);
             $this->fail('A vendor member without admins.manage must not list invitations.');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
 
         VendorAccount::query()->whereKey($vendor->getKey())->update(['status' => 'suspended']);
@@ -97,7 +97,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             app(MembershipInvitationWorkspaceQuery::class)->vendorInvitations($actor, $vendor);
             $this->fail('A suspended vendor must not expose invitations.');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
     }
 
@@ -110,7 +110,7 @@ final class MembershipInvitationWorkspaceTest extends TestCase
             app(MembershipInvitationWorkspaceQuery::class)->customerInvitations($actor, $organization);
             $this->fail('A suspended customer organization must not expose invitations.');
         } catch (AuthorizationException) {
-            $this->assertTrue(true);
+            $this->addToAssertionCount(1);
         }
     }
 
