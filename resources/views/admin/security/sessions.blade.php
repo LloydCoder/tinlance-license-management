@@ -23,7 +23,7 @@
     <section class="panel warning" aria-labelledby="session-revocation-step-up-heading">
         <h2 id="session-revocation-step-up-heading">Fresh MFA verification</h2>
         <p>Revoking every session signs out all devices, including this one. Confirm your identity with an enrolled authenticator or passkey immediately before proceeding.</p>
-        <form method="post" action="{{ route('admin.security.sessions.index') }}" data-step-up-totp class="stack">
+        <form method="post" action="{{ url('/api/v1/security/step-up/totp') }}" data-step-up-totp class="stack">
             @csrf
             <label for="session-revocation-step-up-code">Six-digit authenticator code</label>
             <input id="session-revocation-step-up-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>
