@@ -9,8 +9,8 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\Catalog\ProductCatalogService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -30,9 +30,9 @@ final class ProductCatalogController
         $products = $catalog->listFor($actor, $vendor, $perPage);
 
         return response()->json([
-            'data' => ($products instanceof LengthAwarePaginator)
-                ? $products->getCollection()->map(fn (Product $product): array => $this->serialize($product))->values()
-                : [],
+            'data' => $products->getCollection()
+                ->map(fn (Product $product): array => $this->serialize($product))
+                ->values(),
             'meta' => [
                 'page' => $products->currentPage(),
                 'per_page' => $products->perPage(),
