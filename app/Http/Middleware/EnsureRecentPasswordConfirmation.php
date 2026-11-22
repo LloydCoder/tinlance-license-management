@@ -17,6 +17,7 @@ final class EnsureRecentPasswordConfirmation
         $confirmedAtTimestamp = is_numeric($confirmedAt) ? (int) $confirmedAt : null;
         $nowTimestamp = (int) now()->getTimestamp();
         $isFresh = $confirmedAtTimestamp !== null
+            && $confirmedAtTimestamp <= $nowTimestamp
             && $confirmedAtTimestamp >= ($nowTimestamp - $timeout);
 
         if (! $isFresh) {
