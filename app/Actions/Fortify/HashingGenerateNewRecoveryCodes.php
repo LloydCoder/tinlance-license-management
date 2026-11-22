@@ -8,13 +8,13 @@ use App\Models\User;
 use App\Notifications\MfaRecoveryCodeActivityNotification;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
-use Throwable;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Throwable;
 
 final class HashingGenerateNewRecoveryCodes extends GenerateNewRecoveryCodes
 {
