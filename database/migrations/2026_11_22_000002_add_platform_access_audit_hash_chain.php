@@ -6,7 +6,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use JsonException;
 
 return new class extends Migration
 {
@@ -101,7 +100,7 @@ return new class extends Migration
     }
 
     /**
-     * @throws JsonException
+     * @throws \JsonException
      */
     private function hashEvent(
         int $sequence,
