@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Notifications\MfaRecoveryCodeActivityNotification;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
 use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
+use Throwable;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
@@ -56,5 +59,16 @@ final class HashingGenerateNewRecoveryCodes extends GenerateNewRecoveryCodes
         $this->request->session()->flash('mfa.recovery_codes_once', $codes);
 
         RecoveryCodesGenerated::dispatch($user);
+
+        try {
+            $user->notify(new MfaRecoveryCodeActivityNotification(
+                'Your MFA recovery codes were regenerated. All previously issued recovery codes are now invalid.',
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('TLMS could not deliver an MFA recovery-code regeneration notification.', [
+                'user_id' => $user->getKey(),
+                'exception' => $exception::class,
+            ]);
+        }
     }
 }
