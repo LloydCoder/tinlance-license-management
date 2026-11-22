@@ -21,7 +21,7 @@ final class WorkspaceController
         MembershipInvitationWorkspaceQuery $invitations,
         MembershipDirectoryQuery $directory,
         MembershipRoleAssignmentService $roles,
-    ): View|RedirectResponse {
+    ): Response|RedirectResponse {
         $user = $request->user();
         abort_unless($user instanceof User && $user->status === 'active', 403);
 
@@ -34,7 +34,9 @@ final class WorkspaceController
             ->exists();
 
         if ($isSuperAdmin) {
-            return redirect('/admin');
+            return $request->session()->has('mfa.recovery_code_replacement_once')
+                ? redirect()->route('security.mfa.enroll')
+                : redirect('/admin');
         }
 
         $vendorMemberships = $user->vendorMemberships()
@@ -111,8 +113,9 @@ final class WorkspaceController
             $request->session()->put('url.intended', route('workspace.home'));
         }
 
-        return view('workspace.dashboard', [
+        return response()->view('workspace.dashboard', [
             'user' => $user,
+            'mfaRecoveryCodeReplacement' => $request->session()->get('mfa.recovery_code_replacement_once'),
             'vendorMemberships' => $vendorMemberships,
             'customerMemberships' => $customerMemberships,
             'vendorInvitationGroups' => $vendorInvitationGroups,
@@ -125,6 +128,6 @@ final class WorkspaceController
                 && $passwordConfirmationFresh
                 && $mfaStepUpFresh
                 && ($hasTotp || $hasPasskeys),
-        ]);
+        ])->header('Cache-Control', 'no-store, private')->header('Pragma', 'no-cache');
     }
 }
