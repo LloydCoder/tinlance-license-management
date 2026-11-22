@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Actions\Fortify\HashingEnableTwoFactorAuthentication;
+use App\Actions\Fortify\HashingGenerateNewRecoveryCodes;
+use App\Http\Requests\Fortify\HashedTwoFactorLoginRequest;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
+use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
+
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
