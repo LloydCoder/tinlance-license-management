@@ -19,6 +19,15 @@ final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
         ];
     }
 
+    public function hasValidCode(): bool
+    {
+        if ($this->eligibleChallengedUser() === null) {
+            return false;
+        }
+
+        return parent::hasValidCode();
+    }
+
     public function validRecoveryCode(): ?string
     {
         $code = $this->input('recovery_code');
@@ -27,9 +36,9 @@ final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
             return null;
         }
 
-        $user = $this->challengedUser();
+        $user = $this->eligibleChallengedUser();
 
-        if (! $user instanceof User) {
+        if ($user === null) {
             return null;
         }
 
@@ -43,5 +52,17 @@ final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
         $this->session()->forget('login.id');
 
         return $code;
+    }
+
+    private function eligibleChallengedUser(): ?User
+    {
+        /** @var User $user */
+        $user = $this->challengedUser();
+
+        if ($user->status !== 'active' || ! $user->hasEnabledTwoFactorAuthentication()) {
+            return null;
+        }
+
+        return $user;
     }
 }
