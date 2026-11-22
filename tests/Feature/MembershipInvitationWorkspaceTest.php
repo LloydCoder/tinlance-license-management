@@ -6,12 +6,14 @@ namespace Tests\Feature;
 
 use App\Models\CustomerMembership;
 use App\Models\CustomerMembershipInvitation;
+use App\Models\CustomerMembershipLifecycleEvent;
 use App\Models\CustomerOrganization;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Models\VendorMembershipInvitation;
+use App\Models\VendorMembershipLifecycleEvent;
 use App\Services\Authorization\MembershipInvitationWorkspaceQuery;
 use App\Services\Authorization\MembershipRoleAssignmentService;
 use Database\Seeders\AuthorizationCatalogSeeder;
@@ -127,6 +129,119 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $this->assertSame(26, $paginator->total());
         $this->assertSame(25, $paginator->perPage());
         $this->assertCount(25, $paginator->items());
+    }
+
+    public function test_vendor_revoked_membership_query_is_tenant_scoped_and_excludes_inactive_accounts(): void
+    {
+        [$actor, $vendor] = $this->vendorManager('vendor-revoked-query-one');
+        $otherVendor = $this->createVendor('vendor-revoked-query-two');
+
+        $revokedUser = $this->createUser('vendor-revoked-visible');
+        $revoked = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $revokedUser->getKey(),
+            'status' => 'revoked',
+            'joined_at' => null,
+        ]);
+        $previousRole = $this->role('vendor', 'security_auditor');
+        $revoked->roles()->attach($previousRole);
+        VendorMembershipLifecycleEvent::query()->create([
+            'vendor_membership_id' => $revoked->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Prior vendor access removed.',
+            'created_at' => now()->subDay(),
+        ]);
+
+        $otherUser = $this->createUser('vendor-revoked-other-tenant');
+        $otherMembership = VendorMembership::query()->create([
+            'vendor_account_id' => $otherVendor->getKey(),
+            'user_id' => $otherUser->getKey(),
+            'status' => 'revoked',
+        ]);
+        VendorMembershipLifecycleEvent::query()->create([
+            'vendor_membership_id' => $otherMembership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Other tenant access removed.',
+            'created_at' => now(),
+        ]);
+
+        $suspendedUser = $this->createUser('vendor-revoked-suspended');
+        $suspendedUser->forceFill(['status' => 'suspended'])->save();
+        VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $suspendedUser->getKey(),
+            'status' => 'revoked',
+        ]);
+
+        $activeUser = $this->createUser('vendor-revoked-active');
+        VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $activeUser->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
+        $paginator = app(MembershipInvitationWorkspaceQuery::class)->vendorRevokedMemberships($actor, $vendor);
+        $this->assertSame(1, $paginator->total());
+        $item = $paginator->getCollection()->sole();
+        $this->assertSame($revoked->getKey(), $item->getKey());
+        $this->assertSame($revokedUser->email, $item->user?->email);
+        $this->assertSame('Prior vendor access removed.', $item->latestLifecycleEvent?->reason);
+        $this->assertTrue($item->roles->contains('id', $previousRole->getKey()));
+        $this->assertSame(25, $paginator->perPage());
+        $this->assertArrayNotHasKey('token_hash', $item->toArray());
+    }
+
+    public function test_customer_revoked_membership_query_is_scoped_to_active_organization_and_parent_vendor(): void
+    {
+        [$actor, $organization] = $this->customerActor('customer-revoked-query-one');
+        $otherVendor = $this->createVendor('customer-revoked-query-two');
+        $otherOrganization = $this->createOrganization($otherVendor, 'customer-revoked-query-two');
+
+        $revokedUser = $this->createUser('customer-revoked-visible');
+        $revoked = CustomerMembership::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'user_id' => $revokedUser->getKey(),
+            'status' => 'revoked',
+        ]);
+        $previousRole = $this->role('customer', 'customer_technical_admin');
+        $revoked->roles()->attach($previousRole);
+        CustomerMembershipLifecycleEvent::query()->create([
+            'customer_membership_id' => $revoked->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Prior customer access removed.',
+            'created_at' => now()->subDay(),
+        ]);
+
+        $otherUser = $this->createUser('customer-revoked-other-tenant');
+        $otherMembership = CustomerMembership::query()->create([
+            'customer_organization_id' => $otherOrganization->getKey(),
+            'user_id' => $otherUser->getKey(),
+            'status' => 'revoked',
+        ]);
+        CustomerMembershipLifecycleEvent::query()->create([
+            'customer_membership_id' => $otherMembership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Other customer access removed.',
+            'created_at' => now(),
+        ]);
+
+        $paginator = app(MembershipInvitationWorkspaceQuery::class)->customerRevokedMemberships($actor, $organization);
+        $this->assertSame(1, $paginator->total());
+        $item = $paginator->getCollection()->firstOrFail();
+        $this->assertSame($revoked->getKey(), $item->getKey());
+        $this->assertSame($revokedUser->email, $item->user?->email);
+        $this->assertSame('Prior customer access removed.', $item->latestLifecycleEvent?->reason);
+        $this->assertTrue($item->roles->contains('id', $previousRole->getKey()));
+        $this->assertArrayNotHasKey('token_hash', $item->toArray());
     }
 
     public function test_assignable_role_catalogue_excludes_maker_checker_only_vendor_roles(): void
@@ -255,7 +370,6 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('Delivery pending');
         $response->assertSee('Created');
         $response->assertSee('support_agent');
-        $response->assertSee('security_auditor');
         $response->assertSee('vendor_developer');
         $response->assertDontSee('vendor_admin');
         $response->assertDontSee('finance_admin');
@@ -299,10 +413,109 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertDontSee($invitation->token_hash);
     }
 
+    public function test_vendor_workspace_renders_revoked_membership_context_and_mfa_gated_reinstatement_action(): void
+    {
+        [$actor, $vendor] = $this->vendorManager('workspace-vendor-reinstatement');
+        $invitee = $this->createUser('workspace-vendor-revoked-member');
+        $membership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'revoked',
+        ]);
+        $previousRole = $this->role('vendor', 'security_auditor');
+        $membership->roles()->attach($previousRole);
+        VendorMembershipLifecycleEvent::query()->create([
+            'vendor_membership_id' => $membership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Vendor access removed after contract review.',
+            'created_at' => now()->subDay(),
+        ]);
+
+        $this->enableWorkspaceAuthentication($actor);
+        $session = $this->workspaceSession($actor);
+        $session['auth.password_confirmed_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_method'] = 'totp';
+
+        $response = $this->actingAs($actor)->withSession($session)->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee('Revoked vendor memberships');
+        $response->assertSee($invitee->name);
+        $response->assertSee($invitee->email);
+        $response->assertSee('Security Auditor');
+        $response->assertSee('Vendor access removed after contract review.');
+        $response->assertSee('data-action="reinstate"', false);
+        $response->assertSee('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$membership->getKey().'/reinstate');
+        $response->assertSee('Send reinstatement invitation');
+        $response->assertSee('support_agent');
+        $response->assertSee('security_auditor');
+        $response->assertDontSee('vendor_admin');
+        $response->assertDontSee('finance_admin');
+        $response->assertViewHas('vendorInvitationGroups', static fn (array $groups): bool => $groups[0]['revokedMemberships']->total() === 1);
+        $response->assertViewHas('canManageMembershipWrites', true);
+    }
+
+    public function test_customer_workspace_renders_revoked_membership_context_and_reinstatement_action(): void
+    {
+        [$actor, $organization] = $this->customerActor('workspace-customer-reinstatement');
+        $invitee = $this->createUser('workspace-customer-revoked-member');
+        $membership = CustomerMembership::query()->create([
+            'customer_organization_id' => $organization->getKey(),
+            'user_id' => $invitee->getKey(),
+            'status' => 'revoked',
+        ]);
+        $previousRole = $this->role('customer', 'customer_technical_admin');
+        $membership->roles()->attach($previousRole);
+        CustomerMembershipLifecycleEvent::query()->create([
+            'customer_membership_id' => $membership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Customer access removed after review.',
+            'created_at' => now()->subDay(),
+        ]);
+
+        $this->enableWorkspaceAuthentication($actor);
+        $session = $this->workspaceSession($actor);
+        $session['auth.password_confirmed_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_at'] = now()->getTimestamp();
+        $session['auth.mfa_step_up_method'] = 'totp';
+
+        $response = $this->actingAs($actor)->withSession($session)->get(route('workspace.home'));
+
+        $response->assertOk();
+        $response->assertSee('Revoked customer memberships');
+        $response->assertSee($invitee->name);
+        $response->assertSee($invitee->email);
+        $response->assertSee('Customer Technical Admin');
+        $response->assertSee('Customer access removed after review.');
+        $response->assertSee('data-action="reinstate"', false);
+        $response->assertSee('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$membership->getKey().'/reinstate');
+        $response->assertSee('customer_member');
+        $response->assertDontSee('customer_owner');
+        $response->assertViewHas('customerInvitationGroups', static fn (array $groups): bool => $groups[0]['revokedMemberships']->total() === 1);
+    }
+
     public function test_workspace_disables_writes_until_password_confirmation_and_fresh_mfa_step_up(): void
     {
         [$actor, $vendor] = $this->vendorManager('workspace-vendor-assurance');
         $this->createVendorInvitation($actor, $vendor, 'workspace-vendor-assurance-invitee', 'sent', now()->addDay());
+        $revokedUser = $this->createUser('workspace-vendor-assurance-revoked');
+        $revokedMembership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $revokedUser->getKey(),
+            'status' => 'revoked',
+        ]);
+        VendorMembershipLifecycleEvent::query()->create([
+            'vendor_membership_id' => $revokedMembership->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'reason' => 'Assurance test revocation.',
+        ]);
         $this->enableWorkspaceAuthentication($actor);
 
         $response = $this->actingAs($actor)
@@ -314,6 +527,8 @@ final class MembershipInvitationWorkspaceTest extends TestCase
         $response->assertSee('data-step-up-totp', false);
         $response->assertSee('Verify authenticator');
         $response->assertSee('disabled', false);
+        $response->assertSee('data-action="reinstate"', false);
+        $this->assertMatchesRegularExpression('/data-action="reinstate".*?<button[^>]*disabled/s', (string) $response->getContent());
         $response->assertViewHas('passwordConfirmationFresh', false);
         $response->assertViewHas('mfaStepUpFresh', false);
         $response->assertViewHas('canManageMembershipWrites', false);

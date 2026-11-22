@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 final class VendorMembership extends BaseModel
 {
@@ -45,6 +46,12 @@ final class VendorMembership extends BaseModel
     public function lifecycleEvents(): HasMany
     {
         return $this->hasMany(VendorMembershipLifecycleEvent::class, 'vendor_membership_id');
+    }
+
+    /** @return HasOne<VendorMembershipLifecycleEvent, $this> */
+    public function latestLifecycleEvent(): HasOne
+    {
+        return $this->hasOne(VendorMembershipLifecycleEvent::class, 'vendor_membership_id')->latestOfMany('created_at');
     }
 
     /** @return BelongsToMany<Role, $this> */

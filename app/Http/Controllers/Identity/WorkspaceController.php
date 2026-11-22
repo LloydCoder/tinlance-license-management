@@ -61,6 +61,7 @@ final class WorkspaceController
             $vendorInvitationGroups[] = [
                 'tenant' => $vendor,
                 'invitations' => $invitations->vendorInvitations($user, $vendor),
+                'revokedMemberships' => $invitations->vendorRevokedMemberships($user, $vendor),
                 'roles' => $roles->assignableVendorRoles(),
             ];
         }
@@ -75,6 +76,7 @@ final class WorkspaceController
             $customerInvitationGroups[] = [
                 'tenant' => $organization,
                 'invitations' => $invitations->customerInvitations($user, $organization),
+                'revokedMemberships' => $invitations->customerRevokedMemberships($user, $organization),
                 'roles' => $roles->assignableCustomerRoles(),
             ];
         }

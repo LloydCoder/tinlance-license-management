@@ -3,12 +3,12 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 const responseMessages = {
     401: 'Your session has expired. Sign in again, then retry.',
     403: 'This action is not permitted, or your MFA enrollment is no longer valid.',
-    409: 'The invitation changed before this action completed. Refresh the workspace.',
+    409: 'The membership or invitation changed before this action completed. Refresh the workspace.',
     410: 'This invitation is no longer active. Refresh the workspace.',
     422: 'Some fields are invalid. Check the form and try again.',
     423: 'Confirm your password and complete a fresh MFA verification before changing invitations.',
     429: 'Too many attempts. Wait briefly before trying again.',
-    503: 'The invitation service is temporarily unavailable. Try again later.',
+    503: 'The invitation was saved but email delivery failed. Refresh the workspace and retry delivery after mail transport is restored.',
 };
 
 async function postJson(url, payload) {
@@ -24,7 +24,9 @@ async function postJson(url, payload) {
     });
 
     if (!response.ok) {
-        throw new Error(responseMessages[response.status] ?? 'The request could not be completed. Refresh the workspace and try again.');
+        const error = new Error(responseMessages[response.status] ?? 'The request could not be completed. Refresh the workspace and try again.');
+        error.status = response.status;
+        throw error;
     }
 
     return response.status === 204 ? {} : response.json().catch(() => ({}));
@@ -44,12 +46,16 @@ document.addEventListener('submit', async (event) => {
     const status = form.querySelector('[data-form-status]');
     const submit = form.querySelector('button[type="submit"]');
 
-    if (!endpoint || !['create', 'resend', 'revoke'].includes(action ?? '')) {
+    if (!endpoint || !['create', 'resend', 'revoke', 'reinstate'].includes(action ?? '')) {
         if (status) status.textContent = 'This invitation action is not configured.';
         return;
     }
 
     if (action === 'revoke' && !window.confirm('Cancel this invitation? The pending invitation token will be invalidated.')) {
+        return;
+    }
+
+    if (action === 'reinstate' && !window.confirm('Reinstate this membership? Previous roles will be removed and a fresh invitation will be sent. The user must accept it before access resumes.')) {
         return;
     }
 
@@ -67,9 +73,19 @@ document.addEventListener('submit', async (event) => {
 
     try {
         await postJson(endpoint, payload);
-        if (status) status.textContent = 'The invitation change was accepted. Refreshing the workspace…';
+        if (status) {
+            status.textContent = action === 'reinstate'
+                ? 'The membership is invited again. A fresh invitation was sent; refreshing the workspace…'
+                : 'The invitation change was accepted. Refreshing the workspace…';
+        }
         window.location.reload();
     } catch (error) {
+        if (action === 'reinstate' && error instanceof Error && error.status === 503) {
+            if (status) status.textContent = 'The membership is invited, but email delivery failed. Refreshing to show the failed invitation and resend controls…';
+            window.location.reload();
+            return;
+        }
+
         if (status) {
             status.textContent = error instanceof Error
                 ? error.message

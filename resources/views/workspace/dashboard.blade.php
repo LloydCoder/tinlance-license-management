@@ -166,6 +166,49 @@
                 </table>
             </div>
             {{ $group['invitations']->links() }}
+
+            <h4>Revoked vendor memberships</h4>
+            <p class="muted-note">Prior roles are shown for audit context only. Reinstatement clears them, assigns a new allowlisted role and sends a fresh invitation; access resumes only after acceptance.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Former member</th><th scope="col">Prior roles</th><th scope="col">Revoked</th><th scope="col">Reason</th><th scope="col">Reinstate</th></tr></thead>
+                    <tbody>
+                    @forelse ($group['revokedMemberships'] as $revokedMembership)
+                        <tr>
+                            <td><strong>{{ $revokedMembership->user?->name }}</strong><br>{{ $revokedMembership->user?->email }}</td>
+                            <td>
+                                @forelse ($revokedMembership->roles as $role)
+                                    <span>{{ $role->name }}</span>
+                                @empty
+                                    <span class="muted">No prior role assigned</span>
+                                @endforelse
+                            </td>
+                            <td>{{ $revokedMembership->latestLifecycleEvent?->created_at?->format('Y-m-d H:i T') }}</td>
+                            <td>{{ $revokedMembership->latestLifecycleEvent?->reason }}</td>
+                            <td>
+                                <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="reinstate" data-endpoint="{{ url('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$revokedMembership->getKey().'/reinstate') }}">
+                                    @csrf
+                                    <label for="vendor-reinstate-role-{{ $revokedMembership->getKey() }}">New role</label>
+                                    <select id="vendor-reinstate-role-{{ $revokedMembership->getKey() }}" name="role_slug" required>
+                                        <option value="">Choose a role</option>
+                                        @foreach ($group['roles'] as $role)
+                                            <option value="{{ $role->slug }}">{{ $role->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <label for="vendor-reinstate-reason-{{ $revokedMembership->getKey() }}">Reinstatement reason</label>
+                                    <textarea id="vendor-reinstate-reason-{{ $revokedMembership->getKey() }}" name="reason" minlength="5" maxlength="500" required></textarea>
+                                    <button type="submit" @disabled(! $canManageMembershipWrites)>Send reinstatement invitation</button>
+                                    <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="muted">No revoked vendor memberships for this account.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+            {{ $group['revokedMemberships']->links() }}
         </section>
     @endforeach
 
@@ -261,6 +304,49 @@
                 </table>
             </div>
             {{ $group['invitations']->links() }}
+
+            <h4>Revoked customer memberships</h4>
+            <p class="muted-note">Prior roles are shown for audit context only. Reinstatement clears them, assigns a new allowlisted customer role and sends a fresh invitation; access resumes only after acceptance.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Former member</th><th scope="col">Prior roles</th><th scope="col">Revoked</th><th scope="col">Reason</th><th scope="col">Reinstate</th></tr></thead>
+                    <tbody>
+                    @forelse ($group['revokedMemberships'] as $revokedMembership)
+                        <tr>
+                            <td><strong>{{ $revokedMembership->user?->name }}</strong><br>{{ $revokedMembership->user?->email }}</td>
+                            <td>
+                                @forelse ($revokedMembership->roles as $role)
+                                    <span>{{ $role->name }}</span>
+                                @empty
+                                    <span class="muted">No prior role assigned</span>
+                                @endforelse
+                            </td>
+                            <td>{{ $revokedMembership->latestLifecycleEvent?->created_at?->format('Y-m-d H:i T') }}</td>
+                            <td>{{ $revokedMembership->latestLifecycleEvent?->reason }}</td>
+                            <td>
+                                <form method="post" action="{{ route('workspace.home') }}" data-invitation-form data-action="reinstate" data-endpoint="{{ url('/api/v1/customer-organizations/'.$organization->getKey().'/memberships/'.$revokedMembership->getKey().'/reinstate') }}">
+                                    @csrf
+                                    <label for="customer-reinstate-role-{{ $revokedMembership->getKey() }}">New role</label>
+                                    <select id="customer-reinstate-role-{{ $revokedMembership->getKey() }}" name="role_slug" required>
+                                        <option value="">Choose a role</option>
+                                        @foreach ($group['roles'] as $role)
+                                            <option value="{{ $role->slug }}">{{ $role->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <label for="customer-reinstate-reason-{{ $revokedMembership->getKey() }}">Reinstatement reason</label>
+                                    <textarea id="customer-reinstate-reason-{{ $revokedMembership->getKey() }}" name="reason" minlength="5" maxlength="500" required></textarea>
+                                    <button type="submit" @disabled(! $canManageMembershipWrites)>Send reinstatement invitation</button>
+                                    <p class="muted-note" role="status" aria-live="polite" data-form-status></p>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="muted">No revoked customer memberships for this organization.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+            {{ $group['revokedMemberships']->links() }}
         </section>
     @endforeach
 
