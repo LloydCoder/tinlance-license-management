@@ -61,6 +61,28 @@ final readonly class MembershipRoleAssignmentService
             ->get();
     }
 
+    /** @return Collection<int, Role> */
+    public function revocableVendorRoles(): Collection
+    {
+        return Role::query()
+            ->where('scope', 'vendor')
+            ->whereIn('slug', array_merge(self::ASSIGNABLE_VENDOR_ROLES, self::APPROVAL_REQUIRED_VENDOR_ROLES))
+            ->orderBy('name')
+            ->orderBy('slug')
+            ->get();
+    }
+
+    /** @return Collection<int, Role> */
+    public function revocableCustomerRoles(): Collection
+    {
+        return Role::query()
+            ->where('scope', 'customer')
+            ->whereIn('slug', self::ASSIGNABLE_CUSTOMER_ROLES)
+            ->orderBy('name')
+            ->orderBy('slug')
+            ->get();
+    }
+
     public function __construct(private MembershipAuthorization $authorization) {}
 
     public function assignVendorRole(
