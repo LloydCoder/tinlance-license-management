@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Requests\Fortify;
 
 use App\Models\User;
+use App\Notifications\MfaRecoveryCodeActivityNotification;
 use App\Services\Identity\MfaRecoveryCodeVault;
 use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
 {
@@ -49,6 +52,17 @@ final class HashedTwoFactorLoginRequest extends TwoFactorLoginRequest
         }
 
         $this->session()->flash('mfa.recovery_code_replacement_once', $replacement);
+
+        try {
+            $user->notify(new MfaRecoveryCodeActivityNotification(
+                'A saved MFA recovery code was used to sign in. A replacement code has been issued.',
+            ));
+        } catch (Throwable $exception) {
+            Log::warning('TLMS could not deliver an MFA recovery-code usage notification.', [
+                'user_id' => $user->getKey(),
+                'exception' => $exception::class,
+            ]);
+        }
         $this->session()->forget('login.id');
 
         return $code;
