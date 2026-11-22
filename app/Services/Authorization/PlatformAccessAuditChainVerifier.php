@@ -116,7 +116,7 @@ final readonly class PlatformAccessAuditChainVerifier
             || (string) $profileEvent->request_id !== $requestId
             || $profileEvent->event_type !== 'profile_updated'
             || ! is_string($profileEvent->change_digest)
-            || preg_match('/\\A[a-f0-9]{64}\\z/D', $profileEvent->change_digest) !== 1
+            || preg_match('/\A[a-f0-9]{64}\z/D', $profileEvent->change_digest) !== 1
         ) {
             return false;
         }
@@ -201,7 +201,7 @@ final readonly class PlatformAccessAuditChainVerifier
             || (string) $profileEvent->vendor_account_id !== $tenantVendorAccountId
             || (string) $profileEvent->request_id !== $requestId
             || ! is_string($profileEvent->change_digest)
-            || preg_match('/\\A[a-f0-9]{64}\\z/D', $profileEvent->change_digest) !== 1
+            || preg_match('/\A[a-f0-9]{64}\z/D', $profileEvent->change_digest) !== 1
         ) {
             return false;
         }
