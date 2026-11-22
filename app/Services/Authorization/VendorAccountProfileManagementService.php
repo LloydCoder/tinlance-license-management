@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\\Services\\Authorization;
+namespace App\Services\Authorization;
 
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorAccountProfileEvent;
-use Illuminate\\Auth\\Access\\AuthorizationException;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorAccountProfileEvent;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 final readonly class VendorAccountProfileManagementService
@@ -132,7 +132,7 @@ final readonly class VendorAccountProfileManagementService
 
     private function normalizeRequestId(string $requestId): string
     {
-        return preg_match('/\\A[A-Za-z0-9._:-]{1,128}\\z/D', $requestId) === 1
+        return preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) === 1
             ? $requestId
             : bin2hex(random_bytes(16));
     }
