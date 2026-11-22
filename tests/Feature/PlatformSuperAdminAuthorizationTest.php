@@ -32,6 +32,15 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         $otherVendor = $this->createVendor('other-vendor');
 
         $this->assertTrue(Gate::forUser($superAdmin)->allows('view', $otherVendor));
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_type' => 'vendor_account',
+            'resource_id' => $otherVendor->getKey(),
+            'tenant_vendor_account_id' => $otherVendor->getKey(),
+            'outcome' => 'allowed',
+            'reason_code' => 'platform_super_admin',
+        ]);
     }
 
     public function test_bootstrapped_super_admin_can_view_active_customer_organizations_across_vendor_tenants(): void
@@ -41,6 +50,15 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         $organization = $this->createOrganization($otherVendor, 'cross-tenant-customer');
 
         $this->assertTrue(Gate::forUser($superAdmin)->allows('view', $organization));
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'customer_organization.read',
+            'resource_type' => 'customer_organization',
+            'resource_id' => $organization->getKey(),
+            'tenant_vendor_account_id' => $otherVendor->getKey(),
+            'outcome' => 'allowed',
+            'reason_code' => 'platform_super_admin',
+        ]);
     }
 
     public function test_cross_tenant_super_admin_read_is_denied_for_suspended_target_resources(): void
@@ -51,6 +69,22 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
 
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $suspendedVendor));
         $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $suspendedOrganization));
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'vendor.read',
+            'resource_type' => 'vendor_account',
+            'resource_id' => $suspendedVendor->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'tenant_inactive',
+        ]);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'actor_user_id' => $superAdmin->getKey(),
+            'action' => 'customer_organization.read',
+            'resource_type' => 'customer_organization',
+            'resource_id' => $suspendedOrganization->getKey(),
+            'outcome' => 'denied',
+            'reason_code' => 'tenant_inactive',
+        ]);
     }
 
     public function test_cross_tenant_super_admin_read_is_denied_after_bootstrap_user_suspension(): void
@@ -79,6 +113,45 @@ final class PlatformSuperAdminAuthorizationTest extends TestCase
         );
 
         $this->assertFalse(Gate::forUser($user)->allows('view', $otherVendor));
+        $this->assertDatabaseCount('platform_access_audit_events', 0);
+    }
+
+    public function test_bootstrap_super_admin_loses_cross_tenant_read_authority_when_the_super_admin_role_is_revoked(): void
+    {
+        [$superAdmin, $primaryVendor] = $this->bootstrapSuperAdmin();
+        $otherVendor = $this->createVendor('role-revoked-target');
+        $membership = VendorMembership::query()
+            ->where('vendor_account_id', $primaryVendor->getKey())
+            ->where('user_id', $superAdmin->getKey())
+            ->firstOrFail();
+        $membership->roles()->detach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'super_admin')->firstOrFail(),
+        );
+
+        $this->assertFalse(Gate::forUser($superAdmin)->allows('view', $otherVendor));
+        $this->assertDatabaseCount('platform_access_audit_events', 0);
+    }
+
+    public function test_platform_access_audit_events_cannot_be_updated_or_deleted(): void
+    {
+        [$superAdmin] = $this->bootstrapSuperAdmin();
+        $vendor = $this->createVendor('immutable-audit');
+        Gate::forUser($superAdmin)->allows('view', $vendor);
+        $event = PlatformAccessAuditEvent::query()->sole();
+
+        try {
+            $event->update(['reason_code' => 'tampered']);
+            $this->fail('Platform access audit event update should be rejected.');
+        } catch (\\LogicException) {
+            $this->addToAssertionCount(1);
+        }
+
+        try {
+            $event->delete();
+            $this->fail('Platform access audit event deletion should be rejected.');
+        } catch (\\LogicException) {
+            $this->addToAssertionCount(1);
+        }
     }
 
     public function test_platform_super_admin_read_policy_does_not_grant_resource_mutations_or_collection_listing(): void
