@@ -11,6 +11,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final readonly class MembershipDirectoryQuery
@@ -38,7 +39,7 @@ final readonly class MembershipDirectoryQuery
             ->whereHas('vendorAccount', static fn (Builder $tenant) => $tenant->where('status', 'active'))
             ->with([
                 'user:id,name,email,status',
-                'roles' => static fn (Builder $roles) => $roles->where('scope', 'vendor'),
+                'roles' => static fn (BelongsToMany $roles) => $roles->where('scope', 'vendor'),
             ])
             ->orderByDesc('joined_at')
             ->orderByDesc('id')
@@ -70,7 +71,7 @@ final readonly class MembershipDirectoryQuery
             })
             ->with([
                 'user:id,name,email,status',
-                'roles' => static fn (Builder $roles) => $roles->where('scope', 'customer'),
+                'roles' => static fn (BelongsToMany $roles) => $roles->where('scope', 'customer'),
             ])
             ->orderByDesc('joined_at')
             ->orderByDesc('id')
