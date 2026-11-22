@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\MembershipRoleAssignmentService;
 use App\Services\Authorization\VendorRoleApprovalService;
 use Database\Seeders\AuthorizationCatalogSeeder;
@@ -91,7 +92,7 @@ final class VendorRoleApprovalTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.status', 'approved');
 
-        $authorization = app(\\App\\Services\\Authorization\\MembershipAuthorization::class);
+        $authorization = app(MembershipAuthorization::class);
         $this->assertTrue($authorization->vendorCan($secondAdmin, $vendor, 'admins.manage'));
         $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'approvals.review'));
         $this->assertFalse($authorization->vendorCan($secondAdmin, $vendor, 'platform.settings.manage'));
