@@ -108,11 +108,13 @@ final class VendorAccountProfilePortalTest extends TestCase
     public function test_bootstrap_super_admin_is_read_only_for_vendor_profile_mutations(): void
     {
         [$admin, $vendor] = $this->createVendorAdmin('super_admin');
-        PlatformInstallation::query()->create([
-            'installation_key' => 'primary',
-            'bootstrapped_user_id' => $admin->getKey(),
-            'bootstrapped_at' => now(),
-        ]);
+        PlatformInstallation::query()->updateOrCreate(
+            ['installation_key' => 'primary'],
+            [
+                'bootstrapped_user_id' => $admin->getKey(),
+                'bootstrapped_at' => now(),
+            ],
+        );
 
         $this->actingAs($admin, 'web')
             ->withSession($this->assuredSession($admin))
