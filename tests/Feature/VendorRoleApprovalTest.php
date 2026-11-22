@@ -125,11 +125,10 @@ final class VendorRoleApprovalTest extends TestCase
         ]);
 
         $this->authenticatedJson($firstAdmin)
-            ->postJson($this->approvalPath($vendor, null, 'request'), [
-                'membership_id' => $invitedMembership->getKey(),
+            ->withHeaders(['Idempotency-Key' => 'vendor-admin-invited-0001'])
+            ->postJson('/api/v1/vendor-accounts/'.$vendor->getKey().'/memberships/'.$invitedMembership->getKey().'/role-approval-requests', [
                 'role_id' => $vendorAdminRole->getKey(),
                 'reason' => 'Do not grant vendor administration before acceptance.',
-                'idempotency_key' => 'vendor-admin-invited-0001',
             ])
             ->assertForbidden();
     }
