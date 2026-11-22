@@ -243,18 +243,16 @@ final readonly class CustomerOrganizationManagementService
                     ? mb_strtolower(trim($attributes['billing_email']))
                     : null,
             ];
-            $changes = [
-                'display_name' => $current->display_name !== $changes['display_name']
-                    ? $changes['display_name']
-                    : null,
-                'billing_email' => $current->billing_email !== $changes['billing_email']
-                    ? $changes['billing_email']
-                    : null,
-            ];
-            $changes = array_filter(
-                $changes,
-                static fn (mixed $value): bool => $value !== null,
-            );
+            $requestedChanges = $changes;
+            $changes = [];
+
+            if ($current->display_name !== $requestedChanges['display_name']) {
+                $changes['display_name'] = $requestedChanges['display_name'];
+            }
+
+            if ($current->billing_email !== $requestedChanges['billing_email']) {
+                $changes['billing_email'] = $requestedChanges['billing_email'];
+            }
 
             if ($changes === []) {
                 return $current;
