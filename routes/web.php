@@ -167,6 +167,6 @@ Route::middleware([
         ->name('admin.security.sessions');
 
     Route::post('/admin/security/sessions/revoke-all', [SessionController::class, 'revokeAll'])
-        ->middleware(['password.confirm', 'throttle:3,1'])
+        ->middleware(['password.confirm', EnsureRecentMfaStepUp::class, 'throttle:3,1'])
         ->name('admin.security.sessions.revoke-all');
 });
