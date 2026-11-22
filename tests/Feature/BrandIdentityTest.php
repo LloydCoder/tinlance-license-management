@@ -23,8 +23,12 @@ final class BrandIdentityTest extends TestCase
 
     public function test_workspace_shell_uses_the_approved_tlms_brand_assets_and_tokens(): void
     {
-        $this->get('/workspace')
-            ->assertRedirect('/login');
+        $workspace = file_get_contents(resource_path('views/workspace/dashboard.blade.php'));
+
+        $this->assertIsString($workspace);
+        $this->assertStringContainsString('/brand/tlms-lockup-horizontal-dark.svg', $workspace);
+        $this->assertStringContainsString('/brand/tlms-brand.css', $workspace);
+        $this->assertStringContainsString('/favicon.svg', $workspace);
 
         $this->assertFileExists(public_path('brand/tlms-lockup-horizontal-dark.svg'));
         $this->assertFileExists(public_path('brand/tlms-lockup-horizontal-light.svg'));
