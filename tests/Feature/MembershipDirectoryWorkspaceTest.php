@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\CustomerMembership;
-use App\\Models\\CustomerOrganization;
-use App\\Models\\Role;
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorMembership;
-use App\\Services\\Authorization\\MembershipDirectoryQuery;
-use Database\\Seeders\\AuthorizationCatalogSeeder;
-use Illuminate\\Auth\\Access\\AuthorizationException;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\CustomerMembership;
+use App\Models\CustomerOrganization;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use App\Services\Authorization\MembershipDirectoryQuery;
+use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 final class MembershipDirectoryWorkspaceTest extends TestCase
 {
