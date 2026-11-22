@@ -26,7 +26,7 @@ final class HashingEnableTwoFactorAuthentication extends EnableTwoFactorAuthenti
             throw new HttpException(403, 'Inactive accounts cannot enable authenticator enrollment.');
         }
 
-        if (! empty($user->two_factor_secret) && $force !== true) {
+        if (! empty($user->two_factor_secret) && ! $force) {
             return;
         }
 
