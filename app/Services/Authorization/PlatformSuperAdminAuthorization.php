@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Authorization;
 
-use App\Models\PlatformAccessAuditEvent;
 use App\Models\PlatformInstallation;
 use App\Models\User;
 use App\Models\VendorAccount;
