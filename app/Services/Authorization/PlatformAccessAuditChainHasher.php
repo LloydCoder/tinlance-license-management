@@ -128,7 +128,7 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
-     * @param array<string, mixed> $eventPayload
+     * @param  array<string, mixed>  $eventPayload
      *
      * @throws JsonException
      */
@@ -167,8 +167,8 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
-     * @param array<string, mixed> $value
-     * @return array<string, mixed>
+     * @param  array<string, mixed>  $value
+     * @return  array<string, mixed>
      */
     private function sortJsonObjectKeys(array $value): array
     {
