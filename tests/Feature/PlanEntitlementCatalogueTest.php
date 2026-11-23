@@ -10,7 +10,9 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 final class PlanEntitlementCatalogueTest extends TestCase
