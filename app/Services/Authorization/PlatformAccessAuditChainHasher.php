@@ -168,7 +168,7 @@ final class PlatformAccessAuditChainHasher
 
     /**
      * @param  array<string, mixed>  $value
-     * @return  array<string, mixed>
+     * @return array<string, mixed>
      */
     private function sortJsonObjectKeys(array $value): array
     {
