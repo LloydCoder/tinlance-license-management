@@ -186,7 +186,7 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
-     * @param array<mixed> $value
+     * @param  array<mixed>  $value
      * @return array<mixed>
      */
     private function sortNestedJson(array $value): array
