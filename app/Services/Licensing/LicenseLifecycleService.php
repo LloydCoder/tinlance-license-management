@@ -367,6 +367,8 @@ final readonly class LicenseLifecycleService
     /** @param array<array-key, mixed> $payload */
     private function payloadHash(array $payload): string
     {
+        ksort($payload, SORT_STRING);
+
         return hash('sha256', json_encode(
             $payload,
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
