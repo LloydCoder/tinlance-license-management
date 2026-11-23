@@ -881,7 +881,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'reason' => 'Transfer the licence to the verified destination organization.',
         ];
         $headers = [
-            'Idempotency-Key' => 'successor-transfer-idempotency-000001',
+            'Idempotency-Key' => str()->random(40),
             'X-Request-ID' => 'successor-transfer-request-000001',
         ];
 
@@ -955,14 +955,16 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertCreated();
 
         $sourceId = (string) $issued->json('data.id');
+        $replacementHeaders = [
+            'Idempotency-Key' => str()->random(40),
+            'X-Request-ID' => 'successor-replacement-request-0001',
+        ];
+        $replacementPayload = [
+            'relation_type' => 'replacement',
+            'reason' => 'Replace the credential while preserving the customer and remaining term.',
+        ];
         $this->authenticated($actor)
-            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', [
-                'relation_type' => 'replacement',
-                'reason' => 'Replace the credential while preserving the customer and remaining term.',
-            ], [
-                'Idempotency-Key' => 'successor-replacement-idempotency-0001',
-                'X-Request-ID' => 'successor-replacement-request-0001',
-            ])
+            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', $replacementPayload, $replacementHeaders)
             ->assertStatus(409);
 
         $this->authenticated($actor)
@@ -973,13 +975,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertOk();
 
         $response = $this->authenticated($actor)
-            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', [
-                'relation_type' => 'replacement',
-                'reason' => 'Replace the credential while preserving the customer and remaining term.',
-            ], [
-                'Idempotency-Key' => 'successor-replacement-idempotency-0001',
-                'X-Request-ID' => 'successor-replacement-request-0001',
-            ])
+            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', $replacementPayload, $replacementHeaders)
             ->assertCreated()
             ->assertJsonPath('data.relation_type', 'replacement');
 
