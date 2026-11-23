@@ -105,10 +105,14 @@ return new class extends Migration
             return;
         }
 
+        DB::unprepared('DROP TRIGGER IF EXISTS plan_events_guard_insert');
         DB::unprepared('DROP TRIGGER IF EXISTS plan_events_prevent_update');
         DB::unprepared('DROP TRIGGER IF EXISTS plan_events_prevent_delete');
+        DB::unprepared('DROP TRIGGER IF EXISTS plan_versions_guard_insert');
         DB::unprepared('DROP TRIGGER IF EXISTS plan_versions_guard_update');
         DB::unprepared('DROP TRIGGER IF EXISTS plan_versions_prevent_delete');
+        DB::unprepared('DROP TRIGGER IF EXISTS plans_guard_insert');
+        DB::unprepared('DROP TRIGGER IF EXISTS plans_guard_update');
         DB::unprepared('DROP TRIGGER IF EXISTS plans_prevent_delete');
     }
 
@@ -117,6 +121,91 @@ return new class extends Migration
         if (DB::connection()->getDriverName() !== 'mysql') {
             return;
         }
+
+        DB::unprepared(<<<'SQL'
+            CREATE TRIGGER plans_guard_insert
+            BEFORE INSERT ON plans
+            FOR EACH ROW
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM products
+                    WHERE id = NEW.product_id AND vendor_account_id = NEW.vendor_account_id
+                ) OR NOT EXISTS (
+                    SELECT 1 FROM vendor_accounts
+                    WHERE id = NEW.vendor_account_id AND status = 'active'
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plans must reference an active product vendor tenant';
+                END IF;
+            END
+            SQL);
+
+        DB::unprepared(<<<'SQL'
+            CREATE TRIGGER plans_guard_update
+            BEFORE UPDATE ON plans
+            FOR EACH ROW
+            BEGIN
+                IF OLD.status <> 'draft'
+                    OR NEW.product_id <> OLD.product_id
+                    OR NEW.vendor_account_id <> OLD.vendor_account_id
+                    OR NEW.code <> OLD.code
+                    OR NEW.created_by_user_id <> OLD.created_by_user_id
+                    OR NEW.status <> OLD.status
+                    OR NEW.version <> OLD.version + 1 THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan identity is immutable and updates must advance the aggregate version';
+                END IF;
+            END
+            SQL);
+
+        DB::unprepared(<<<'SQL'
+            CREATE TRIGGER plan_versions_guard_insert
+            BEFORE INSERT ON plan_versions
+            FOR EACH ROW
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM plans
+                    WHERE id = NEW.plan_id
+                        AND product_id = NEW.product_id
+                        AND vendor_account_id = NEW.vendor_account_id
+                        AND status = 'draft'
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan versions must belong to a draft plan in the same tenant';
+                END IF;
+            END
+            SQL);
+
+        DB::unprepared(<<<'SQL'
+            CREATE TRIGGER plan_events_guard_insert
+            BEFORE INSERT ON plan_events
+            FOR EACH ROW
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM plans
+                    INNER JOIN products ON products.id = plans.product_id
+                    WHERE plans.id = NEW.plan_id
+                        AND plans.product_id = NEW.product_id
+                        AND plans.vendor_account_id = NEW.vendor_account_id
+                        AND products.vendor_account_id = NEW.vendor_account_id
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan events must remain within the plan product vendor tenant';
+                END IF;
+
+                IF NEW.plan_version_id IS NOT NULL AND NOT EXISTS (
+                    SELECT 1 FROM plan_versions
+                    WHERE id = NEW.plan_version_id
+                        AND plan_id = NEW.plan_id
+                        AND product_id = NEW.product_id
+                        AND vendor_account_id = NEW.vendor_account_id
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan event version must match its parent plan tenant';
+                END IF;
+            END
+            SQL);
 
         DB::unprepared(<<<'SQL'
             CREATE TRIGGER plan_events_prevent_update
@@ -143,7 +232,8 @@ return new class extends Migration
                     OR NEW.plan_id <> OLD.plan_id
                     OR NEW.product_id <> OLD.product_id
                     OR NEW.vendor_account_id <> OLD.vendor_account_id
-                    OR NEW.version_number <> OLD.version_number THEN
+                    OR NEW.version_number <> OLD.version_number
+                    OR NEW.created_by_user_id <> OLD.created_by_user_id THEN
                     SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Published plan versions and their identity are immutable';
                 END IF;
