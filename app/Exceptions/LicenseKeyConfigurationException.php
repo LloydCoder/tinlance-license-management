@@ -6,6 +6,4 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-final class LicenseKeyConfigurationException extends RuntimeException
-{
-}
+final class LicenseKeyConfigurationException extends RuntimeException {}
