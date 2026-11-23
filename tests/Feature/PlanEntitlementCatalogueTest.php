@@ -319,7 +319,7 @@ final class PlanEntitlementCatalogueTest extends TestCase
 
         app(ProductAssignmentService::class)->grant(
             $manager,
-            Product::query()->findOrFail($productId),
+            Product::query()->whereKey($productId)->firstOrFail(),
             (string) $readerMembership->getKey(),
             'Grant reader access to this product.',
             'plan-reader-visibility',
