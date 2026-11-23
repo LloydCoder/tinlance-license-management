@@ -82,8 +82,8 @@ final readonly class LicenseIssuanceService
             'customer_organization_id' => (string) $customer->getKey(),
             'plan_version_id' => (string) $planVersion->getKey(),
             'starts_at' => $startValue,
-            'expires_at_override' => $expiryOverride?->format('Y-m-d\\TH:i:s.u\\Z'),
-            'grace_until_override' => $graceOverride?->format('Y-m-d\\TH:i:s.u\\Z'),
+            'expires_at_override' => $expiryOverride?->toISOString(),
+            'grace_until_override' => $graceOverride?->toISOString(),
             'reason' => $reason,
         ];
 
