@@ -324,7 +324,7 @@ final class ProductCatalogFoundationTest extends TestCase
 
     public function test_product_manager_can_create_release_channels_and_promote_published_same_product_versions(): void
     {
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
         [$manager, $vendor] = $this->createActor('vendor_product_manager');
         [$vendorAdmin] = $this->createActor('super_admin', 'primary', $vendor);
         [$developer] = $this->createActor('vendor_developer', 'primary', $vendor);
