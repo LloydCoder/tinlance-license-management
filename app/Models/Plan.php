@@ -31,9 +31,17 @@ final class Plan extends BaseModel
         });
 
         self::updating(static function (self $plan): void {
-            if ($plan->isDirty(['product_id', 'vendor_account_id', 'created_by_user_id', 'status', 'code'])
-                || $plan->getOriginal('status') !== 'draft'
-                || (int) $plan->version !== ((int) $plan->getOriginal('version') + 1)) {
+            $originalStatus = $plan->getOriginal('status');
+            $statusTransitionAllowed = $originalStatus === 'draft'
+                && $plan->status === 'active'
+                && $plan->versions()->where('status', 'published')->exists();
+
+            if (
+                $plan->isDirty(['product_id', 'vendor_account_id', 'created_by_user_id', 'code', 'name', 'description'])
+                || ! in_array($originalStatus, ['draft', 'active'], true)
+                || ($plan->isDirty('status') && ! $statusTransitionAllowed)
+                || (int) $plan->version !== ((int) $plan->getOriginal('version') + 1)
+            ) {
                 throw new LogicException('Plan identity and lifecycle are service-controlled.');
             }
         });

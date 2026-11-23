@@ -72,11 +72,20 @@ final class PlanEvent extends BaseModel
         $plan = Plan::query()->whereKey($event->plan_id)->first();
         $product = Product::query()->whereKey($event->product_id)->first();
         $vendor = VendorAccount::query()->whereKey($event->vendor_account_id)->first();
+        $actorMembershipExists = VendorMembership::query()
+            ->where('vendor_account_id', $event->vendor_account_id)
+            ->where('user_id', $event->actor_user_id)
+            ->where('status', 'active')
+            ->exists();
 
         if (
-            ! $plan instanceof Plan
+            ($event->event_type === 'created' && $event->plan_version_id !== null)
+            || ($event->event_type !== 'created' && $event->plan_version_id === null)
+            || ! $actorMembershipExists
+            || ! $plan instanceof Plan
             || ! $product instanceof Product
             || ! $vendor instanceof VendorAccount
+            || $vendor->status !== 'active'
             || (string) $plan->product_id !== (string) $product->getKey()
             || (string) $plan->vendor_account_id !== (string) $vendor->getKey()
             || (string) $product->vendor_account_id !== (string) $vendor->getKey()

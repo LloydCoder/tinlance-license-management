@@ -145,15 +145,28 @@ return new class extends Migration
             BEFORE UPDATE ON plans
             FOR EACH ROW
             BEGIN
-                IF OLD.status <> 'draft'
+                IF OLD.status NOT IN ('draft', 'active')
                     OR NEW.product_id <> OLD.product_id
                     OR NEW.vendor_account_id <> OLD.vendor_account_id
                     OR NEW.code <> OLD.code
+                    OR NEW.name <> OLD.name
+                    OR NOT (NEW.description <=> OLD.description)
                     OR NEW.created_by_user_id <> OLD.created_by_user_id
-                    OR NEW.status <> OLD.status
                     OR NEW.version <> OLD.version + 1 THEN
                     SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Plan identity is immutable and updates must advance the aggregate version';
+                END IF;
+
+                IF NEW.status <> OLD.status AND NOT (
+                    OLD.status = 'draft'
+                    AND NEW.status = 'active'
+                    AND EXISTS (
+                        SELECT 1 FROM plan_versions
+                        WHERE plan_id = OLD.id AND status = 'published'
+                    )
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'A plan becomes active only after its first version is published';
                 END IF;
             END
             SQL);
@@ -163,15 +176,24 @@ return new class extends Migration
             BEFORE INSERT ON plan_versions
             FOR EACH ROW
             BEGIN
-                IF NOT EXISTS (
+                IF NEW.status <> 'draft'
+                    OR NEW.published_at IS NOT NULL
+                    OR NEW.snapshot_sha256 IS NOT NULL
+                    OR NOT EXISTS (
                     SELECT 1 FROM plans
                     WHERE id = NEW.plan_id
                         AND product_id = NEW.product_id
                         AND vendor_account_id = NEW.vendor_account_id
-                        AND status = 'draft'
+                        AND status IN ('draft', 'active')
+                ) OR NOT EXISTS (
+                    SELECT 1 FROM products
+                    WHERE id = NEW.product_id AND vendor_account_id = NEW.vendor_account_id
+                ) OR NOT EXISTS (
+                    SELECT 1 FROM vendor_accounts
+                    WHERE id = NEW.vendor_account_id AND status = 'active'
                 ) THEN
                     SIGNAL SQLSTATE '45000'
-                        SET MESSAGE_TEXT = 'Plan versions must belong to a draft plan in the same tenant';
+                        SET MESSAGE_TEXT = 'Plan versions must belong to an active plan in the same tenant';
                 END IF;
             END
             SQL);
@@ -181,6 +203,13 @@ return new class extends Migration
             BEFORE INSERT ON plan_events
             FOR EACH ROW
             BEGIN
+                IF NEW.event_type NOT IN ('created', 'version_created', 'version_updated', 'version_published')
+                    OR (NEW.event_type = 'created' AND NEW.plan_version_id IS NOT NULL)
+                    OR (NEW.event_type <> 'created' AND NEW.plan_version_id IS NULL) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan event type and version scope are invalid';
+                END IF;
+
                 IF NOT EXISTS (
                     SELECT 1
                     FROM plans
@@ -192,6 +221,24 @@ return new class extends Migration
                 ) THEN
                     SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Plan events must remain within the plan product vendor tenant';
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM vendor_accounts
+                    WHERE id = NEW.vendor_account_id AND status = 'active'
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan events require an active vendor tenant';
+                END IF;
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM vendor_memberships
+                    WHERE vendor_account_id = NEW.vendor_account_id
+                        AND user_id = NEW.actor_user_id
+                        AND status = 'active'
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan event actors must have an active vendor membership';
                 END IF;
 
                 IF NEW.plan_version_id IS NOT NULL AND NOT EXISTS (

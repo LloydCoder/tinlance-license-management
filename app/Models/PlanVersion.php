@@ -60,7 +60,12 @@ final class PlanVersion extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $version): void {
-            if ($version->status !== 'draft' || (int) $version->version_number < 1) {
+            if (
+                $version->status !== 'draft'
+                || (int) $version->version_number < 1
+                || $version->published_at !== null
+                || $version->snapshot_sha256 !== null
+            ) {
                 throw new LogicException('Plan version lifecycle metadata is invalid.');
             }
 
@@ -164,6 +169,7 @@ final class PlanVersion extends BaseModel
             || $maintenanceDays < 0
             || $maintenanceDays > 3650
             || ! is_array($entitlements)
+            || count($entitlements) > 100
         ) {
             throw new LogicException('Plan version metadata is invalid.');
         }
@@ -181,6 +187,7 @@ final class PlanVersion extends BaseModel
                 ! is_string($key)
                 || preg_match('/\A[a-z][a-z0-9_.-]{0,63}\z/D', $key) !== 1
                 || (! is_bool($value) && ! is_int($value) && ! is_string($value))
+                || (is_int($value) && ($value < -9007199254740991 || $value > 9007199254740991))
                 || (is_string($value) && mb_strlen($value) > 1000)
             ) {
                 throw new LogicException('Entitlements must be typed scalar values keyed by stable identifiers.');

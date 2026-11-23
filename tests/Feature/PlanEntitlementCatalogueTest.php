@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
+use App\Services\Catalog\ProductAssignmentService;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -250,6 +252,187 @@ final class PlanEntitlementCatalogueTest extends TestCase
                 'reason' => 'Attempt to rewrite a published entitlement snapshot.',
             ])
             ->assertForbidden();
+    }
+
+    public function test_entitlement_integers_are_bounded_to_json_safe_values(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+
+        $productId = $this->authenticated($manager)
+            ->postJson('/api/v1/products', [
+                'name' => 'Safe Integer Product',
+                'slug' => 'safe-integer-product',
+                'description' => 'JSON safe entitlement integer fixture.',
+                'reason' => 'Create the safe integer product.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $planId = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$productId.'/plans', [
+                'code' => 'safe-integer',
+                'name' => 'Safe Integer',
+                'reason' => 'Create the safe integer plan.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $payload = [
+            'expected_version' => 1,
+            'billing_model' => 'perpetual',
+            'currency' => 'NGN',
+            'price_minor' => 0,
+            'trial_days' => 0,
+            'maintenance_days' => 0,
+            'entitlements' => [
+                ['key' => 'seat_limit', 'type' => 'integer', 'value' => 9007199254740992],
+            ],
+            'reason' => 'Reject an unsafe JSON integer entitlement.',
+        ];
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions', $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PLAN_INVALID');
+
+        $this->assertDatabaseCount('plan_versions', 0);
+
+        $payload['entitlements'][0]['value'] = 9007199254740991;
+        $payload['reason'] = 'Accept the largest safe JSON integer entitlement.';
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions', $payload)
+            ->assertCreated();
+    }
+
+    public function test_product_readers_only_see_published_plan_versions(): void
+    {
+        [$manager, $vendor] = $this->createActor('super_admin');
+
+        $productId = $this->authenticated($manager)
+            ->postJson('/api/v1/products', [
+                'name' => 'Reader Visibility Product',
+                'slug' => 'reader-visibility-product',
+                'description' => 'Draft and published plan visibility fixture.',
+                'reason' => 'Create the reader visibility product.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $planId = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$productId.'/plans', [
+                'code' => 'reader-plan',
+                'name' => 'Reader Plan',
+                'reason' => 'Create a plan with a private draft version.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $draftVersionId = $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions', [
+                'expected_version' => 1,
+                'billing_model' => 'subscription',
+                'currency' => 'NGN',
+                'price_minor' => 100000,
+                'billing_interval' => 'month',
+                'trial_days' => 0,
+                'maintenance_days' => 30,
+                'entitlements' => [
+                    ['key' => 'seats', 'type' => 'integer', 'value' => 5],
+                ],
+                'reason' => 'Create the private draft plan version.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $reader = User::query()->create([
+            'name' => 'Product Reader',
+            'email' => 'product-reader-'.str()->random(12).'@example.test',
+            'password' => str()->random(40),
+            'status' => 'active',
+        ]);
+        $readerMembership = VendorMembership::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'user_id' => $reader->getKey(),
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $readerMembership->roles()->attach(
+            Role::query()->where('scope', 'vendor')->where('slug', 'vendor_developer')->firstOrFail(),
+        );
+        $reader->forceFill([
+            'email_verified_at' => now(),
+            'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'two_factor_recovery_codes' => encrypt(json_encode([], JSON_THROW_ON_ERROR)),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        app(ProductAssignmentService::class)->grant(
+            $manager,
+            Product::query()->whereKey($productId)->firstOrFail(),
+            (string) $readerMembership->getKey(),
+            'Grant reader access to this product.',
+            'plan-reader-visibility',
+        );
+
+        $this->authenticated($reader)
+            ->getJson('/api/v1/products/'.$productId.'/plans')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->authenticated($reader)
+            ->getJson('/api/v1/plans/'.$planId)
+            ->assertNotFound();
+
+        $this->authenticated($reader)
+            ->getJson('/api/v1/plans/'.$planId.'/versions')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions/'.$draftVersionId.'/publish', [
+                'expected_version' => 2,
+                'reason' => 'Publish the first plan version for product readers.',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('plans', [
+            'id' => $planId,
+            'status' => 'active',
+            'version' => 3,
+        ]);
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions', [
+                'expected_version' => 3,
+                'billing_model' => 'subscription',
+                'currency' => 'NGN',
+                'price_minor' => 200000,
+                'billing_interval' => 'year',
+                'trial_days' => 0,
+                'maintenance_days' => 365,
+                'entitlements' => [
+                    ['key' => 'seats', 'type' => 'integer', 'value' => 20],
+                ],
+                'reason' => 'Create the next private draft plan version.',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($reader)
+            ->getJson('/api/v1/products/'.$productId.'/plans')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->authenticated($reader)
+            ->getJson('/api/v1/plans/'.$planId.'/versions')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.status', 'published');
+
+        $this->authenticated($manager)
+            ->getJson('/api/v1/plans/'.$planId.'/versions')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_database_rejects_commercial_term_mutation_during_publication(): void
