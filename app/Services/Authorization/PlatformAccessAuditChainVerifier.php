@@ -67,8 +67,43 @@ final readonly class PlatformAccessAuditChainVerifier
             $lastSequence = $expectedSequence - 1;
             $lastHash = $head->last_hash === null ? null : (string) $head->last_hash;
 
-            return (int) $head->last_sequence === $lastSequence && $lastHash === $previousHash;
+            $chainMatchesHead = (int) $head->last_sequence === $lastSequence
+                && $lastHash === $previousHash;
+
+            return $chainMatchesHead && $this->verifyProductEventCoverage();
         });
+    }
+
+    /**
+     * Every product event must be represented exactly once in the version-2 audit chain.
+     *
+     * @return bool
+     */
+    private function verifyProductEventCoverage(): bool
+    {
+        $unreferencedEventsExist = DB::table('product_events')
+            ->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('platform_access_audit_events')
+                    ->whereColumn('platform_access_audit_events.details_ref_id', 'product_events.id')
+                    ->where('platform_access_audit_events.hash_version', 2)
+                    ->whereIn('platform_access_audit_events.action', ['product.created', 'product.updated']);
+            })
+            ->exists();
+
+        if ($unreferencedEventsExist) {
+            return false;
+        }
+
+        $duplicateReferencesExist = DB::table('platform_access_audit_events')
+            ->select('details_ref_id')
+            ->where('hash_version', 2)
+            ->whereIn('action', ['product.created', 'product.updated'])
+            ->groupBy('details_ref_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        return ! $duplicateReferencesExist;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
