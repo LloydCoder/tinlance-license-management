@@ -2011,7 +2011,7 @@ paths:
             Cache-Control:
               schema:
                 type: string
-                pattern: '(^|,\\s*)no-store(,|$)'
+                pattern: '(^|,\s*)no-store(,|$)'
             Pragma:
               schema:
                 type: string
