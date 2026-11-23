@@ -553,7 +553,6 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertCreated();
 
         $allocationId = (string) $allocation->json('data.id');
-        $expectedSourceVersion = (int) $source->fresh()->version + 1;
         $this->authenticated($actor)
             ->deleteJson('/api/v1/licenses/'.$licenseId.'/allocations/'.$allocationId, [
                 'reason' => 'The customer decommissioned this site installation.',
@@ -875,6 +874,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ], ['X-Request-ID' => 'successor-transfer-allocation-0001'])
             ->assertCreated();
         $allocationId = (string) $allocation->json('data.id');
+        $expectedSourceVersion = (int) $source->fresh()->version + 1;
 
         $payload = [
             'relation_type' => 'transfer',
