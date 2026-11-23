@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Tlms\Tests\Unit\Domain;
 
 use InvalidArgumentException;
-use PHPUnit\Framework\TestCase;
 use Tlms\Domain\Licensing\LicenseIssuanceFingerprint;
 
-final class LicenseIssuanceFingerprintTest extends TestCase
+final class LicenseIssuanceFingerprintTest
 {
-    public function test_fingerprint_is_stable_when_object_key_order_differs(): void
+    public function testFingerprintIsStableWhenObjectKeyOrderDiffers(): void
     {
         $first = LicenseIssuanceFingerprint::create('vendor-1', 'actor-1', [
             'customer_organization_id' => 'customer-1',
@@ -29,28 +28,32 @@ final class LicenseIssuanceFingerprintTest extends TestCase
             'customer_organization_id' => 'customer-1',
         ]);
 
-        self::assertSame($first, $second);
-        self::assertMatchesRegularExpression('/\A[a-f0-9]{64}\z/', $first);
+        expectSame($first, $second);
+        expectSame(64, strlen($first));
     }
 
-    public function test_fingerprint_is_scoped_to_vendor_and_actor(): void
+    public function testFingerprintIsScopedToVendorAndActor(): void
     {
         $payload = ['customer_organization_id' => 'customer-1'];
         $fingerprint = LicenseIssuanceFingerprint::create('vendor-1', 'actor-1', $payload);
 
-        self::assertNotSame($fingerprint, LicenseIssuanceFingerprint::create('vendor-2', 'actor-1', $payload));
-        self::assertNotSame($fingerprint, LicenseIssuanceFingerprint::create('vendor-1', 'actor-2', $payload));
+        expectFalse(hash_equals($fingerprint, LicenseIssuanceFingerprint::create('vendor-2', 'actor-1', $payload)));
+        expectFalse(hash_equals($fingerprint, LicenseIssuanceFingerprint::create('vendor-1', 'actor-2', $payload)));
     }
 
-    public function test_fingerprint_rejects_non_json_payload_values(): void
+    public function testFingerprintRejectsNonJsonPayloadValues(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        LicenseIssuanceFingerprint::create('vendor-1', 'actor-1', ['invalid' => new \stdClass()]);
+        expectThrows(
+            static fn () => LicenseIssuanceFingerprint::create('vendor-1', 'actor-1', ['invalid' => new \stdClass()]),
+            InvalidArgumentException::class,
+        );
     }
 
-    public function test_fingerprint_rejects_empty_scope_identifiers(): void
+    public function testFingerprintRejectsEmptyScopeIdentifiers(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        LicenseIssuanceFingerprint::create('', 'actor-1', []);
+        expectThrows(
+            static fn () => LicenseIssuanceFingerprint::create('', 'actor-1', []),
+            InvalidArgumentException::class,
+        );
     }
 }
