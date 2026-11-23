@@ -321,6 +321,122 @@ final class ProductCatalogFoundationTest extends TestCase
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
+    public function test_product_manager_can_create_update_and_publish_product_versions(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+        $product = $this->createProduct($manager);
+
+        $created = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions', [
+                'version' => '1.0.0',
+                'release_notes' => 'Initial stable release.',
+                'artifact_sha256' => str_repeat('a', 64),
+                'artifact_size_bytes' => 1024,
+                'reason' => 'Create the initial product version.',
+            ], ['X-Request-ID' => 'product-version-create-0001'])
+            ->assertCreated()
+            ->assertJsonPath('data.version', '1.0.0')
+            ->assertJsonPath('data.status', 'draft');
+
+        $versionId = (string) $created->json('data.id');
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions', [
+                'version' => '1.0.0',
+                'release_notes' => 'Duplicate version must be rejected.',
+                'reason' => 'Attempt a duplicate product version.',
+            ])
+            ->assertUnprocessable();
+
+        $updated = $this->authenticated($manager)
+            ->patchJson('/api/v1/products/'.$product->getKey().'/versions/'.$versionId, [
+                'expected_version' => 1,
+                'release_notes' => 'Updated release notes.',
+                'artifact_sha256' => str_repeat('b', 64),
+                'artifact_size_bytes' => 2048,
+                'reason' => 'Update the draft release metadata.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.version_number', 2);
+
+        $this->authenticated($manager)
+            ->patchJson('/api/v1/products/'.$product->getKey().'/versions/'.$versionId, [
+                'expected_version' => 1,
+                'release_notes' => 'Stale update.',
+                'artifact_sha256' => str_repeat('c', 64),
+                'artifact_size_bytes' => 4096,
+                'reason' => 'Attempt a stale version update.',
+            ])
+            ->assertStatus(409);
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions/'.$versionId.'/publish', [
+                'reason' => 'Publish the verified product version.',
+            ], ['X-Request-ID' => 'product-version-publish-0001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'published');
+
+        $this->authenticated($manager)
+            ->patchJson('/api/v1/products/'.$product->getKey().'/versions/'.$versionId, [
+                'expected_version' => 3,
+                'release_notes' => 'Published versions are immutable.',
+                'artifact_sha256' => str_repeat('d', 64),
+                'artifact_size_bytes' => 8192,
+                'reason' => 'Attempt to mutate a published version.',
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('product_version_events', [
+            'product_version_id' => $versionId,
+            'event_type' => 'published',
+            'request_id' => 'product-version-publish-0001',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_assigned_developer_can_read_product_versions_but_cannot_create_or_update_them(): void
+    {
+        [$manager, $vendor] = $this->createActor('vendor_product_manager');
+        [$vendorAdmin] = $this->createActor('super_admin', 'primary', $vendor);
+        [$developer] = $this->createActor('vendor_developer', 'primary', $vendor);
+        $product = $this->createProduct($manager);
+
+        $this->authenticated($vendorAdmin)
+            ->postJson('/api/v1/products/'.$product->getKey().'/assignments', [
+                'vendor_membership_id' => $developer->vendorMemberships()->firstOrFail()->getKey(),
+                'reason' => 'Assign developer access for version review.',
+            ])
+            ->assertCreated();
+
+        $created = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions', [
+                'version' => '2.0.0-beta.1',
+                'release_notes' => 'Beta release for developer review.',
+                'artifact_sha256' => str_repeat('e', 64),
+                'artifact_size_bytes' => 4096,
+                'reason' => 'Create the beta product version.',
+            ])
+            ->assertCreated();
+
+        $versionId = (string) $created->json('data.id');
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products/'.$product->getKey().'/versions')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products/'.$product->getKey().'/versions/'.$versionId)
+            ->assertOk();
+
+        $this->authenticated($developer)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions', [
+                'version' => '2.0.0-beta.2',
+                'reason' => 'Developer must not create versions.',
+            ])
+            ->assertForbidden();
+    }
+
     public function test_product_assignment_metadata_cannot_be_rewritten_without_a_state_transition(): void
     {
         [$manager] = $this->createActor('vendor_product_manager');
