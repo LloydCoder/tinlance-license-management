@@ -202,7 +202,7 @@ final class PlanCatalogueController
             'billing_interval' => $version->billing_interval,
             'trial_days' => (int) $version->trial_days,
             'maintenance_days' => (int) $version->maintenance_days,
-            'entitlements' => $version->entitlements,
+            'entitlements' => (object) $version->entitlements,
             'snapshot_sha256' => $version->snapshot_sha256,
             'published_at' => $version->published_at?->toISOString(),
         ];
