@@ -346,6 +346,12 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ])
             ->assertOk();
 
+        $this->assertDatabaseHas('plans', [
+            'id' => $planId,
+            'status' => 'active',
+            'version' => 3,
+        ]);
+
         $this->authenticated($manager)
             ->postJson('/api/v1/plans/'.$planId.'/versions', [
                 'expected_version' => 3,
