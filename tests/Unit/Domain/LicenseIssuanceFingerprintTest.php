@@ -44,7 +44,7 @@ final class LicenseIssuanceFingerprintTest
     public function testFingerprintRejectsNonJsonPayloadValues(): void
     {
         expectThrows(
-            static fn () => LicenseIssuanceFingerprint::create('vendor-1', 'actor-1', ['invalid' => new \stdClass()]),
+            static fn () => LicenseIssuanceFingerprint::create('vendor-1', 'actor-1', ['invalid' => new \stdClass]),
             InvalidArgumentException::class,
         );
     }
