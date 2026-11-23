@@ -295,9 +295,27 @@ final readonly class PlanCatalogueService
      */
     private function normalizeVersionInput(array $input): array
     {
+        $entries = $input['entitlements'] ?? null;
+        if (! is_array($entries) || ! array_is_list($entries) || count($entries) > 100) {
+            throw new InvalidArgumentException('Entitlements must be a bounded list of typed values.');
+        }
+
         $entitlements = [];
-        foreach ($input['entitlements'] as $entry) {
-            $key = (string) $entry['key'];
+        foreach ($entries as $entry) {
+            if (
+                ! is_array($entry)
+                || ! is_string($entry['key'] ?? null)
+                || ! is_string($entry['type'] ?? null)
+                || ! array_key_exists('value', $entry)
+            ) {
+                throw new InvalidArgumentException('Entitlement entries require a key, type and value.');
+            }
+
+            $key = $entry['key'];
+            if (preg_match('/\\A[a-z][a-z0-9_.-]{0,63}\\z/D', $key) !== 1) {
+                throw new InvalidArgumentException('Entitlement keys must use stable lowercase identifiers.');
+            }
+
             if (array_key_exists($key, $entitlements)) {
                 throw new InvalidArgumentException('Entitlement keys must be unique.');
             }
@@ -318,18 +336,37 @@ final readonly class PlanCatalogueService
         }
 
         ksort($entitlements, SORT_STRING);
-        $billingModel = (string) $input['billing_model'];
+        $billingModel = $input['billing_model'] ?? null;
         $billingInterval = isset($input['billing_interval']) && $input['billing_interval'] !== ''
-            ? (string) $input['billing_interval']
+            ? $input['billing_interval']
             : null;
-        $trialDays = (int) $input['trial_days'];
-        $priceMinor = (int) $input['price_minor'];
-        $currency = strtoupper((string) $input['currency']);
+        $trialDays = filter_var($input['trial_days'] ?? null, FILTER_VALIDATE_INT);
+        $maintenanceDays = filter_var($input['maintenance_days'] ?? null, FILTER_VALIDATE_INT);
+        $priceMinor = filter_var($input['price_minor'] ?? null, FILTER_VALIDATE_INT);
+        $currencyInput = $input['currency'] ?? null;
 
         if (
-            $priceMinor < 0
+            ! is_string($billingModel)
+            || ! in_array($billingModel, ['perpetual', 'subscription', 'annual', 'trial'], true)
+            || ($billingInterval !== null && ! is_string($billingInterval))
+            || ! is_int($trialDays)
+            || $trialDays < 0
+            || $trialDays > 365
+            || ! is_int($maintenanceDays)
+            || $maintenanceDays < 0
+            || $maintenanceDays > 3650
+            || ! is_int($priceMinor)
+            || $priceMinor < 0
             || $priceMinor > 9007199254740991
-            || preg_match('/\\A[A-Z]{3}\\z/D', $currency) !== 1
+            || ! is_string($currencyInput)
+        ) {
+            throw new InvalidArgumentException('Plan version metadata is invalid.');
+        }
+
+        $currency = strtoupper($currencyInput);
+
+        if (
+            preg_match('/\\A[A-Z]{3}\\z/D', $currency) !== 1
             || ($billingModel === 'subscription' && ! in_array($billingInterval, ['month', 'year'], true))
             || ($billingModel !== 'subscription' && $billingInterval !== null)
             || ($billingModel === 'trial' && $trialDays < 1)
@@ -343,7 +380,7 @@ final readonly class PlanCatalogueService
             'price_minor' => $priceMinor,
             'billing_interval' => $billingInterval,
             'trial_days' => $trialDays,
-            'maintenance_days' => (int) $input['maintenance_days'],
+            'maintenance_days' => $maintenanceDays,
             'entitlements' => $entitlements,
         ];
     }
@@ -378,6 +415,11 @@ final readonly class PlanCatalogueService
         string $requestId,
         array $payload,
     ): void {
+        $reason = trim($reason);
+        if (mb_strlen($reason) < 5 || mb_strlen($reason) > 500) {
+            throw new InvalidArgumentException('Plan event reason is invalid.');
+        }
+
         $normalizedRequestId = preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) === 1
             ? $requestId
             : (string) Str::uuid();
@@ -389,7 +431,7 @@ final readonly class PlanCatalogueService
             'vendor_account_id' => $plan->vendor_account_id,
             'actor_user_id' => $actor->getKey(),
             'event_type' => $type,
-            'reason' => trim($reason),
+            'reason' => $reason,
             'request_id' => $normalizedRequestId,
             'event_payload' => $payload,
             'created_at' => now(),
