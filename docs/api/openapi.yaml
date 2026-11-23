@@ -261,6 +261,112 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /products/{productId}/release-channels:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    get:
+      tags: [Products]
+      operationId: listReleaseChannels
+      description: Lists release channels for a product the active vendor membership may read. Assigned developers have read-only access.
+      responses:
+        '200':
+          description: Release channels
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseChannelCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags: [Products]
+      operationId: createReleaseChannel
+      description: Creates an active product-scoped release channel. Requires plans.entitlements.manage, recent password confirmation and fresh MFA step-up. Channel slugs are unique per product.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseChannelCreateRequest'
+      responses:
+        '201':
+          description: Release channel created with immutable audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseChannelResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /products/{productId}/release-channels/{releaseChannelId}/promote:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+      - name: releaseChannelId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Products]
+      operationId: promoteReleaseChannel
+      description: Promotes a published version of the same product to the channel. Requires releases.publish, expected_version optimistic locking, a reason and fresh MFA step-up. Repeating the current promotion is idempotent; promoting an earlier published version supports controlled rollback.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseChannelPromoteRequest'
+      responses:
+        '200':
+          description: Release channel promotion completed or already current
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseChannelPromotionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/role-approval-requests:
     post:
       tags: [Identity]
@@ -1726,6 +1832,106 @@ components:
             $ref: '#/components/schemas/Product'
         meta:
           $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+    ReleaseChannelCreateRequest:
+      type: object
+      required: [slug, name, reason]
+      additionalProperties: false
+      properties:
+        slug:
+          type: string
+          minLength: 2
+          maxLength: 32
+          pattern: '^[a-z][a-z0-9-]{1,31}$'
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ReleaseChannelPromoteRequest:
+      type: object
+      required: [product_version_id, expected_version, reason]
+      additionalProperties: false
+      properties:
+        product_version_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        expected_version:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ReleaseChannel:
+      type: object
+      required: [id, product_id, slug, name, status, current_product_version_id, version_number, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        product_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        slug:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active]
+        current_product_version_id:
+          type: [string, 'null']
+          minLength: 26
+          maxLength: 26
+        version_number:
+          type: integer
+          minimum: 1
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+    ReleaseChannelResult:
+      type: object
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReleaseChannel'
+        request_id:
+          type: string
+    ReleaseChannelCollection:
+      type: object
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReleaseChannel'
+        meta:
+          $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+    ReleaseChannelPromotionResult:
+      type: object
+      required: [data, meta, request_id]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReleaseChannel'
+        meta:
+          type: object
+          required: [already_promoted]
+          properties:
+            already_promoted:
+              type: boolean
         request_id:
           type: string
     ProductVersionCreateRequest:
