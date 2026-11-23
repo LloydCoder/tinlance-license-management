@@ -256,7 +256,7 @@ final readonly class PlanCatalogueService
             $entitlements = $snapshot['entitlements'];
             if (is_array($entitlements)) {
                 ksort($entitlements, SORT_STRING);
-                $snapshot['entitlements'] = $entitlements;
+                $snapshot['entitlements'] = (object) $entitlements;
             }
 
             $locked->forceFill([
