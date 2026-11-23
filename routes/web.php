@@ -18,6 +18,7 @@ use App\Http\Controllers\Identity\WorkspaceController;
 use App\Http\Controllers\Licensing\LicenseAllocationController;
 use App\Http\Controllers\Licensing\LicenseController;
 use App\Http\Controllers\Licensing\LicenseLifecycleController;
+use App\Http\Controllers\Licensing\LicenseUsageController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
