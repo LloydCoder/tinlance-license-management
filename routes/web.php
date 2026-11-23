@@ -15,6 +15,7 @@ use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Identity\VendorAccountProfileController;
 use App\Http\Controllers\Identity\VendorRoleApprovalController;
 use App\Http\Controllers\Identity\WorkspaceController;
+use App\Http\Controllers\Licensing\LicenseController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
@@ -234,6 +235,12 @@ Route::middleware([
     Route::post('/customer-organizations/{organization}/memberships/{membership}/roles/{role}/revoke', [MembershipRoleController::class, 'revokeCustomer'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.customer-memberships.roles.revoke');
+    Route::post('/products/{product}/licenses', [LicenseController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.products.licenses.store');
+    Route::post('/license-issuance-requests/{issuanceRequest}/secret', [LicenseController::class, 'revealSecret'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:3,1'])
+        ->name('api.license-issuance-requests.secret');
 });
 
 Route::middleware([

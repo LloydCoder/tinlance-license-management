@@ -1915,6 +1915,134 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /products/{productId}/licenses:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Licences]
+      operationId: issueProductLicence
+      summary: Issue a product-scoped licence
+      description: Requires licences.issue, an active vendor membership, product assignment (except vendor Super Admin), recent password confirmation and fresh MFA step-up. The idempotency token is SHA-256 hashed at rest and scoped to vendor and actor. The response never contains the plaintext licence key; retrieve it once through the secret-delivery endpoint.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 128
+            pattern: '^[A-Za-z0-9._~-]{32,128}$'
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseIssueRequest'
+      responses:
+        '201':
+          description: Licence issued; secret retrieval is available for a limited time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseIssueResult'
+        '200':
+          description: Idempotent replay; no second licence is created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseIssueResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /license-issuance-requests/{issuanceRequestId}/secret:
+    parameters:
+      - name: issuanceRequestId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Licences]
+      operationId: revealIssuedLicenceSecret
+      summary: Retrieve an issued licence key once
+      description: Only the original issuing actor may retrieve the secret. Retrieval is protected by fresh MFA, bound to the vendor and issuance request, expires after the configured TTL, marks the request delivered atomically, clears ciphertext and emits an immutable licence event. The response is never cacheable.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        '200':
+          description: One-time plaintext licence key delivered
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                pattern: '(^|,\s*)no-store(,|$)'
+            Pragma:
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseSecretResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '410':
+          description: The one-time secret was already delivered or its retrieval window expired
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
 components:
   securitySchemes:
     AdminSession:
@@ -3071,6 +3199,109 @@ components:
               format: date-time
         request_id:
           type: string
+    LicenseIssueRequest:
+      type: object
+      additionalProperties: false
+      required: [customer_organization_id, plan_version_id, reason]
+      properties:
+        customer_organization_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        plan_version_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        starts_at:
+          type: [string, 'null']
+          format: date-time
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseIssueResult:
+      type: object
+      additionalProperties: false
+      required: [data, issuance, replayed, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, public_reference, status, customer_organization_id, product_id, plan_version_id, starts_at, expires_at, grace_until, version]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            public_reference:
+              type: string
+              maxLength: 64
+            status:
+              type: string
+              const: issued
+            customer_organization_id:
+              type: string
+            product_id:
+              type: string
+            plan_version_id:
+              type: string
+            starts_at:
+              type: [string, 'null']
+              format: date-time
+            expires_at:
+              type: [string, 'null']
+              format: date-time
+            grace_until:
+              type: [string, 'null']
+              format: date-time
+            version:
+              type: integer
+              const: 1
+        issuance:
+          type: object
+          additionalProperties: false
+          required: [request_id, secret_available, secret_expires_at, secret_delivery]
+          properties:
+            request_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            secret_available:
+              type: boolean
+            secret_expires_at:
+              type: string
+              format: date-time
+            secret_delivery:
+              type: string
+              const: one_time
+        replayed:
+          type: boolean
+        request_id:
+          type: string
+    LicenseSecretResult:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [license_id, license_key, delivery]
+          properties:
+            license_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            license_key:
+              type: string
+              pattern: '^tlms_[A-Za-z0-9_-]{43}$'
+              readOnly: true
+            delivery:
+              type: string
+              const: one_time
+        request_id:
+          type: string
+
   responses:
     BadRequest:
       description: Invalid request
