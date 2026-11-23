@@ -85,6 +85,7 @@ final class PlanEvent extends BaseModel
             || ! $plan instanceof Plan
             || ! $product instanceof Product
             || ! $vendor instanceof VendorAccount
+            || $vendor->status !== 'active'
             || (string) $plan->product_id !== (string) $product->getKey()
             || (string) $plan->vendor_account_id !== (string) $vendor->getKey()
             || (string) $product->vendor_account_id !== (string) $vendor->getKey()
