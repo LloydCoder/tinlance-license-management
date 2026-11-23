@@ -954,6 +954,7 @@ paths:
     get:
       tags: [Products]
       operationId: listProducts
+      description: Lists products in the authenticated vendor scope. Product managers see products they created; vendor Super Admins see all products in their vendor account.
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -968,6 +969,90 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Products]
+      operationId: createProduct
+      description: Creates a draft product for the active primary vendor. Requires recent password confirmation and fresh MFA step-up. The creator is the initial product assignee.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequest'
+      responses:
+        '201':
+          description: Product created with immutable audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /products/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    get:
+      tags: [Products]
+      operationId: getProduct
+      description: Returns a product only when the caller is within its vendor scope and is its creator or a vendor Super Admin.
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Products]
+      operationId: updateProduct
+      description: Updates a draft product using optimistic concurrency. Product identity, vendor ownership, creator and lifecycle status are server-controlled.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateRequest'
+      responses:
+        '200':
+          description: Product updated with immutable audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /licences:
     post:
       tags: [Licences]
@@ -1290,17 +1375,89 @@ components:
           type: string
     Product:
       type: object
-      required: [id, name, slug, status]
+      required: [id, public_id, name, slug, description, status, version, created_at, updated_at]
       properties:
         id:
           type: string
+          minLength: 26
+          maxLength: 26
+        public_id:
+          type: string
+          format: uuid
         name:
           type: string
+          minLength: 2
+          maxLength: 160
         slug:
           type: string
+          minLength: 2
+          maxLength: 80
+        description:
+          type: [string, 'null']
+          maxLength: 2000
         status:
           type: string
           enum: [draft, active, suspended, retired]
+        version:
+          type: integer
+          minimum: 1
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+    ProductCreateRequest:
+      type: object
+      required: [name, slug, reason]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 160
+        slug:
+          type: string
+          minLength: 2
+          maxLength: 80
+        description:
+          type: [string, 'null']
+          maxLength: 2000
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductUpdateRequest:
+      type: object
+      required: [expected_version, name, slug, description, reason]
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 2
+          maxLength: 160
+        slug:
+          type: string
+          minLength: 2
+          maxLength: 80
+        description:
+          type: [string, 'null']
+          maxLength: 2000
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductResult:
+      type: object
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: '#/components/schemas/Product'
+        request_id:
+          type: string
     ProductCollection:
       type: object
       required: [data, meta, request_id]

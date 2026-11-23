@@ -23,6 +23,12 @@ final class VendorAccount extends BaseModel
         return $this->hasMany(VendorMembership::class);
     }
 
+    /** @return HasMany<Product, $this> */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     /** @return HasMany<CustomerOrganization, $this> */
     public function customerOrganizations(): HasMany
     {

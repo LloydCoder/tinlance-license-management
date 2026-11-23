@@ -67,8 +67,38 @@ final readonly class PlatformAccessAuditChainVerifier
             $lastSequence = $expectedSequence - 1;
             $lastHash = $head->last_hash === null ? null : (string) $head->last_hash;
 
-            return (int) $head->last_sequence === $lastSequence && $lastHash === $previousHash;
+            $chainMatchesHead = (int) $head->last_sequence === $lastSequence
+                && $lastHash === $previousHash;
+
+            return $chainMatchesHead && $this->verifyProductEventCoverage();
         });
+    }
+
+    private function verifyProductEventCoverage(): bool
+    {
+        $unreferencedEventsExist = DB::table('product_events')
+            ->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('platform_access_audit_events')
+                    ->whereColumn('platform_access_audit_events.details_ref_id', 'product_events.id')
+                    ->where('platform_access_audit_events.hash_version', 2)
+                    ->whereIn('platform_access_audit_events.action', ['product.created', 'product.updated']);
+            })
+            ->exists();
+
+        if ($unreferencedEventsExist) {
+            return false;
+        }
+
+        $duplicateReferencesExist = DB::table('platform_access_audit_events')
+            ->select('details_ref_id')
+            ->where('hash_version', 2)
+            ->whereIn('action', ['product.created', 'product.updated'])
+            ->groupBy('details_ref_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        return ! $duplicateReferencesExist;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
@@ -79,6 +109,7 @@ final readonly class PlatformAccessAuditChainVerifier
             'customer_organization.created',
             'customer_organization.profile_updated' => $this->verifyCustomerProfileDetails($auditEvent),
             'vendor_account.profile_updated' => $this->verifyVendorProfileDetails($auditEvent),
+            'product.created', 'product.updated' => $this->verifyProductDetails($auditEvent),
             default => false,
         };
     }
@@ -136,6 +167,83 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $profileEvent->change_digest,
             (string) $profileEvent->request_id,
             (string) $profileEvent->created_at,
+        );
+
+        return hash_equals($detailsHash, $expectedDetailsHash);
+    }
+
+    private function verifyProductDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+        $action = $row['action'] ?? null;
+
+        if (
+            ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
+            || ! in_array($action, ['product.created', 'product.updated'], true)
+        ) {
+            return false;
+        }
+
+        $productEvent = DB::table('product_events')
+            ->join('products', 'products.id', '=', 'product_events.product_id')
+            ->where('product_events.id', $detailsReferenceId)
+            ->first([
+                'product_events.id',
+                'product_events.product_id',
+                'product_events.vendor_account_id',
+                'product_events.actor_user_id',
+                'product_events.event_type',
+                'product_events.reason',
+                'product_events.changed_fields',
+                'product_events.change_digest',
+                'product_events.request_id',
+                'product_events.created_at',
+                'products.vendor_account_id as product_vendor_account_id',
+            ]);
+
+        $expectedEventType = $action === 'product.created' ? 'created' : 'updated';
+
+        if (
+            $productEvent === null
+            || $productEvent->event_type !== $expectedEventType
+            || (string) $productEvent->product_id !== $resourceId
+            || (string) $productEvent->vendor_account_id !== $tenantVendorAccountId
+            || (string) $productEvent->product_vendor_account_id !== $tenantVendorAccountId
+            || (string) $productEvent->actor_user_id !== $actorUserId
+            || (string) $productEvent->request_id !== $requestId
+            || ! is_string($productEvent->change_digest)
+            || preg_match('/\A[a-f0-9]{64}\z/D', $productEvent->change_digest) !== 1
+        ) {
+            return false;
+        }
+
+        $changedFields = json_decode((string) $productEvent->changed_fields, true);
+        if (! is_array($changedFields) || ! array_is_list($changedFields)) {
+            return false;
+        }
+
+        $expectedDetailsHash = $this->hasher->hashProductEvent(
+            (string) $productEvent->id,
+            (string) $productEvent->product_id,
+            (string) $productEvent->vendor_account_id,
+            (string) $productEvent->actor_user_id,
+            (string) $productEvent->event_type,
+            (string) $productEvent->reason,
+            $changedFields,
+            (string) $productEvent->change_digest,
+            (string) $productEvent->request_id,
+            (string) $productEvent->created_at,
         );
 
         return hash_equals($detailsHash, $expectedDetailsHash);

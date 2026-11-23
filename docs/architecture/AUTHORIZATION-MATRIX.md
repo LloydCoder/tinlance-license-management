@@ -173,3 +173,15 @@ Any future dual-control workflow must prohibit both maker/checker identity confl
 - PR #58 additionally locks the persisted parent vendor row during customer membership revocation. The active vendor check is now serialized against concurrent vendor suspension; the customer organization row is also locked before the parent vendor row.
 - PR #70 adds a least-privilege vendor_admin role (vendor.account.read, admins.manage, audit.read only). The first active vendor administrator is bootstrapped by a Super Admin under the existing fresh password/MFA-gated role mutation route; the operation is serialized under the vendor lock and records an immutable role event. Subsequent vendor-admin grants use the existing maker-checker workflow; vendor admins can request but cannot approve grants. The role is excluded from direct invitation/assignment allowlists.
 - PRs #66–#68 implement a tenant-scoped pending-invitation workspace. The query reloads manager permissions, scopes results to active parent tenants, paginates independently per tenant, includes expired/failed-delivery records for recovery, excludes accepted/revoked records and never selects token material. The controller revalidates vendor/customer manager permissions before passing groups to the workspace view. The UI calls the existing invitation/lifecycle APIs for create/resend/revoke; role options use the invitation-service allowlists, and maker-checker-only roles remain excluded. Mutations require recent password confirmation and fresh five-minute TOTP/passkey step-up; same-origin POST/CSRF controls are UX safeguards only, while server authorization remains authoritative. Raw invitation tokens and token hashes are not rendered. PRs #74–#75 add revoked-member review and reinstatement controls; reinstatement creates a fresh invitation, clears prior role pivots, invalidates old tokens and restores access only after acceptance. PR #84 adds manager-only active membership directory queries and tables, tenant-scoped, active-user filtered, role-scope filtered and independently paginated. The directory is read-only; active-member role/revocation UI remains pending.
+
+
+## Product registry scope (PR #98)
+
+| Actor | Product visibility | Product mutation |
+|---|---|---|
+| vendor_product_manager | Products created by that manager in the active primary vendor | Create products; update own draft products only |
+| vendor super_admin (non-bootstrap) | All products in its vendor account | Create and update draft products in its vendor account |
+| bootstrap Super Admin | Read-only vendor-scoped visibility | Denied product creation and mutation |
+| Other vendor roles | No product catalogue access unless a future permission is explicitly granted | Denied |
+
+The product creator is the initial product assignee. A separate multi-user assignment workflow is not yet implemented. Every write requires recent password confirmation and fresh TOTP/passkey step-up; the service locks and rechecks the vendor membership. Product identity, public ID, vendor ownership, creator and lifecycle status are server-controlled; only draft name, slug and description are editable.

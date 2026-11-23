@@ -173,3 +173,13 @@ The OpenAPI document is a first contract draft and must pass schema validation, 
 - [RFC 8785 — JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html) — canonical serialization for signed JSON claims where applicable.
 
 The OpenAPI document is a first contract draft and must pass schema validation, security review and SDK contract tests before implementation is considered conformant.
+
+
+## Product catalogue endpoints (PR #98)
+
+- GET /api/v1/products lists products in the active vendor scope. Product managers see their created products; vendor Super Admins see all vendor products.
+- POST /api/v1/products creates a draft product. It requires recent password confirmation, fresh MFA step-up, name, slug and a reason.
+- GET /api/v1/products/{productId} returns only a product visible to the caller; out-of-scope product IDs are concealed with 404.
+- PATCH /api/v1/products/{productId} updates draft name, slug and description with expected_version. Stale versions return 409; server-owned identity, tenant, creator and lifecycle fields are prohibited.
+- Product writes append immutable product_events and a version-2 platform audit event in the same transaction.
+- Product versions, release channels, plans, entitlements and price versions are not yet implemented.

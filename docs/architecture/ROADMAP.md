@@ -73,3 +73,8 @@ The current repository implements PHP 8.3–8.5 CI, MySQL 8.4 and MariaDB 10.11 
 - API and credential changes require explicit versioning and compatibility tests.
 - Secrets and private signing keys never enter source control or customer packages.
 - Each phase ends with a forensic review and evidence recorded in IMPLEMENTATION-STATUS.md.
+
+
+### Phase 5 implementation increment — product registry foundation (PR #98)
+
+The initial product aggregate and tenant-scoped API are implemented: stable public identifiers, vendor-scoped slug uniqueness, draft lifecycle, optimistic version checks, creator-scoped access for vendor_product_manager and vendor Super Admin access within the vendor. Product create/update events are immutable and linked to version-2 platform audit records with canonical before/after digests. Mutations require recent password confirmation and fresh MFA and revalidate membership under lock. The initial assignee is the product creator; multi-user product assignment remains open. ProductVersion, ReleaseChannel, Plan, PlanVersion, EntitlementDefinition, entitlement snapshots, PriceVersion, trials and licence lifecycle remain open Phase 5+ work. PR #98 does not complete Phase 5.

@@ -1,6 +1,6 @@
 # TLMS implementation status
 
-**Last reviewed:** 2026-11-23 (PR #97 adds the vendor profile administration slice and version-2 audit evidence)
+**Last reviewed:** 2026-11-23 (PR #98 adds the initial tenant-scoped product registry, creator-scoped access and version-2 audit evidence)
 **Current phase:** Phase 4 — identity, organizations and authorization
 **Overall status:** Engineering foundation and initial identity/authorization slice implemented. TLMS is not production-ready; no complete licence lifecycle, payment, update distribution, SDK or deployment exists.
 
@@ -446,3 +446,14 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - Eloquent guards and MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect profile-event rows. Regression tests cover authorized and unauthorized access, bootstrap read-only behavior, prohibited fields, missing fresh MFA, payload tampering and database-level immutability.
 - Exact PR merge-ref CI passed PHP 8.3/8.4/8.5, MySQL 8.4, MariaDB 10.11, OpenAPI, browser assets, cPanel artifact, documentation governance, Larastan, Semgrep, Gitleaks and OSV-Scanner.
 - This is a narrow vendor display-profile surface, not a complete vendor portal. It does not add legal identity editing, vendor contact management, commercial defaults, billing, or generalized resource administration.
+
+
+## PR #98 — product registry foundation (2026-11-23)
+
+- Adds tenant-owned products with stable internal ULIDs and public UUIDs, vendor-scoped unique slugs, draft lifecycle state and optimistic resource versions.
+- Adds product creation/list/read/update endpoints. Product managers initially manage products they create; vendor Super Admins can read and manage all products in their vendor account. Explicit multi-user product assignment is a follow-on slice.
+- Product updates are draft-only and require expected_version. Vendor ownership, public ID, creator and lifecycle status are server-controlled. Slug uniqueness is enforced by both vendor-row serialization and a database unique constraint.
+- Product create/update operations require recent password confirmation and fresh MFA step-up, recheck active membership under row lock, and write immutable product_events plus version-2 platform audit evidence in the same transaction.
+- The audit verifier checks product, vendor/tenant, actor, event type, request ID, reason, changed fields and canonical before/after digest. Eloquent guards and MySQL/MariaDB triggers protect product event history.
+- Exact PR merge-ref CI and Security Analysis are required before merge.
+- This is the product catalogue foundation only. Product versions/release channels, plans/plan versions, entitlement definitions/snapshots, price versions, trials and licence issuance remain incomplete.
