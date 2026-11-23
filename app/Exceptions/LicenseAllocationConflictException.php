@@ -6,6 +6,4 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-final class LicenseAllocationConflictException extends RuntimeException
-{
-}
+final class LicenseAllocationConflictException extends RuntimeException {}
