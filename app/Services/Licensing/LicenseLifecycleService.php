@@ -72,10 +72,16 @@ final readonly class LicenseLifecycleService
             if ($existingEvent instanceof LicenseEvent) {
                 $existingFrom = (string) $existingEvent->from_status;
                 $expectedEventType = $this->eventType($existingFrom, $toStatus);
-                $existingPayload = $existingEvent->event_payload;
-                $existingAggregateVersion = is_array($existingPayload)
-                    ? (int) ($existingPayload['aggregate_version'] ?? 0)
-                    : 0;
+                $existingPayload = json_decode((string) $existingEvent->getRawOriginal('event_payload'), true);
+                $versionValue = is_array($existingPayload)
+                    ? ($existingPayload['aggregate_version'] ?? null)
+                    : null;
+
+                if (! is_numeric($versionValue) || (int) $versionValue < 1) {
+                    throw new LicenseLifecycleConflictException('The existing lifecycle event payload is invalid.');
+                }
+
+                $existingAggregateVersion = (int) $versionValue;
 
                 if ($existingAggregateVersion < 1) {
                     throw new LicenseLifecycleConflictException('The existing lifecycle event payload is invalid.');
