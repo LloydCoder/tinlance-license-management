@@ -14,6 +14,8 @@ use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\MembershipAuthorization;
+use App\Services\Authorization\PlatformAccessAuditChainHasher;
+use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +27,8 @@ final readonly class PlanCatalogueService
     public function __construct(
         private MembershipAuthorization $membershipAuthorization,
         private PlatformSuperAdminAuthorization $platformAuthorization,
+        private PlatformAccessAuditChainWriter $auditWriter,
+        private PlatformAccessAuditChainHasher $auditHasher,
     ) {}
 
     /**
@@ -369,7 +373,11 @@ final readonly class PlanCatalogueService
         string $requestId,
         array $payload,
     ): void {
-        PlanEvent::query()->create([
+        $normalizedRequestId = preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) === 1
+            ? $requestId
+            : (string) Str::uuid();
+
+        $event = PlanEvent::query()->create([
             'plan_id' => $plan->getKey(),
             'plan_version_id' => $version?->getKey(),
             'product_id' => $plan->product_id,
@@ -377,12 +385,47 @@ final readonly class PlanCatalogueService
             'actor_user_id' => $actor->getKey(),
             'event_type' => $type,
             'reason' => trim($reason),
-            'request_id' => preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) === 1
-                ? $requestId
-                : (string) Str::uuid(),
+            'request_id' => $normalizedRequestId,
             'event_payload' => $payload,
             'created_at' => now(),
         ]);
+
+        $createdAt = (string) DB::table('plan_events')->where('id', $event->getKey())->value('created_at');
+        $detailsHash = $this->auditHasher->hashPlanEvent(
+            (string) $event->getKey(),
+            (string) $event->plan_id,
+            $event->plan_version_id === null ? null : (string) $event->plan_version_id,
+            (string) $event->product_id,
+            (string) $event->vendor_account_id,
+            (string) $event->actor_user_id,
+            (string) $event->event_type,
+            (string) $event->reason,
+            (string) $event->request_id,
+            $event->event_payload,
+            $createdAt,
+        );
+
+        $isPlanCreation = $type === 'created';
+        $action = match ($type) {
+            'created' => 'plan.created',
+            'version_created' => 'plan_version.created',
+            'version_updated' => 'plan_version.updated',
+            'version_published' => 'plan_version.published',
+            default => throw new InvalidArgumentException('Plan event type is invalid.'),
+        };
+
+        $this->auditWriter->append(
+            (string) $actor->getKey(),
+            $action,
+            $isPlanCreation ? 'plan' : 'plan_version',
+            (string) ($version?->getKey() ?? $plan->getKey()),
+            (string) $plan->vendor_account_id,
+            'allowed',
+            'plan_catalogue_management',
+            $normalizedRequestId,
+            (string) $event->getKey(),
+            $detailsHash,
+        );
     }
 
     private function authorizeProductManager(User $actor, Product $product, VendorAccount $vendor, string $permission): void
