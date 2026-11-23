@@ -17,6 +17,7 @@ use App\Models\VendorMembership;
 use App\Services\Licensing\LicenseKeyMaterialProvider;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Tests\TestCase;
 use Tlms\Domain\Licensing\LicenseKey;
 
@@ -28,6 +29,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
     {
         parent::setUp();
         $this->seed(AuthorizationCatalogSeeder::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
         $this->configureKeyMaterial();
     }
 
