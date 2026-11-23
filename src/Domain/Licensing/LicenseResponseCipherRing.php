@@ -67,12 +67,16 @@ final readonly class LicenseResponseCipherRing
 
     /**
      * @throws SodiumException
-     * @throws JsonException
      */
     public function decrypt(string $envelope, string $context): string
     {
         self::assertContext($context);
-        $decoded = json_decode(self::base64UrlDecode($envelope), true, 8, JSON_THROW_ON_ERROR);
+
+        try {
+            $decoded = json_decode(self::base64UrlDecode($envelope), true, 8, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new InvalidArgumentException('The encrypted issuance response envelope is invalid.', previous: $exception);
+        }
 
         if (! is_array($decoded)
             || array_keys($decoded) !== ['v', 'kid', 'nonce', 'ciphertext']
