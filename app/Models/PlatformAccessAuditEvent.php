@@ -57,6 +57,10 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'product_version.published',
                 'release_channel.created',
                 'release_channel.promoted',
+                'plan.created',
+                'plan_version.created',
+                'plan_version.updated',
+                'plan_version.published',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated',
@@ -69,6 +73,8 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'product.created', 'product.updated', 'product.assignment_granted', 'product.assignment_revoked' => 'product',
                 'product_version.created', 'product_version.updated', 'product_version.published' => 'product_version',
                 'release_channel.created', 'release_channel.promoted' => 'release_channel',
+                'plan.created' => 'plan',
+                'plan_version.created', 'plan_version.updated', 'plan_version.published' => 'plan_version',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated' => 'customer_organization',
@@ -86,6 +92,7 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'product.assignment_granted', 'product.assignment_revoked' => ['product_assignment_management'],
                 'product_version.created', 'product_version.updated', 'product_version.published' => ['product_version_management'],
                 'release_channel.created', 'release_channel.promoted' => ['release_channel_management'],
+                'plan.created', 'plan_version.created', 'plan_version.updated', 'plan_version.published' => ['plan_catalogue_management'],
                 'customer_organization.created' => ['vendor_customer_management'],
                 'customer_organization.profile_updated' => [
                     'vendor_customer_management',
@@ -106,6 +113,10 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'product_version.published',
                 'release_channel.created',
                 'release_channel.promoted',
+                'plan.created',
+                'plan_version.created',
+                'plan_version.updated',
+                'plan_version.published',
             ], true);
 
             if (
@@ -139,6 +150,10 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'product_version.published',
                     'release_channel.created',
                     'release_channel.promoted',
+                    'plan.created',
+                    'plan_version.created',
+                    'plan_version.updated',
+                    'plan_version.published',
                 ], true)
                     || ! is_string($event->details_ref_id)
                     || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', strtoupper($event->details_ref_id)) !== 1
