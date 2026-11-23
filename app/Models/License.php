@@ -163,6 +163,12 @@ final class License extends BaseModel
         return $this->belongsTo(PlanVersion::class);
     }
 
+    /** @return HasMany<LicenseUsageCounter, $this> */
+    public function usageCounters(): HasMany
+    {
+        return $this->hasMany(LicenseUsageCounter::class);
+    }
+
     /** @return HasMany<LicenseEvent, $this> */
     public function events(): HasMany
     {
