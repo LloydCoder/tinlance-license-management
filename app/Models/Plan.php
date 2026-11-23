@@ -42,11 +42,20 @@ final class Plan extends BaseModel
     }
 
     /** @return BelongsTo<Product, $this> */
-    public function product(): BelongsTo { return $this->belongsTo(Product::class); }
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
 
     /** @return BelongsTo<VendorAccount, $this> */
-    public function vendorAccount(): BelongsTo { return $this->belongsTo(VendorAccount::class); }
+    public function vendorAccount(): BelongsTo
+    {
+        return $this->belongsTo(VendorAccount::class);
+    }
 
     /** @return HasMany<PlanVersion, $this> */
-    public function versions(): HasMany { return $this->hasMany(PlanVersion::class); }
+    public function versions(): HasMany
+    {
+        return $this->hasMany(PlanVersion::class);
+    }
 }
