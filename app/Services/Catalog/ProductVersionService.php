@@ -260,8 +260,19 @@ final readonly class ProductVersionService
 
     private function authorizeProductManager(User $actor, Product $product, VendorAccount $vendor, string $permission): void
     {
+        if ($this->platformAuthorization->isBootstrapSuperAdmin($actor)) {
+            throw new AuthorizationException('The actor does not have the required product-version permission.');
+        }
+
+        $membership = VendorMembership::query()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('user_id', $actor->getKey())
+            ->where('status', 'active')
+            ->lockForUpdate()
+            ->first();
+
         if (
-            $this->platformAuthorization->isBootstrapSuperAdmin($actor)
+            ! $membership instanceof VendorMembership
             || ! $this->membershipAuthorization->vendorCan($actor, $vendor, $permission)
         ) {
             throw new AuthorizationException('The actor does not have the required product-version permission.');
@@ -271,20 +282,11 @@ final readonly class ProductVersionService
             return;
         }
 
-        $membership = VendorMembership::query()
-            ->where('vendor_account_id', $vendor->getKey())
-            ->where('user_id', $actor->getKey())
-            ->where('status', 'active')
-            ->first();
-
-        if (
-            ! $membership instanceof VendorMembership
-            || ! ProductAssignment::query()
-                ->where('product_id', $product->getKey())
-                ->where('vendor_membership_id', $membership->getKey())
-                ->whereNull('revoked_at')
-                ->exists()
-        ) {
+        if (! ProductAssignment::query()
+            ->where('product_id', $product->getKey())
+            ->where('vendor_membership_id', $membership->getKey())
+            ->whereNull('revoked_at')
+            ->exists()) {
             throw new AuthorizationException('The actor is not assigned to this product.');
         }
     }
