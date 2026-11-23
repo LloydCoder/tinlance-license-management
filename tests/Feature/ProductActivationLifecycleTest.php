@@ -2,20 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\PlatformAccessAuditEvent;
-use App\\Models\\Product;
-use App\\Models\\ProductEvent;
-use App\\Models\\Role;
-use App\\Models\\User;
-use App\\Models\\VendorAccount;
-use App\\Models\\VendorMembership;
-use App\\Services\\Authorization\\PlatformAccessAuditChainVerifier;
-use Database\\Seeders\\AuthorizationCatalogSeeder;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use App\Models\PlatformAccessAuditEvent;
+use App\Models\Product;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\VendorAccount;
+use App\Models\VendorMembership;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
+use Database\Seeders\AuthorizationCatalogSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
-use Tests\\TestCase;
+use Tests\TestCase;
 
 final class ProductActivationLifecycleTest extends TestCase
 {
