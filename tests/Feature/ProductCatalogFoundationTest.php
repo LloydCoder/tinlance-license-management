@@ -327,7 +327,7 @@ final class ProductCatalogFoundationTest extends TestCase
         [$vendorAdmin] = $this->createActor('super_admin', 'primary', $vendor);
         [$developer] = $this->createActor('vendor_developer', 'primary', $vendor);
         $product = $this->createProduct($manager);
-        $otherProduct = $this->createProduct($manager, 'other-product');
+        $otherProduct = $this->createProduct($manager);
 
         $channel = $this->authenticated($manager)
             ->postJson('/api/v1/products/'.$product->getKey().'/release-channels', [
