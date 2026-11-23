@@ -50,7 +50,6 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertJsonPath('data.version', 1);
     }
 
-
     public function test_draft_plan_version_can_be_updated_and_rejects_stale_plan_versions(): void
     {
         [$manager] = $this->createActor('vendor_product_manager');
