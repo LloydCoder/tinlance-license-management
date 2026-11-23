@@ -364,6 +364,7 @@ final readonly class LicenseLifecycleService
         return $payload;
     }
 
+    /** @param array<array-key, mixed> $payload */
     private function payloadHash(array $payload): string
     {
         return hash('sha256', json_encode(
