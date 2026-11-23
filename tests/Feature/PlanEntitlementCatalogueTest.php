@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
+use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -111,6 +112,8 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertJsonPath('data.entitlements.seats', 25)
             ->assertJsonPath('data.entitlements.updates', true);
 
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+
         $this->authenticated($manager)
             ->patchJson('/api/v1/plans/'.$plan.'/versions/'.$version, [
                 'expected_version' => 2,
@@ -180,6 +183,16 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertJsonPath('data.entitlements.seats', 25)
             ->assertJsonPath('data.entitlements.updates', true)
             ->assertJsonPath('data.entitlements.support_level', 'priority');
+
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'action' => 'plan.created',
+            'resource_type' => 'plan',
+        ]);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'action' => 'plan_version.published',
+            'resource_type' => 'plan_version',
+        ]);
 
         $this->authenticated($manager)
             ->patchJson('/api/v1/plans/'.$plan.'/versions/'.$version, [
