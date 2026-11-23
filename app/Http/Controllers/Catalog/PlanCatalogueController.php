@@ -230,7 +230,7 @@ final class PlanCatalogueController
             'billing_interval' => ['nullable', 'in:month,year'],
             'trial_days' => ['required', 'integer', 'min:0', 'max:365'],
             'maintenance_days' => ['required', 'integer', 'min:0', 'max:3650'],
-            'entitlements' => ['required', 'array', 'max:100'],
+            'entitlements' => ['present', 'array', 'max:100'],
             'entitlements.*.key' => ['required', 'string', 'regex:/\A[a-z][a-z0-9_.-]{0,63}\z/D'],
             'entitlements.*.type' => ['required', 'in:boolean,integer,string'],
             'entitlements.*.value' => ['present'],
