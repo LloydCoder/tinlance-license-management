@@ -1905,6 +1905,25 @@ paths:
           type: string
           minLength: 26
           maxLength: 26
+    get:
+      tags: [Products]
+      operationId: listProductPlans
+      summary: List plans for an authorized product
+      security:
+        - AdminSession: []
+      responses:
+        '200':
+          description: Tenant-scoped plan catalogue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanListResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
       tags: [Products]
       operationId: createProductPlan
@@ -1980,6 +1999,62 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /plans/{planId}:
+    parameters:
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    get:
+      tags: [Products]
+      operationId: showPlan
+      summary: Retrieve a tenant-authorized plan
+      security:
+        - AdminSession: []
+      responses:
+        '200':
+          description: Plan metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /plans/{planId}/versions:
+    parameters:
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    get:
+      tags: [Products]
+      operationId: listPlanVersions
+      summary: List versions for a tenant-authorized plan
+      security:
+        - AdminSession: []
+      responses:
+        '200':
+          description: Plan version history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanVersionListResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /plans/{planId}/versions/{planVersionId}:
     parameters:
       - name: planId
@@ -3070,6 +3145,56 @@ components:
             version:
               type: integer
               minimum: 1
+        request_id:
+          type: string
+    PlanListResult:
+      type: object
+      additionalProperties: false
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanResult/properties/data'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [page, per_page, total]
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            per_page:
+              type: integer
+              minimum: 1
+            total:
+              type: integer
+              minimum: 0
+        request_id:
+          type: string
+    PlanVersionListResult:
+      type: object
+      additionalProperties: false
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanVersionResult/properties/data'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [page, per_page, total]
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            per_page:
+              type: integer
+              minimum: 1
+            total:
+              type: integer
+              minimum: 0
         request_id:
           type: string
     TypedEntitlementInput:
