@@ -255,6 +255,9 @@ Route::middleware([
     Route::delete('/licenses/{license}/allocations/{allocation}', [LicenseAllocationController::class, 'destroy'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.licenses.allocations.destroy');
+    Route::post('/licenses/{license}/usage', [LicenseUsageController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:30,1'])
+        ->name('api.licenses.usage.store');
 });
 
 Route::middleware([
