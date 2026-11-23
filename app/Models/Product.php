@@ -58,12 +58,38 @@ final class Product extends BaseModel
         });
 
         self::updating(static function (self $product): void {
+            $originalStatus = (string) $product->getRawOriginal('status');
+            $isActivation = $product->isDirty('status')
+                && $originalStatus === 'draft'
+                && $product->status === 'active';
+
             if (
-                $product->isDirty(['public_id', 'vendor_account_id', 'created_by_user_id', 'status'])
-                || $product->getOriginal('status') !== 'draft'
-                || (int) $product->version !== ((int) $product->getOriginal('version') + 1)
+                $product->isDirty(['public_id', 'vendor_account_id', 'created_by_user_id'])
+                || $originalStatus !== 'draft'
+                || (int) $product->version !== ((int) $product->getRawOriginal('version') + 1)
             ) {
                 throw new LogicException('Product identity, ownership, lifecycle and version metadata are service-controlled.');
+            }
+
+            if ($isActivation) {
+                $hasPublishedRelease = $product->releaseChannels()
+                    ->where('status', 'active')
+                    ->whereNotNull('current_product_version_id')
+                    ->whereHas('currentVersion', static fn ($query) => $query->where('status', 'published'))
+                    ->exists();
+
+                if (
+                    ! $hasPublishedRelease
+                    || $product->isDirty(['name', 'slug', 'description'])
+                ) {
+                    throw new LogicException('A product may activate only after a published product version is promoted to an active release channel.');
+                }
+
+                return;
+            }
+
+            if ($product->isDirty('status')) {
+                throw new LogicException('The product lifecycle transition is invalid.');
             }
         });
     }

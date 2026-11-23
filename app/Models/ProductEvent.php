@@ -45,14 +45,14 @@ final class ProductEvent extends BaseModel
     {
         self::creating(static function (self $event): void {
             if (
-                ! in_array($event->event_type, ['created', 'updated'], true)
+                ! in_array($event->event_type, ['created', 'updated', 'activated'], true)
                 || mb_strlen(trim((string) $event->reason)) < 5
                 || mb_strlen((string) $event->reason) > 500
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
                 || preg_match('/\A[a-f0-9]{64}\z/D', (string) $event->change_digest) !== 1
                 || $event->changed_fields === []
                 || count(array_unique($event->changed_fields)) !== count($event->changed_fields)
-                || array_diff($event->changed_fields, ['name', 'slug', 'description']) !== []
+                || array_diff($event->changed_fields, ['name', 'slug', 'description', 'status']) !== []
             ) {
                 throw new LogicException('Product event metadata is invalid.');
             }
