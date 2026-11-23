@@ -365,8 +365,7 @@ final readonly class PlatformAccessAuditChainVerifier
         $expectedEventType = match ($action) {
             'product.created' => 'created',
             'product.updated' => 'updated',
-            'product.activated' => 'activated',
-            default => null,
+            default => 'activated',
         };
 
         if (
