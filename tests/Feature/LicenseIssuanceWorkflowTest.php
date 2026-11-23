@@ -652,9 +652,9 @@ final class LicenseIssuanceWorkflowTest extends TestCase
 
         $licenseId = (string) $issued->json('data.id');
 
-        $this->artisan('tlms:licenses:expire --limit=10')
-            ->expectsOutputToContain('1 licence expired')
-            ->assertExitCode(0);
+        $exitCode = Artisan::call('tlms:licenses:expire', ['--limit' => 10]);
+        $this->assertSame(0, $exitCode);
+        $this->assertSame('1 licence expired.', trim(Artisan::output()));
 
         $this->assertDatabaseHas('licenses', [
             'id' => $licenseId,
@@ -671,9 +671,9 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'request_id' => 'sys:license-expiry:'.$licenseId.':1',
         ]);
 
-        $this->artisan('tlms:licenses:expire --limit=10')
-            ->expectsOutputToContain('0 licences expired')
-            ->assertExitCode(0);
+        $exitCode = Artisan::call('tlms:licenses:expire', ['--limit' => 10]);
+        $this->assertSame(0, $exitCode);
+        $this->assertSame('0 licences expired.', trim(Artisan::output()));
 
         $this->assertSame(1, DB::table('license_events')->where('license_id', $licenseId)->where('event_type', 'expired')->count());
     }
@@ -710,9 +710,9 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertCreated();
         $batchLicenseId = (string) $second->json('data.id');
 
-        $this->artisan('tlms:licenses:expire --limit=1')
-            ->expectsOutputToContain('1 licence expired')
-            ->assertExitCode(0);
+        $exitCode = Artisan::call('tlms:licenses:expire', ['--limit' => 1]);
+        $this->assertSame(0, $exitCode);
+        $this->assertSame('1 licence expired.', trim(Artisan::output()));
 
         $this->assertDatabaseHas('licenses', [
             'id' => $graceLicenseId,
