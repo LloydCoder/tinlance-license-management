@@ -210,6 +210,147 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         $this->assertSame(0, License::query()->count());
     }
 
+    public function test_licence_lifecycle_transitions_are_versioned_idempotent_and_terminal(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Customer payment confirmed for the annual professional plan.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'lifecycle-issuance-request-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $activatePayload = [
+            'to_status' => 'active',
+            'reason' => 'Customer deployment is approved and ready for activation.',
+        ];
+        $activateHeaders = ['X-Request-ID' => 'lifecycle-activate-request-000001'];
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', $activatePayload, $activateHeaders)
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.version', 2)
+            ->assertJsonPath('replayed', false);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', $activatePayload, $activateHeaders)
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.version', 2)
+            ->assertJsonPath('replayed', true);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'suspended',
+                'reason' => 'Customer requested a temporary access suspension.',
+            ], ['X-Request-ID' => 'lifecycle-suspend-request-000001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'suspended')
+            ->assertJsonPath('data.version', 3);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Customer resolved the suspension and access is restored.',
+            ], ['X-Request-ID' => 'lifecycle-reinstate-request-000001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.version', 4);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'revoked',
+                'reason' => 'The customer contract has been permanently terminated.',
+            ], ['X-Request-ID' => 'lifecycle-revoke-request-000001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'revoked')
+            ->assertJsonPath('data.version', 5);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Attempt to reactivate a terminal revoked licence.',
+            ], ['X-Request-ID' => 'lifecycle-reactivate-request-000001'])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', $activatePayload, $activateHeaders)
+            ->assertOk()
+            ->assertJsonPath('data.status', 'revoked')
+            ->assertJsonPath('data.version', 5)
+            ->assertJsonPath('replayed', true);
+
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $licenseId,
+            'event_type' => 'activated',
+            'request_id' => 'lifecycle-activate-request-000001',
+        ]);
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $licenseId,
+            'event_type' => 'suspended',
+            'request_id' => 'lifecycle-suspend-request-000001',
+        ]);
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $licenseId,
+            'event_type' => 'reinstated',
+            'request_id' => 'lifecycle-reinstate-request-000001',
+        ]);
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $licenseId,
+            'event_type' => 'revoked',
+            'request_id' => 'lifecycle-revoke-request-000001',
+        ]);
+        $this->assertSame(5, LicenseEvent::query()->where('license_id', $licenseId)->count());
+    }
+
+    public function test_licence_cannot_activate_before_start_or_after_effective_expiry(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $future = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => '2030-01-01T00:00:00Z',
+                'reason' => 'Issue a future-dated annual professional licence.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'lifecycle-future-issue-000001',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$future->json('data.id').'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Attempt to activate before the licence start date.',
+            ], ['X-Request-ID' => 'lifecycle-future-activate-000001'])
+            ->assertStatus(409);
+
+        $expired = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => '2020-01-01T00:00:00Z',
+                'reason' => 'Issue a historical annual licence for expiry validation.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'lifecycle-expired-issue-000001',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$expired->json('data.id').'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Attempt to activate an already expired licence.',
+            ], ['X-Request-ID' => 'lifecycle-expired-activate-000001'])
+            ->assertStatus(409);
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
