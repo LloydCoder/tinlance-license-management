@@ -60,7 +60,12 @@ final class PlanVersion extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $version): void {
-            if ($version->status !== 'draft' || (int) $version->version_number < 1) {
+            if (
+                $version->status !== 'draft'
+                || (int) $version->version_number < 1
+                || $version->published_at !== null
+                || $version->snapshot_sha256 !== null
+            ) {
                 throw new LogicException('Plan version lifecycle metadata is invalid.');
             }
 
