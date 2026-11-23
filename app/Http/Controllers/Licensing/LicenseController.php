@@ -104,6 +104,8 @@ final class LicenseController
             $plaintext = $issuance->revealSecret($actor, $record, $requestId);
         } catch (LicenseSecretUnavailableException $exception) {
             return $this->problem($exception->getMessage(), $request, 410);
+        } catch (LicenseIssuanceConflictException $exception) {
+            return $this->problem($exception->getMessage(), $request, 409);
         }
 
         return response()->json([
