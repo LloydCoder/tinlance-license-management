@@ -187,6 +187,7 @@ final class PlanVersion extends BaseModel
                 ! is_string($key)
                 || preg_match('/\A[a-z][a-z0-9_.-]{0,63}\z/D', $key) !== 1
                 || (! is_bool($value) && ! is_int($value) && ! is_string($value))
+                || (is_int($value) && ($value < -9007199254740991 || $value > 9007199254740991))
                 || (is_string($value) && mb_strlen($value) > 1000)
             ) {
                 throw new LogicException('Entitlements must be typed scalar values keyed by stable identifiers.');
