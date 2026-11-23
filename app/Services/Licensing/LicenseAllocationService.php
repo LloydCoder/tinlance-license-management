@@ -18,10 +18,10 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
-use Tlms\Domain\Licensing\DomainName;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Tlms\Domain\Licensing\DomainName;
 
 final readonly class LicenseAllocationService
 {
