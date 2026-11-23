@@ -2149,6 +2149,71 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
 
+  /licenses/{licenseId}/successors:
+    parameters:
+      - name: licenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Licences]
+      operationId: createLicenceSuccessor
+      summary: Transfer or replace an active licence through a successor
+      description: Requires licences.mutate and licences.issue, active vendor membership, product assignment (except vendor Super Admin), recent password confirmation and fresh MFA step-up. The source licence is revoked and linked to a newly issued successor in one transaction. The successor inherits the source plan version, start, expiry and grace deadline; its new key is available only through the existing one-time issuance secret-delivery endpoint. Transfer requires a different active customer organization; replacement preserves the current customer.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 128
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseSuccessorRequest'
+      responses:
+        '201':
+          description: Successor created and source licence revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseSuccessorResult'
+        '200':
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseSuccessorResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /licenses/{licenseId}/usage:
     parameters:
       - name: licenseId
@@ -3583,6 +3648,68 @@ components:
         request_id:
           type: string
 
+    LicenseSuccessorRequest:
+      type: object
+      additionalProperties: false
+      required: [relation_type, reason]
+      properties:
+        relation_type:
+          type: string
+          enum: [transfer, replacement]
+        destination_customer_organization_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+          description: Required for transfer and prohibited for replacement.
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseSuccessorResult:
+      type: object
+      additionalProperties: false
+      required: [data, replayed, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, relation_type, source_license_id, successor_license_id, destination_customer_organization_id, source_status, successor_status, issuance_request_id, secret_available]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            relation_type:
+              type: string
+              enum: [transfer, replacement]
+            source_license_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            successor_license_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            destination_customer_organization_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            source_status:
+              type: string
+              const: revoked
+            successor_status:
+              type: string
+              const: issued
+            issuance_request_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            secret_available:
+              type: boolean
+        replayed:
+          type: boolean
+        request_id:
+          type: string
     LicenseUsageRequest:
       type: object
       additionalProperties: false

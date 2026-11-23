@@ -51,6 +51,8 @@ final readonly class LicenseIssuanceService
         string $reason,
         string $idempotencyKey,
         string $requestId,
+        ?string $expiresAtOverride = null,
+        ?string $graceUntilOverride = null,
     ): array {
         $reason = trim($reason);
         $idempotencyKey = trim($idempotencyKey);
@@ -66,12 +68,22 @@ final readonly class LicenseIssuanceService
         }
 
         $normalizedStart = ($startsAt === null ? now() : Carbon::parse($startsAt))->utc();
+        $expiryOverride = $expiresAtOverride === null ? null : Carbon::parse($expiresAtOverride)->utc();
+        $graceOverride = $graceUntilOverride === null ? null : Carbon::parse($graceUntilOverride)->utc();
+        if (
+            ($expiryOverride !== null && $expiryOverride->lessThanOrEqualTo($normalizedStart))
+            || ($graceOverride !== null && ($expiryOverride === null || $graceOverride->lessThan($expiryOverride)))
+        ) {
+            throw new InvalidArgumentException('Successor licence term overrides are invalid.');
+        }
         $startValue = $normalizedStart->format('Y-m-d\TH:i:s.u\Z');
         $fingerprintPayload = [
             'product_id' => (string) $product->getKey(),
             'customer_organization_id' => (string) $customer->getKey(),
             'plan_version_id' => (string) $planVersion->getKey(),
             'starts_at' => $startValue,
+            'expires_at_override' => $expiryOverride?->toISOString(),
+            'grace_until_override' => $graceOverride?->toISOString(),
             'reason' => $reason,
         ];
 
@@ -86,6 +98,8 @@ final readonly class LicenseIssuanceService
             $customer,
             $planVersion,
             $normalizedStart,
+            $expiryOverride,
+            $graceOverride,
             $reason,
             $requestId,
             $vendorId,
@@ -165,7 +179,7 @@ final readonly class LicenseIssuanceService
                 $this->keyMaterial->activePepperKeyId(),
             );
 
-            $licenseExpiry = $this->calculateExpiry($lockedPlanVersion, $normalizedStart);
+            $licenseExpiry = $expiryOverride ?? $this->calculateExpiry($lockedPlanVersion, $normalizedStart);
             $license = License::query()->create([
                 'vendor_account_id' => $vendorId,
                 'customer_organization_id' => $lockedCustomer->getKey(),
@@ -177,7 +191,7 @@ final readonly class LicenseIssuanceService
                 'status' => 'issued',
                 'starts_at' => $normalizedStart,
                 'expires_at' => $licenseExpiry,
-                'grace_until' => null,
+                'grace_until' => $graceOverride,
                 'version' => 1,
                 'created_by_user_id' => $actorId,
             ]);
@@ -204,6 +218,7 @@ final readonly class LicenseIssuanceService
                 'status' => 'issued',
                 'starts_at' => $normalizedStart->toISOString(),
                 'expires_at' => $licenseExpiry?->toISOString(),
+                'grace_until' => $graceOverride?->toISOString(),
             ];
             ksort($eventPayload, SORT_STRING);
             $eventPayloadHash = hash('sha256', json_encode(
