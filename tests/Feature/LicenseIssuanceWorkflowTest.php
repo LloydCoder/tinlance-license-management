@@ -8,6 +8,8 @@ use App\Models\CustomerOrganization;
 use App\Models\License;
 use App\Models\LicenseEvent;
 use App\Models\LicenseIssuanceRequest;
+use App\Models\PlanVersion;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
@@ -199,7 +201,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
     }
 
     /**
-     * @return array{User, VendorAccount, \App\Models\Product, \App\Models\PlanVersion, CustomerOrganization}
+     * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
     private function createIssuanceFixture(): array
     {
@@ -292,13 +294,12 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'billing_email' => 'billing@licence-workflow.example',
         ]);
 
-        return [
-            $actor,
-            $vendor,
-            \App\Models\Product::query()->findOrFail($productId),
-            \App\Models\PlanVersion::query()->findOrFail($planVersionId),
-            $customer,
-        ];
+        /** @var Product $product */
+        $product = Product::query()->whereKey($productId)->firstOrFail();
+        /** @var PlanVersion $planVersion */
+        $planVersion = PlanVersion::query()->whereKey($planVersionId)->firstOrFail();
+
+        return [$actor, $vendor, $product, $planVersion, $customer];
     }
 
     /**
