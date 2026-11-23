@@ -37,7 +37,7 @@ final class Plan extends BaseModel
                 && $plan->versions()->where('status', 'published')->exists();
 
             if (
-                $plan->isDirty(['product_id', 'vendor_account_id', 'created_by_user_id', 'code'])
+                $plan->isDirty(['product_id', 'vendor_account_id', 'created_by_user_id', 'code', 'name', 'description'])
                 || ! in_array($originalStatus, ['draft', 'active'], true)
                 || ($plan->isDirty('status') && ! $statusTransitionAllowed)
                 || (int) $plan->version !== ((int) $plan->getOriginal('version') + 1)
