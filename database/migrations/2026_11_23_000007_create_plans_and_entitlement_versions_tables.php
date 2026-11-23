@@ -176,7 +176,10 @@ return new class extends Migration
             BEFORE INSERT ON plan_versions
             FOR EACH ROW
             BEGIN
-                IF NOT EXISTS (
+                IF NEW.status <> 'draft'
+                    OR NEW.published_at IS NOT NULL
+                    OR NEW.snapshot_sha256 IS NOT NULL
+                    OR NOT EXISTS (
                     SELECT 1 FROM plans
                     WHERE id = NEW.plan_id
                         AND product_id = NEW.product_id
