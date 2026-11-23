@@ -60,30 +60,11 @@ final class PlanVersion extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $version): void {
-            if (
-                $version->status !== 'draft'
-                || (int) $version->version_number < 1
-                || ! in_array($version->billing_model, ['perpetual', 'subscription', 'annual', 'trial'], true)
-                || preg_match('/\A[A-Z]{3}\z/D', (string) $version->currency) !== 1
-            ) {
-                throw new LogicException('Plan version metadata is invalid.');
+            if ($version->status !== 'draft' || (int) $version->version_number < 1) {
+                throw new LogicException('Plan version lifecycle metadata is invalid.');
             }
 
-            if (
-                $version->billing_model === 'subscription'
-                && ! in_array($version->billing_interval, ['month', 'year'], true)
-            ) {
-                throw new LogicException('Subscription plans require a supported billing interval.');
-            }
-
-            foreach ($version->entitlements as $key => $value) {
-                if (
-                    preg_match('/\A[a-z][a-z0-9_.-]{0,63}\z/D', $key) !== 1
-                    || (! is_bool($value) && ! is_int($value) && ! is_string($value))
-                ) {
-                    throw new LogicException('Entitlements must be typed scalar values keyed by stable identifiers.');
-                }
-            }
+            self::assertDraftMetadata($version);
         });
 
         self::updating(static function (self $version): void {
@@ -127,11 +108,62 @@ final class PlanVersion extends BaseModel
             ) {
                 throw new LogicException('Plan version lifecycle transition is invalid.');
             }
+
+            self::assertDraftMetadata($version);
         });
 
         self::deleting(static function (): never {
             throw new LogicException('Plan versions must be retained.');
         });
+    }
+
+    private static function assertDraftMetadata(self $version): void
+    {
+        $billingModel = $version->getAttribute('billing_model');
+        $currency = $version->getAttribute('currency');
+        $priceMinor = $version->getAttribute('price_minor');
+        $billingInterval = $version->getAttribute('billing_interval');
+        $trialDays = $version->getAttribute('trial_days');
+        $maintenanceDays = $version->getAttribute('maintenance_days');
+        $entitlements = $version->getAttribute('entitlements');
+
+        if (
+            ! is_string($billingModel)
+            || ! in_array($billingModel, ['perpetual', 'subscription', 'annual', 'trial'], true)
+            || ! is_string($currency)
+            || preg_match('/\A[A-Z]{3}\z/D', $currency) !== 1
+            || ! is_int($priceMinor)
+            || $priceMinor < 0
+            || $priceMinor > 9007199254740991
+            || ! is_int($trialDays)
+            || $trialDays < 0
+            || $trialDays > 365
+            || ! is_int($maintenanceDays)
+            || $maintenanceDays < 0
+            || $maintenanceDays > 3650
+            || ! is_array($entitlements)
+        ) {
+            throw new LogicException('Plan version metadata is invalid.');
+        }
+
+        if (
+            ($billingModel === 'subscription' && ! in_array($billingInterval, ['month', 'year'], true))
+            || ($billingModel !== 'subscription' && $billingInterval !== null)
+            || ($billingModel === 'trial' && $trialDays < 1)
+        ) {
+            throw new LogicException('Billing interval and trial duration do not match the billing model.');
+        }
+
+        foreach ($entitlements as $key => $value) {
+            if (
+                ! is_string($key)
+                || preg_match('/\A[a-z][a-z0-9_.-]{0,63}\z/D', $key) !== 1
+                || (! is_bool($value) && ! is_int($value) && ! is_string($value))
+                || (is_string($value) && mb_strlen($value) > 1000)
+            ) {
+                throw new LogicException('Entitlements must be typed scalar values keyed by stable identifiers.');
+            }
+        }
     }
 
     /** @return BelongsTo<Plan, $this> */
