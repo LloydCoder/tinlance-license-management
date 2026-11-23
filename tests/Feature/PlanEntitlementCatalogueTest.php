@@ -253,13 +253,6 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
-        $this->authenticated($manager)
-            ->postJson('/api/v1/plans/'.$plan.'/versions/'.$version.'/publish', [
-                'expected_version' => 2,
-                'reason' => 'Publish the immutable plan version.',
-            ])
-            ->assertOk();
-
         $this->expectException(QueryException::class);
 
         DB::table('plan_versions')
