@@ -197,7 +197,17 @@ final readonly class PlatformAccessAuditChainVerifier
             })
             ->where(function ($query): void {
                 $query->whereNull('latest_event.id')
-                    ->orWhereRaw('NOT (channels.current_product_version_id <=> latest_event.product_version_id)');
+                    ->orWhere(function ($mismatch): void {
+                        $mismatch->whereColumn('channels.current_product_version_id', '<>', 'latest_event.product_version_id')
+                            ->orWhere(function ($nullMismatch): void {
+                                $nullMismatch->whereNull('channels.current_product_version_id')
+                                    ->whereNotNull('latest_event.product_version_id');
+                            })
+                            ->orWhere(function ($nullMismatch): void {
+                                $nullMismatch->whereNotNull('channels.current_product_version_id')
+                                    ->whereNull('latest_event.product_version_id');
+                            });
+                    });
             })
             ->exists();
 
