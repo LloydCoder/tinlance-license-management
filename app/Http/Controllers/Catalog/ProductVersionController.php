@@ -159,6 +159,21 @@ final class ProductVersionController
         ]);
     }
 
+    /**
+     * @return array{
+     *     id: string,
+     *     product_id: string,
+     *     version: string,
+     *     status: string,
+     *     release_notes: string|null,
+     *     artifact_sha256: string|null,
+     *     artifact_size_bytes: int|null,
+     *     version_number: int,
+     *     published_at: string|null,
+     *     created_at: string|null,
+     *     updated_at: string|null
+     * }
+     */
     private function serialize(ProductVersion $version): array
     {
         return [
