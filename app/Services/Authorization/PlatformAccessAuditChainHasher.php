@@ -128,6 +128,47 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
+     * @param  list<string>  $changedFields
+     *
+     * @throws JsonException
+     */
+    public function hashProductVersionEvent(
+        string $id,
+        string $productVersionId,
+        string $productId,
+        string $vendorAccountId,
+        string $actorUserId,
+        string $eventType,
+        string $reason,
+        array $changedFields,
+        string $changeDigest,
+        string $requestId,
+        string $createdAt,
+    ): string {
+        sort($changedFields, SORT_STRING);
+
+        $canonicalEvent = [
+            'version' => 1,
+            'id' => $id,
+            'product_version_id' => $productVersionId,
+            'product_id' => $productId,
+            'vendor_account_id' => $vendorAccountId,
+            'actor_user_id' => $actorUserId,
+            'event_type' => $eventType,
+            'reason' => $reason,
+            'changed_fields' => $changedFields,
+            'change_digest' => $changeDigest,
+            'request_id' => $requestId,
+            'created_at' => $createdAt,
+        ];
+
+        return hash('sha256', json_encode(
+            $canonicalEvent,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        ));
+    }
+
+    /**
      * @throws JsonException
      */
     public function hashProductAssignmentEvent(

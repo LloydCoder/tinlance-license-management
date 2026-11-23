@@ -59,6 +59,32 @@ final readonly class ProductPolicy
             && $this->view($user, $product);
     }
 
+    public function manageVersions(User $user, Product $product): bool
+    {
+        $vendor = VendorAccount::query()
+            ->whereKey($product->vendor_account_id)
+            ->where('status', 'active')
+            ->first();
+
+        return ! $this->platformAuthorization->isBootstrapSuperAdmin($user)
+            && $vendor instanceof VendorAccount
+            && $this->authorization->vendorCan($user, $vendor, 'plans.entitlements.manage')
+            && $this->view($user, $product);
+    }
+
+    public function publishVersions(User $user, Product $product): bool
+    {
+        $vendor = VendorAccount::query()
+            ->whereKey($product->vendor_account_id)
+            ->where('status', 'active')
+            ->first();
+
+        return ! $this->platformAuthorization->isBootstrapSuperAdmin($user)
+            && $vendor instanceof VendorAccount
+            && $this->authorization->vendorCan($user, $vendor, 'releases.publish')
+            && $this->view($user, $product);
+    }
+
     public function manageAssignments(User $user, Product $product): bool
     {
         $vendor = VendorAccount::query()

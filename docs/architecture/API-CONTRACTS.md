@@ -187,3 +187,13 @@ The OpenAPI document is a first contract draft and must pass schema validation, 
 - Product creators receive an initial assignment. Product managers and developers can list/read only products actively assigned to their vendor membership; developers are read-only. Product managers can update assigned draft products. Vendor Super Admins can view/manage all products in their vendor account.
 - Assignment state is mutable only through grant/revoke transitions; every transition creates an immutable product_assignment_events row and a version-2 platform audit event in the same transaction. The verifier checks event payload binding, complete event coverage and duplicate references.
 - Product versions, release channels, plans, entitlements and price versions are not yet implemented.
+
+
+## Product versions
+
+- GET /api/v1/products/{productId}/versions lists versions for products the active vendor membership may read. Product managers and developers see assigned products; vendor Super Admins see all products in their vendor account.
+- POST /api/v1/products/{productId}/versions creates a draft semantic version. The caller must have plans.entitlements.manage and an active assignment (or be the vendor Super Admin). The product/version pair is unique.
+- PATCH /api/v1/products/{productId}/versions/{productVersionId} updates draft release notes and artifact metadata with expected_version optimistic locking. Published versions cannot be edited.
+- POST /api/v1/products/{productId}/versions/{productVersionId}/publish requires releases.publish, a SHA-256 artifact digest, a positive artifact size, a reason and fresh MFA step-up. Publishing freezes the version metadata.
+- Version creation, update and publish create immutable product_version_events rows and version-2 platform audit events in the same transaction. The chain verifier checks the product/version/vendor/actor/request binding, event payload digest, complete event coverage and duplicate references.
+- Artifact bytes are not stored or distributed by this increment. Artifact upload/storage, signing, release channels, rollout policy and SDK update distribution remain separate phases.

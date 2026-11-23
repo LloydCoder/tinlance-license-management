@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Catalog\ProductAssignmentController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
+use App\Http\Controllers\Catalog\ProductVersionController;
 use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
@@ -124,6 +125,21 @@ Route::middleware([
     Route::delete('/products/{product}/assignments/{membership}', [ProductAssignmentController::class, 'destroy'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.products.assignments.destroy');
+    Route::get('/products/{product}/versions', [ProductVersionController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.products.versions.index');
+    Route::post('/products/{product}/versions', [ProductVersionController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.versions.store');
+    Route::get('/products/{product}/versions/{productVersion}', [ProductVersionController::class, 'show'])
+        ->middleware('throttle:60,1')
+        ->name('api.products.versions.show');
+    Route::patch('/products/{product}/versions/{productVersion}', [ProductVersionController::class, 'update'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.versions.update');
+    Route::post('/products/{product}/versions/{productVersion}/publish', [ProductVersionController::class, 'publish'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.versions.publish');
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/role-approval-requests', [VendorRoleApprovalController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor.role-approvals.store');

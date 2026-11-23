@@ -451,12 +451,12 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 ## PR #98 — product registry foundation (2026-11-23)
 
 - Adds tenant-owned products with stable internal ULIDs and public UUIDs, vendor-scoped unique slugs, draft lifecycle state and optimistic resource versions.
-- Adds product creation/list/read/update endpoints. Product managers initially manage products they create; vendor Super Admins can read and manage all products in their vendor account. Explicit multi-user product assignment is a follow-on slice.
+- Adds product creation/list/read/update endpoints. Product managers and developers list/read only products assigned to their active vendor membership; developers are read-only, and product managers can update assigned draft products. Vendor Super Admins can read/manage all products in their vendor account and alone grant/revoke assignments.
 - Product updates are draft-only and require expected_version. Vendor ownership, public ID, creator and lifecycle status are server-controlled. Slug uniqueness is enforced by both vendor-row serialization and a database unique constraint.
 - Product create/update operations require recent password confirmation and fresh MFA step-up, recheck active membership under row lock, and write immutable product_events plus version-2 platform audit evidence in the same transaction.
 - The audit verifier checks product, vendor/tenant, actor, event type, request ID, reason, changed fields and canonical before/after digest. Eloquent guards and MySQL/MariaDB triggers protect product event history.
 - Exact PR merge-ref CI and Security Analysis are required before merge.
-- This is the product catalogue foundation only. Product versions/release channels, plans/plan versions, entitlement definitions/snapshots, price versions, trials and licence issuance remain incomplete.
+- This is the product catalogue foundation only. Product version draft/publish lifecycle is implemented in the Phase 5 increment below. Release channels, plans/plan versions, entitlement definitions/snapshots, price versions, trials and licence issuance remain incomplete.
 
 
 ## Phase 4 increment — explicit product assignment ABAC (2026-11-23)
@@ -467,3 +467,12 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - Grant/revoke writes require the existing recent-password and fresh five-minute TOTP/passkey step-up middleware. The service locks and revalidates product, vendor, actor and target membership in one transaction.
 - Each grant/revoke creates an immutable product_assignment_events record and a version-2 platform audit-chain event. The verifier checks assignment/product/vendor/membership/actor/request binding, complete event coverage and duplicate references. MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect assignment-event rows.
 - This closes the product-assignment portion of Phase 4 resource-level ABAC. It does not complete Phase 4: generalized policies for plans, licences, payments, resellers and releases, broader privileged-operation approvals and full portals remain open.
+
+
+## Phase 5 increment — immutable product version lifecycle (2026-11-23)
+
+- Adds product-scoped semantic versions with unique (product_id, version), draft/published states, release notes, SHA-256 artifact metadata and optimistic version numbers.
+- Product managers with plans.entitlements.manage can create/update drafts only for assigned products; developers can read versions for assigned products but cannot create or edit them. Vendor Super Admins retain vendor-wide product version authority.
+- Publishing requires releases.publish, a positive artifact size, a 64-character SHA-256 digest, recent password confirmation and fresh TOTP/passkey step-up. Published version metadata is immutable.
+- Product version events are immutable, transactionally linked to version-2 platform audit events, verified for tenant/actor/request/payload binding and complete unique event coverage. MySQL/MariaDB triggers protect event history and enforce version state transitions.
+- Artifact bytes, artifact storage, signing, release channels, rollout policies and update distribution are not implemented by this increment.

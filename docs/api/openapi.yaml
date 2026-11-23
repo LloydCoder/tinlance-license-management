@@ -92,6 +92,175 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /products/{productId}/versions:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    get:
+      tags: [Products]
+      operationId: listProductVersions
+      description: Lists versions for a product the active vendor membership may read. Product managers and developers see versions only for assigned products; vendor Super Admins see all products in their vendor account.
+      responses:
+        '200':
+          description: Product versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductVersionCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags: [Products]
+      operationId: createProductVersion
+      description: Creates a draft semantic version for an assigned product. Requires plans.entitlements.manage, recent password confirmation and fresh MFA step-up. Version identity is unique per product.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductVersionCreateRequest'
+      responses:
+        '201':
+          description: Draft product version created with immutable audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductVersionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /products/{productId}/versions/{productVersionId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+      - name: productVersionId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    get:
+      tags: [Products]
+      operationId: getProductVersion
+      responses:
+        '200':
+          description: Product version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductVersionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Products]
+      operationId: updateProductVersion
+      description: Updates draft release notes and artifact metadata using optimistic version control. Published versions are immutable. Requires plans.entitlements.manage and fresh MFA step-up.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductVersionUpdateRequest'
+      responses:
+        '200':
+          description: Draft product version updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductVersionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /products/{productId}/versions/{productVersionId}/publish:
+    post:
+      tags: [Products]
+      operationId: publishProductVersion
+      description: Publishes a draft version only after a valid SHA-256 artifact digest and positive artifact size are recorded. Requires releases.publish, recent password confirmation and fresh MFA step-up. Published metadata is immutable.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - name: productVersionId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductVersionPublishRequest'
+      responses:
+        '200':
+          description: Product version published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductVersionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /vendor-accounts/{vendorId}/memberships/{membershipId}/role-approval-requests:
     post:
       tags: [Identity]
@@ -1555,6 +1724,114 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Product'
+        meta:
+          $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+    ProductVersionCreateRequest:
+      type: object
+      required: [version, reason]
+      additionalProperties: false
+      properties:
+        version:
+          type: string
+          maxLength: 64
+          description: Semantic version identifier; validated by the API.
+        release_notes:
+          type: [string, 'null']
+          maxLength: 5000
+        artifact_sha256:
+          type: [string, 'null']
+          pattern: '^[a-fA-F0-9]{64}$'
+        artifact_size_bytes:
+          type: [integer, 'null']
+          minimum: 1
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductVersionUpdateRequest:
+      type: object
+      required: [expected_version, release_notes, artifact_sha256, artifact_size_bytes, reason]
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        release_notes:
+          type: [string, 'null']
+          maxLength: 5000
+        artifact_sha256:
+          type: [string, 'null']
+          pattern: '^[a-fA-F0-9]{64}$'
+        artifact_size_bytes:
+          type: [integer, 'null']
+          minimum: 1
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductVersionPublishRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductVersion:
+      type: object
+      required: [id, product_id, version, status, version_number, published_at, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        product_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        version:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        release_notes:
+          type: [string, 'null']
+        artifact_sha256:
+          type: [string, 'null']
+          pattern: '^[a-f0-9]{64}$'
+        artifact_size_bytes:
+          type: [integer, 'null']
+        version_number:
+          type: integer
+          minimum: 1
+        published_at:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+    ProductVersionResult:
+      type: object
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductVersion'
+        request_id:
+          type: string
+    ProductVersionCollection:
+      type: object
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVersion'
         meta:
           $ref: '#/components/schemas/Pagination'
         request_id:
