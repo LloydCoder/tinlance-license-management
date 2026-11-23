@@ -38,8 +38,9 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'starts_at' => '2030-01-01T00:00:00Z',
             'reason' => 'Customer payment confirmed for the annual professional plan.',
         ];
+        $idempotencyKey = str()->random(40);
         $headers = [
-            'Idempotency-Key' => 'license-issue-idempotency-000001',
+            'Idempotency-Key' => $idempotencyKey,
             'X-Request-ID' => 'license-issue-request-000001',
         ];
 
@@ -67,6 +68,11 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'event_type' => 'issued',
             'request_id' => 'license-issue-request-000001',
         ]);
+
+        $pendingRequest = LicenseIssuanceRequest::query()->findOrFail($issuanceRequestId);
+        $this->assertSame(hash('sha256', $idempotencyKey), $pendingRequest->idempotency_key_sha256);
+        $this->assertNotNull($pendingRequest->response_ciphertext);
+        $this->assertStringNotContainsString('tlms_', (string) $pendingRequest->response_ciphertext);
 
         $retry = $this->authenticated($actor)
             ->postJson('/api/v1/products/'.$product->getKey().'/licenses', $payload, [
@@ -142,11 +148,13 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'plan_version_id' => $planVersion->getKey(),
             'reason' => 'Customer payment confirmed for the annual professional plan.',
         ];
+        $idempotencyKey = str()->random(40);
+        $requestId = 'license-issue-request-000002';
 
         $this->authenticated($actor)
             ->postJson('/api/v1/products/'.$product->getKey().'/licenses', $payload, [
-                'Idempotency-Key' => 'license-issue-idempotency-000002',
-                'X-Request-ID' => 'license-issue-request-000002',
+                'Idempotency-Key' => $idempotencyKey,
+                'X-Request-ID' => $requestId,
             ])
             ->assertCreated();
 
@@ -155,15 +163,15 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                 ...$payload,
                 'reason' => 'A materially different reason for this issuance request.',
             ], [
-                'Idempotency-Key' => 'license-issue-idempotency-000002',
+                'Idempotency-Key' => $idempotencyKey,
                 'X-Request-ID' => 'license-issue-retry-000003',
             ])
             ->assertStatus(409);
 
         $this->authenticated($actor)
             ->postJson('/api/v1/products/'.$product->getKey().'/licenses', $payload, [
-                'Idempotency-Key' => 'license-issue-idempotency-000003',
-                'X-Request-ID' => 'license-issue-request-000002',
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => $requestId,
             ])
             ->assertStatus(409);
 
@@ -182,7 +190,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                 'plan_version_id' => $planVersion->getKey(),
                 'reason' => 'Attempt cross-vendor licence issuance without authorization.',
             ], [
-                'Idempotency-Key' => 'foreign-license-idempotency-0001',
+                'Idempotency-Key' => str()->random(40),
                 'X-Request-ID' => 'foreign-license-request-0001',
             ])
             ->assertForbidden();
