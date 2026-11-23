@@ -146,6 +146,10 @@ final readonly class ReleaseChannelService
             }
 
             if ((string) $channel->current_product_version_id === (string) $version->getKey()) {
+                if ($product->status === 'draft') {
+                    $this->activateProduct($product, $actor, $reason, $requestId);
+                }
+
                 return [$channel, true];
             }
 
