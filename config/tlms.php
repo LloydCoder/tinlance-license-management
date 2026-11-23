@@ -18,4 +18,11 @@ return [
     'memberships' => [
         'invitation_ttl_hours' => max(1, min(168, (int) env('TLMS_MEMBERSHIP_INVITATION_TTL_HOURS', 72))),
     ],
+    'licensing' => [
+        'key_peppers_json' => env('TLMS_LICENSE_KEY_PEPPERS_JSON', ''),
+        'active_pepper_key_id' => env('TLMS_LICENSE_KEY_ACTIVE_PEPPER_ID', ''),
+        'response_encryption_keys_json' => env('TLMS_LICENSE_RESPONSE_ENCRYPTION_KEYS_JSON', ''),
+        'active_response_encryption_key_id' => env('TLMS_LICENSE_RESPONSE_ACTIVE_KEY_ID', ''),
+        'issuance_secret_ttl_seconds' => max(60, min(86400, (int) env('TLMS_LICENSE_ISSUANCE_SECRET_TTL_SECONDS', 900))),
+    ],
 ];
