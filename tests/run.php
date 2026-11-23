@@ -4,6 +4,7 @@ declare(strict_types=1);
 use Tlms\Tests\Unit\Domain\DomainNameTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyPepperRingTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyTest;
+use Tlms\Tests\Unit\Domain\LicenseLifecycleTest;
 
 require __DIR__.'/bootstrap.php';
 
@@ -11,6 +12,7 @@ $tests = [
     new LicenseKeyTest,
     new LicenseKeyPepperRingTest,
     new DomainNameTest,
+    new LicenseLifecycleTest,
 ];
 
 $failures = 0;
