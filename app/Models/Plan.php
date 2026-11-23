@@ -20,6 +20,8 @@ final class Plan extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $plan): void {
+            self::assertTenantIntegrity($plan);
+
             if ($plan->status !== 'draft' || (int) $plan->version !== 1
                 || preg_match('/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/D', (string) $plan->code) !== 1
                 || mb_strlen((string) $plan->name) < 2 || mb_strlen((string) $plan->name) > 160
@@ -39,6 +41,23 @@ final class Plan extends BaseModel
         self::deleting(static function (): never {
             throw new LogicException('Plans must be retained.');
         });
+    }
+
+    private static function assertTenantIntegrity(self $plan): void
+    {
+        $product = Product::query()->whereKey($plan->product_id)->first();
+        $vendor = VendorAccount::query()
+            ->whereKey($plan->vendor_account_id)
+            ->where('status', 'active')
+            ->first();
+
+        if (
+            ! $product instanceof Product
+            || ! $vendor instanceof VendorAccount
+            || (string) $product->vendor_account_id !== (string) $vendor->getKey()
+        ) {
+            throw new LogicException('A plan must remain within its product vendor tenant.');
+        }
     }
 
     /** @return BelongsTo<Product, $this> */
