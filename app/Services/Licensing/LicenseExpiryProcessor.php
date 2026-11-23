@@ -7,6 +7,8 @@ namespace App\Services\Licensing;
 use App\Models\License;
 use App\Models\LicenseAllocationEvent;
 use App\Models\LicenseEvent;
+use App\Models\LicenseUsageEvent;
+use App\Models\VendorAccount;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -38,6 +40,13 @@ final class LicenseExpiryProcessor
 
         foreach ($candidateIds as $licenseId) {
             $didExpire = DB::transaction(function () use ($licenseId, $cutoff): bool {
+                /** @var License|null $candidate */
+                $candidate = License::query()->whereKey($licenseId)->first();
+                if (! $candidate instanceof License) {
+                    return false;
+                }
+
+                VendorAccount::query()->whereKey($candidate->vendor_account_id)->lockForUpdate()->firstOrFail();
                 /** @var License|null $license */
                 $license = License::query()->whereKey($licenseId)->lockForUpdate()->first();
 
@@ -60,6 +69,10 @@ final class LicenseExpiryProcessor
                         ->where('request_id', $requestId)
                         ->exists()
                     || LicenseAllocationEvent::query()
+                        ->where('vendor_account_id', $license->vendor_account_id)
+                        ->where('request_id', $requestId)
+                        ->exists()
+                    || LicenseUsageEvent::query()
                         ->where('vendor_account_id', $license->vendor_account_id)
                         ->where('request_id', $requestId)
                         ->exists()
