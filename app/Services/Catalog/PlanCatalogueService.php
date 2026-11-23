@@ -265,7 +265,11 @@ final readonly class PlanCatalogueService
                 'snapshot_sha256' => hash('sha256', json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)),
             ])->save();
 
-            $lockedPlan->forceFill(['version' => (int) $lockedPlan->version + 1])->save();
+            $planChanges = ['version' => (int) $lockedPlan->version + 1];
+            if ($lockedPlan->status === 'draft') {
+                $planChanges['status'] = 'active';
+            }
+            $lockedPlan->forceFill($planChanges)->save();
 
             $this->event(
                 $lockedPlan,
