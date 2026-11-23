@@ -203,6 +203,13 @@ return new class extends Migration
             BEFORE INSERT ON plan_events
             FOR EACH ROW
             BEGIN
+                IF NEW.event_type NOT IN ('created', 'version_created', 'version_updated', 'version_published')
+                    OR (NEW.event_type = 'created' AND NEW.plan_version_id IS NOT NULL)
+                    OR (NEW.event_type <> 'created' AND NEW.plan_version_id IS NULL) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan event type and version scope are invalid';
+                END IF;
+
                 IF NOT EXISTS (
                     SELECT 1
                     FROM plans
