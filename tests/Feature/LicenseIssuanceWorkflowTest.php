@@ -635,6 +635,97 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_expiry_command_transitions_overdue_licences_with_immutable_system_evidence(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => '2020-01-01T00:00:00Z',
+                'reason' => 'Issue an annual licence to verify scheduled expiry processing.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'expiry-command-issuance-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+
+        $this->artisan('tlms:licenses:expire --limit=10')
+            ->expectsOutputToContain('1 licence expired')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('licenses', [
+            'id' => $licenseId,
+            'status' => 'expired',
+            'version' => 2,
+        ]);
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $licenseId,
+            'actor_type' => 'system',
+            'actor_user_id' => null,
+            'event_type' => 'expired',
+            'from_status' => 'issued',
+            'to_status' => 'expired',
+            'request_id' => 'sys:license-expiry:'.$licenseId.':1',
+        ]);
+
+        $this->artisan('tlms:licenses:expire --limit=10')
+            ->expectsOutputToContain('0 licences expired')
+            ->assertExitCode(0);
+
+        $this->assertSame(1, DB::table('license_events')->where('license_id', $licenseId)->where('event_type', 'expired')->count());
+    }
+
+    public function test_expiry_command_respects_grace_deadlines_and_processes_a_bounded_batch(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $first = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => '2020-01-01T00:00:00Z',
+                'reason' => 'Issue an overdue licence with a future grace deadline.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'expiry-grace-issuance-000001',
+            ])
+            ->assertCreated();
+        $graceLicenseId = (string) $first->json('data.id');
+        DB::table('licenses')->where('id', $graceLicenseId)->update([
+            'grace_until' => now()->addDay(),
+        ]);
+
+        $second = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => '2020-01-01T00:00:00Z',
+                'reason' => 'Issue a second overdue licence for batch-boundary verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'expiry-batch-issuance-000001',
+            ])
+            ->assertCreated();
+        $batchLicenseId = (string) $second->json('data.id');
+
+        $this->artisan('tlms:licenses:expire --limit=1')
+            ->expectsOutputToContain('1 licence expired')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('licenses', [
+            'id' => $graceLicenseId,
+            'status' => 'issued',
+            'version' => 1,
+        ]);
+        $this->assertDatabaseHas('licenses', [
+            'id' => $batchLicenseId,
+            'status' => 'expired',
+            'version' => 2,
+        ]);
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
