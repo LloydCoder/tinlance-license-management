@@ -149,6 +149,8 @@ return new class extends Migration
                     OR NEW.product_id <> OLD.product_id
                     OR NEW.vendor_account_id <> OLD.vendor_account_id
                     OR NEW.code <> OLD.code
+                    OR NEW.name <> OLD.name
+                    OR NOT (NEW.description <=> OLD.description)
                     OR NEW.created_by_user_id <> OLD.created_by_user_id
                     OR NEW.version <> OLD.version + 1 THEN
                     SIGNAL SQLSTATE '45000'
@@ -182,7 +184,7 @@ return new class extends Migration
                         AND status IN ('draft', 'active')
                 ) THEN
                     SIGNAL SQLSTATE '45000'
-                        SET MESSAGE_TEXT = 'Plan versions must belong to a draft plan in the same tenant';
+                        SET MESSAGE_TEXT = 'Plan versions must belong to an active plan in the same tenant';
                 END IF;
             END
             SQL);
