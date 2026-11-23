@@ -176,7 +176,32 @@ final readonly class PlatformAccessAuditChainVerifier
             ->havingRaw('COUNT(*) > 1')
             ->exists();
 
-        return ! $duplicateReleaseChannelReferencesExist;
+        if ($duplicateReleaseChannelReferencesExist) {
+            return false;
+        }
+
+        $invalidReleaseChannelSequencesExist = DB::table('release_channel_events')
+            ->select('release_channel_id')
+            ->groupBy('release_channel_id')
+            ->havingRaw('MIN(channel_version_number) <> 1 OR MAX(channel_version_number) <> COUNT(*)')
+            ->exists();
+
+        if ($invalidReleaseChannelSequencesExist) {
+            return false;
+        }
+
+        $releaseChannelStateMismatchExists = DB::table('release_channels as channels')
+            ->leftJoin('release_channel_events as latest_event', function ($join): void {
+                $join->on('latest_event.release_channel_id', '=', 'channels.id')
+                    ->on('latest_event.channel_version_number', '=', 'channels.version_number');
+            })
+            ->where(function ($query): void {
+                $query->whereNull('latest_event.id')
+                    ->orWhereRaw('NOT (channels.current_product_version_id <=> latest_event.product_version_id)');
+            })
+            ->exists();
+
+        return ! $releaseChannelStateMismatchExists;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
@@ -366,6 +391,7 @@ final readonly class PlatformAccessAuditChainVerifier
                 'release_channel_events.vendor_account_id',
                 'release_channel_events.actor_user_id',
                 'release_channel_events.event_type',
+                'release_channel_events.channel_version_number',
                 'release_channel_events.previous_product_version_id',
                 'release_channel_events.product_version_id',
                 'release_channel_events.reason',
@@ -409,6 +435,7 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $event->vendor_account_id,
             (string) $event->actor_user_id,
             (string) $event->event_type,
+            (int) $event->channel_version_number,
             $event->previous_product_version_id === null ? null : (string) $event->previous_product_version_id,
             $event->product_version_id === null ? null : (string) $event->product_version_id,
             (string) $event->reason,

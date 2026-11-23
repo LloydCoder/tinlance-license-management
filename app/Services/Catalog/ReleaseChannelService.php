@@ -92,7 +92,7 @@ final readonly class ReleaseChannelService
                 'updated_by_user_id' => $actor->getKey(),
             ]);
 
-            $this->appendEvent($channel, $lockedProduct, $actor, 'created', null, null, $reason, $this->normalizeRequestId($requestId));
+            $this->appendEvent($channel, $lockedProduct, $actor, 'created', 1, null, null, $reason, $this->normalizeRequestId($requestId));
 
             return $channel->refresh();
         }, 3);
@@ -148,22 +148,24 @@ final readonly class ReleaseChannelService
             }
 
             $previousVersionId = $channel->current_product_version_id;
-            $channel->forceFill([
-                'current_product_version_id' => $version->getKey(),
-                'version_number' => $expectedVersion + 1,
-                'updated_by_user_id' => $actor->getKey(),
-            ])->save();
-
+            $nextVersionNumber = $expectedVersion + 1;
             $this->appendEvent(
                 $channel,
                 $product,
                 $actor,
                 'promoted',
+                $nextVersionNumber,
                 $previousVersionId === null ? null : (string) $previousVersionId,
                 (string) $version->getKey(),
                 $reason,
                 $this->normalizeRequestId($requestId),
             );
+
+            $channel->forceFill([
+                'current_product_version_id' => $version->getKey(),
+                'version_number' => $nextVersionNumber,
+                'updated_by_user_id' => $actor->getKey(),
+            ])->save();
 
             return [$channel->refresh(), false];
         }, 3);
@@ -218,6 +220,7 @@ final readonly class ReleaseChannelService
         Product $product,
         User $actor,
         string $eventType,
+        int $channelVersionNumber,
         ?string $previousVersionId,
         ?string $productVersionId,
         string $reason,
@@ -229,6 +232,7 @@ final readonly class ReleaseChannelService
             'vendor_account_id' => $product->vendor_account_id,
             'actor_user_id' => $actor->getKey(),
             'event_type' => $eventType,
+            'channel_version_number' => $channelVersionNumber,
             'previous_product_version_id' => $previousVersionId,
             'product_version_id' => $productVersionId,
             'reason' => $reason,
@@ -244,6 +248,7 @@ final readonly class ReleaseChannelService
             (string) $product->vendor_account_id,
             (string) $actor->getKey(),
             $eventType,
+            $channelVersionNumber,
             $previousVersionId,
             $productVersionId,
             $reason,

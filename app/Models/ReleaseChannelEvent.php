@@ -13,6 +13,7 @@ use LogicException;
  * @property string $vendor_account_id
  * @property string $actor_user_id
  * @property string $event_type
+ * @property int $channel_version_number
  * @property string|null $previous_product_version_id
  * @property string|null $product_version_id
  * @property string $reason
@@ -28,6 +29,7 @@ final class ReleaseChannelEvent extends BaseModel
         'vendor_account_id',
         'actor_user_id',
         'event_type',
+        'channel_version_number',
         'previous_product_version_id',
         'product_version_id',
         'reason',
@@ -45,6 +47,7 @@ final class ReleaseChannelEvent extends BaseModel
         self::creating(static function (self $event): void {
             if (
                 ! in_array($event->event_type, ['created', 'promoted'], true)
+                || (int) $event->channel_version_number < 1
                 || mb_strlen(trim((string) $event->reason)) < 5
                 || mb_strlen((string) $event->reason) > 500
                 || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', (string) $event->request_id) !== 1
