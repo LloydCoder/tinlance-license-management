@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Licensing;
 
-use InvalidArgumentException;
+use App\Exceptions\LicenseKeyConfigurationException;
 use JsonException;
 use Tlms\Domain\Licensing\LicenseKeyPepperRing;
 use Tlms\Domain\Licensing\LicenseResponseCipherRing;
@@ -22,7 +22,7 @@ final class LicenseKeyMaterialProvider
         $activeKeyId = config('tlms.licensing.active_pepper_key_id');
 
         if (! is_string($activeKeyId) || $activeKeyId === '') {
-            throw new InvalidArgumentException('The active licence-key pepper identifier is not configured.');
+            throw new LicenseKeyConfigurationException('The active licence-key pepper identifier is not configured.');
         }
 
         return new LicenseKeyPepperRing($keys, $activeKeyId);
@@ -32,7 +32,7 @@ final class LicenseKeyMaterialProvider
     {
         $keyId = config('tlms.licensing.active_pepper_key_id');
         if (! is_string($keyId) || $keyId === '') {
-            throw new InvalidArgumentException('The active licence-key pepper identifier is not configured.');
+            throw new LicenseKeyConfigurationException('The active licence-key pepper identifier is not configured.');
         }
 
         return $keyId;
@@ -49,7 +49,7 @@ final class LicenseKeyMaterialProvider
         $keyId = $this->activePepperKeyId();
 
         if (! array_key_exists($keyId, $keys)) {
-            throw new InvalidArgumentException('The active licence-key pepper is missing from the configured key ring.');
+            throw new LicenseKeyConfigurationException('The active licence-key pepper is missing from the configured key ring.');
         }
 
         return $keys[$keyId];
@@ -66,7 +66,7 @@ final class LicenseKeyMaterialProvider
         $activeKeyId = config('tlms.licensing.active_response_encryption_key_id');
 
         if (! is_string($activeKeyId) || $activeKeyId === '') {
-            throw new InvalidArgumentException('The active issuance response-encryption key identifier is not configured.');
+            throw new LicenseKeyConfigurationException('The active issuance response-encryption key identifier is not configured.');
         }
 
         return new LicenseResponseCipherRing($keys, $activeKeyId);
@@ -78,17 +78,17 @@ final class LicenseKeyMaterialProvider
     private function decodeKeyRing(mixed $json, string $label, int $minimumBytes, int $maximumBytes): array
     {
         if (! is_string($json) || trim($json) === '') {
-            throw new InvalidArgumentException('The '.$label.' key ring is not configured.');
+            throw new LicenseKeyConfigurationException('The '.$label.' key ring is not configured.');
         }
 
         try {
             $encodedKeys = json_decode($json, true, 16, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
-            throw new InvalidArgumentException('The '.$label.' key ring configuration is invalid.', previous: $exception);
+            throw new LicenseKeyConfigurationException('The '.$label.' key ring configuration is invalid.', previous: $exception);
         }
 
         if (! is_array($encodedKeys) || $encodedKeys === []) {
-            throw new InvalidArgumentException('The '.$label.' key ring configuration is invalid.');
+            throw new LicenseKeyConfigurationException('The '.$label.' key ring configuration is invalid.');
         }
 
         $keys = [];
@@ -99,7 +99,7 @@ final class LicenseKeyMaterialProvider
                 || ! is_string($encodedKey)
                 || preg_match('/\A[A-Za-z0-9_-]+\z/D', $encodedKey) !== 1
             ) {
-                throw new InvalidArgumentException('The '.$label.' key ring contains an invalid entry.');
+                throw new LicenseKeyConfigurationException('The '.$label.' key ring contains an invalid entry.');
             }
 
             $decoded = base64_decode(
@@ -113,7 +113,7 @@ final class LicenseKeyMaterialProvider
                 || strlen($decoded) > $maximumBytes
                 || self::base64UrlEncode($decoded) !== $encodedKey
             ) {
-                throw new InvalidArgumentException('The '.$label.' key ring contains invalid key material.');
+                throw new LicenseKeyConfigurationException('The '.$label.' key ring contains invalid key material.');
             }
 
             $keys[$keyId] = $decoded;
