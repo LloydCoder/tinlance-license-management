@@ -226,6 +226,26 @@ final class ProductCatalogFoundationTest extends TestCase
         $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
+    public function test_product_audit_verifier_rejects_unreferenced_product_events(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+        $product = $this->createProduct($manager);
+
+        ProductEvent::query()->create([
+            'product_id' => $product->getKey(),
+            'vendor_account_id' => $product->vendor_account_id,
+            'actor_user_id' => $manager->getKey(),
+            'event_type' => 'updated',
+            'reason' => 'Unlinked event must invalidate audit evidence.',
+            'changed_fields' => ['name'],
+            'change_digest' => str_repeat('0', 64),
+            'request_id' => 'unlinked-product-event-0001',
+            'created_at' => now(),
+        ]);
+
+        $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
     public function test_mysql_and_mariadb_reject_raw_product_event_updates_and_deletes(): void
     {
         if (DB::connection()->getDriverName() !== 'mysql') {
