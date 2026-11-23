@@ -19,6 +19,7 @@ use App\Http\Controllers\Licensing\LicenseAllocationController;
 use App\Http\Controllers\Licensing\LicenseController;
 use App\Http\Controllers\Licensing\LicenseLifecycleController;
 use App\Http\Controllers\Licensing\LicenseUsageController;
+use App\Http\Controllers\Licensing\LicenseSuccessorController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
 use App\Http\Controllers\Security\MfaStepUpController;
 use App\Http\Controllers\Setup\SuperAdminBootstrapController;
@@ -259,6 +260,9 @@ Route::middleware([
     Route::post('/licenses/{license}/usage', [LicenseUsageController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:30,1'])
         ->name('api.licenses.usage.store');
+    Route::post('/licenses/{license}/successors', [LicenseSuccessorController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.licenses.successors.store');
 });
 
 Route::middleware([
