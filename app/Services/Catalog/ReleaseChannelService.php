@@ -6,6 +6,7 @@ namespace App\Services\Catalog;
 
 use App\Exceptions\ReleaseChannelConflictException;
 use App\Models\Product;
+use App\Models\ProductEvent;
 use App\Models\ProductAssignment;
 use App\Models\ProductVersion;
 use App\Models\ReleaseChannel;
@@ -117,6 +118,9 @@ final readonly class ReleaseChannelService
         return DB::transaction(function () use ($actor, $releaseChannel, $productVersionId, $expectedVersion, $reason, $requestId): array {
             $channel = ReleaseChannel::query()->whereKey($releaseChannel->getKey())->lockForUpdate()->firstOrFail();
             $product = Product::query()->whereKey($channel->product_id)->lockForUpdate()->firstOrFail();
+            if (! $product instanceof Product) {
+                throw new AuthorizationException('The release channel product is unavailable.');
+            }
             $vendor = VendorAccount::query()
                 ->whereKey($channel->vendor_account_id)
                 ->where('status', 'active')
