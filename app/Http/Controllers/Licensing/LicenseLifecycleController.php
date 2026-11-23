@@ -58,6 +58,48 @@ final class LicenseLifecycleController
         ]);
     }
 
+    public function renew(Request $request, string $license, LicenseLifecycleService $lifecycle): JsonResponse
+    {
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        $input = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+
+        /** @var License $licenseRecord */
+        $licenseRecord = License::query()->findOrFail($license);
+        $requestId = $this->requestId($request);
+
+        try {
+            $result = $lifecycle->renew(
+                $actor,
+                $licenseRecord,
+                (string) $input['reason'],
+                $requestId,
+            );
+        } catch (LicenseLifecycleConflictException $exception) {
+            return $this->problem($exception->getMessage(), $requestId, 409);
+        } catch (InvalidArgumentException $exception) {
+            return $this->problem($exception->getMessage(), $requestId, 422);
+        }
+
+        /** @var License $updatedLicense */
+        $updatedLicense = $result['license'];
+
+        return response()->json([
+            'data' => [
+                'id' => (string) $updatedLicense->getKey(),
+                'public_reference' => (string) $updatedLicense->public_reference,
+                'status' => (string) $updatedLicense->status,
+                'version' => (int) $updatedLicense->version,
+                'expires_at' => $updatedLicense->expires_at?->toISOString(),
+            ],
+            'replayed' => $result['replayed'],
+            'request_id' => $requestId,
+        ]);
+    }
+
     private function requestId(Request $request): string
     {
         $candidate = $request->header('X-Request-ID');

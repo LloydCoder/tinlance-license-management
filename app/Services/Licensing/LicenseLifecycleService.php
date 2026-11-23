@@ -7,6 +7,7 @@ namespace App\Services\Licensing;
 use App\Exceptions\LicenseLifecycleConflictException;
 use App\Models\License;
 use App\Models\LicenseEvent;
+use App\Models\PlanVersion;
 use App\Models\Product;
 use App\Models\ProductAssignment;
 use App\Models\Role;
@@ -152,6 +153,131 @@ final readonly class LicenseLifecycleService
         }, 3);
     }
 
+    /**
+     * @return array{license: License, replayed: bool}
+     */
+    public function renew(User $actor, License $license, string $reason, string $requestId): array
+    {
+        $reason = trim($reason);
+        $requestId = trim($requestId);
+
+        if (
+            mb_strlen($reason) < 5
+            || mb_strlen($reason) > 500
+            || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) !== 1
+        ) {
+            throw new InvalidArgumentException('Licence renewal request metadata is invalid.');
+        }
+
+        $vendorId = (string) $license->vendor_account_id;
+
+        return DB::transaction(function () use ($actor, $license, $reason, $requestId, $vendorId): array {
+            $vendor = VendorAccount::query()->whereKey($vendorId)->lockForUpdate()->firstOrFail();
+            /** @var License $lockedLicense */
+            $lockedLicense = License::query()->whereKey($license->getKey())->lockForUpdate()->firstOrFail();
+            /** @var Product $product */
+            $product = Product::query()->whereKey($lockedLicense->product_id)->firstOrFail();
+            /** @var PlanVersion $planVersion */
+            $planVersion = PlanVersion::query()
+                ->whereKey($lockedLicense->plan_version_id)
+                ->where('vendor_account_id', $vendorId)
+                ->where('product_id', $product->getKey())
+                ->where('status', 'published')
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->authorizeActor($actor, $vendor, $product);
+
+            if ((string) $lockedLicense->vendor_account_id !== $vendorId) {
+                throw new AuthorizationException('The licence does not belong to the authorized vendor.');
+            }
+
+            $existingEvent = LicenseEvent::query()
+                ->where('vendor_account_id', $vendorId)
+                ->where('request_id', $requestId)
+                ->first();
+
+            if ($existingEvent instanceof LicenseEvent) {
+                $existingPayload = json_decode((string) $existingEvent->getRawOriginal('event_payload'), true);
+                $payloadIsValid = is_array($existingPayload)
+                    && hash_equals(
+                        (string) $existingEvent->payload_sha256,
+                        $this->payloadHash($existingPayload),
+                    );
+
+                if (
+                    $existingEvent->event_type !== 'renewed'
+                    || (string) $existingEvent->license_id !== (string) $lockedLicense->getKey()
+                    || (string) $existingEvent->actor_user_id !== (string) $actor->getKey()
+                    || (string) $existingEvent->reason !== $reason
+                    || ! $payloadIsValid
+                ) {
+                    throw new LicenseLifecycleConflictException('The request identifier was already used for a different licence operation.');
+                }
+
+                return ['license' => $lockedLicense->refresh(), 'replayed' => true];
+            }
+
+            if (! in_array((string) $lockedLicense->status, [LicenseLifecycle::ACTIVE, LicenseLifecycle::SUSPENDED], true)) {
+                throw new LicenseLifecycleConflictException('Only active or suspended licences can be renewed.');
+            }
+
+            $effectiveExpiry = $lockedLicense->grace_until ?? $lockedLicense->expires_at;
+            if ($effectiveExpiry === null || $effectiveExpiry->lessThanOrEqualTo(now())) {
+                throw new LicenseLifecycleConflictException('A perpetual or expired licence cannot be renewed through this operation.');
+            }
+
+            $nextExpiry = match ($planVersion->billing_model) {
+                'annual' => $effectiveExpiry->copy()->addYearNoOverflow(),
+                'subscription' => match ($planVersion->billing_interval) {
+                    'month' => $effectiveExpiry->copy()->addMonthNoOverflow(),
+                    'year' => $effectiveExpiry->copy()->addYearNoOverflow(),
+                    default => throw new LicenseLifecycleConflictException('The published subscription interval is invalid.'),
+                },
+                default => throw new LicenseLifecycleConflictException('Only annual and subscription licences support renewal.'),
+            };
+
+            $fromStatus = (string) $lockedLicense->status;
+            $nextVersion = (int) $lockedLicense->version + 1;
+            $eventPayload = [
+                'aggregate_version' => $nextVersion,
+                'billing_interval' => $planVersion->billing_interval,
+                'billing_model' => $planVersion->billing_model,
+                'license_id' => (string) $lockedLicense->getKey(),
+                'new_expires_at' => $nextExpiry->toISOString(),
+                'old_effective_expiry' => $effectiveExpiry->toISOString(),
+                'reason' => $reason,
+                'status' => $fromStatus,
+            ];
+            ksort($eventPayload, SORT_STRING);
+            $payloadHash = $this->payloadHash($eventPayload);
+
+            $lockedLicense->fill([
+                'expires_at' => $nextExpiry,
+                'grace_until' => null,
+                'version' => $nextVersion,
+            ])->save();
+
+            LicenseEvent::query()->create([
+                'license_id' => $lockedLicense->getKey(),
+                'vendor_account_id' => $vendorId,
+                'product_id' => $product->getKey(),
+                'actor_type' => 'user',
+                'actor_user_id' => $actor->getKey(),
+                'event_type' => 'renewed',
+                'from_status' => $fromStatus,
+                'to_status' => $fromStatus,
+                'reason' => $reason,
+                'request_id' => $requestId,
+                'payload_sha256' => $payloadHash,
+                'event_payload' => $eventPayload,
+                'created_at' => now(),
+            ]);
+
+            return ['license' => $lockedLicense->refresh(), 'replayed' => false];
+        }, 3);
+    }
+
     private function authorizeActor(User $actor, VendorAccount $vendor, Product $product): void
     {
         if (
@@ -238,11 +364,11 @@ final readonly class LicenseLifecycleService
         return $payload;
     }
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
+    /** @param array<array-key, mixed> $payload */
     private function payloadHash(array $payload): string
     {
+        ksort($payload, SORT_STRING);
+
         return hash('sha256', json_encode(
             $payload,
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
