@@ -239,9 +239,17 @@ return new class extends Migration
                 END IF;
 
                 IF NEW.status = 'published' THEN
-                    IF NEW.published_at IS NULL OR NEW.snapshot_sha256 IS NULL THEN
+                    IF NEW.published_at IS NULL
+                        OR NEW.snapshot_sha256 IS NULL
+                        OR NEW.billing_model <> OLD.billing_model
+                        OR NEW.currency <> OLD.currency
+                        OR NEW.price_minor <> OLD.price_minor
+                        OR NOT (NEW.billing_interval <=> OLD.billing_interval)
+                        OR NEW.trial_days <> OLD.trial_days
+                        OR NEW.maintenance_days <> OLD.maintenance_days
+                        OR NOT (NEW.entitlements <=> OLD.entitlements) THEN
                         SIGNAL SQLSTATE '45000'
-                            SET MESSAGE_TEXT = 'Published plan versions require a frozen snapshot';
+                            SET MESSAGE_TEXT = 'Publishing must preserve the complete draft commercial terms and entitlement snapshot';
                     END IF;
                 ELSEIF NEW.status <> 'draft' OR NEW.published_at IS NOT NULL OR NEW.snapshot_sha256 IS NOT NULL THEN
                     SIGNAL SQLSTATE '45000'
