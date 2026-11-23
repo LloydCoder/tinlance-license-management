@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Licensing;
 
 use App\Exceptions\LicenseKeyConfigurationException;
+use InvalidArgumentException;
 use JsonException;
 use Tlms\Domain\Licensing\LicenseKeyPepperRing;
 use Tlms\Domain\Licensing\LicenseResponseCipherRing;
@@ -25,7 +26,11 @@ final class LicenseKeyMaterialProvider
             throw new LicenseKeyConfigurationException('The active licence-key pepper identifier is not configured.');
         }
 
-        return new LicenseKeyPepperRing($keys, $activeKeyId);
+        try {
+            return new LicenseKeyPepperRing($keys, $activeKeyId);
+        } catch (InvalidArgumentException $exception) {
+            throw new LicenseKeyConfigurationException('The licence-key pepper ring configuration is invalid.', previous: $exception);
+        }
     }
 
     public function activePepperKeyId(): string
@@ -69,7 +74,11 @@ final class LicenseKeyMaterialProvider
             throw new LicenseKeyConfigurationException('The active issuance response-encryption key identifier is not configured.');
         }
 
-        return new LicenseResponseCipherRing($keys, $activeKeyId);
+        try {
+            return new LicenseResponseCipherRing($keys, $activeKeyId);
+        } catch (InvalidArgumentException $exception) {
+            throw new LicenseKeyConfigurationException('The issuance response-encryption ring configuration is invalid.', previous: $exception);
+        }
     }
 
     /**
