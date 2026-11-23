@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -16,6 +17,7 @@ use LogicException;
  * @property string $status
  * @property string|null $license_id
  * @property string|null $response_ciphertext
+ * @property Carbon|null $expires_at
  */
 final class LicenseIssuanceRequest extends BaseModel
 {
