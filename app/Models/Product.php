@@ -91,4 +91,10 @@ final class Product extends BaseModel
     {
         return $this->hasMany(ProductEvent::class);
     }
+
+    /** @return HasMany<ProductAssignment, $this> */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(ProductAssignment::class);
+    }
 }

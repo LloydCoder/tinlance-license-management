@@ -68,6 +68,7 @@ final class AuthorizationCatalogSeeder extends Seeder
             'admins.manage' => 'Manage vendor administrator accounts and memberships.',
             'customers.manage' => 'Manage customer organizations and their account lifecycle.',
             'customers.support.read' => 'Read customer information for authorized support work.',
+            'products.read' => 'Read products explicitly assigned to the active vendor membership.',
             'products.manage' => 'Manage vendor products and product configuration.',
             'plans.entitlements.manage' => 'Manage plans, versions and entitlement definitions.',
             'licences.issue' => 'Issue licences through approved issuance workflows.',
@@ -127,11 +128,11 @@ final class AuthorizationCatalogSeeder extends Seeder
                 ],
                 'vendor_product_manager' => [
                     'name' => 'Vendor Product Manager',
-                    'permissions' => ['vendor.account.read', 'products.manage', 'plans.entitlements.manage', 'licences.read', 'releases.publish'],
+                    'permissions' => ['vendor.account.read', 'products.read', 'products.manage', 'plans.entitlements.manage', 'licences.read', 'releases.publish'],
                 ],
                 'vendor_developer' => [
                     'name' => 'Vendor Developer',
-                    'permissions' => ['vendor.account.read', 'licences.read', 'releases.nonproduction.publish'],
+                    'permissions' => ['vendor.account.read', 'products.read', 'licences.read', 'releases.nonproduction.publish'],
                 ],
                 'reseller_manager' => [
                     'name' => 'Reseller Manager',

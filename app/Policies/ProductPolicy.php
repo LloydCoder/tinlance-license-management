@@ -19,7 +19,8 @@ final readonly class ProductPolicy
 
     public function viewAny(User $user, VendorAccount $vendor): bool
     {
-        return $this->authorization->vendorCan($user, $vendor, 'products.manage');
+        return $this->authorization->vendorCan($user, $vendor, 'products.read')
+            || $this->authorization->vendorCan($user, $vendor, 'products.manage');
     }
 
     public function create(User $user, VendorAccount $vendor): bool
@@ -37,20 +38,52 @@ final readonly class ProductPolicy
 
         if (
             ! $vendor instanceof VendorAccount
-            || ! $this->authorization->vendorCan($user, $vendor, 'products.manage')
+            || (! $this->authorization->vendorCan($user, $vendor, 'products.read')
+                && ! $this->authorization->vendorCan($user, $vendor, 'products.manage'))
         ) {
             return false;
         }
 
-        return (string) $product->created_by_user_id === (string) $user->getKey()
-            || $this->isVendorSuperAdmin($user, $vendor);
+        return $this->isVendorSuperAdmin($user, $vendor)
+            || $this->isAssigned($user, $product, $vendor);
     }
 
     public function update(User $user, Product $product): bool
     {
+        $vendor = VendorAccount::query()->whereKey($product->vendor_account_id)->where('status', 'active')->first();
+
         return ! $this->platformAuthorization->isBootstrapSuperAdmin($user)
             && $product->status === 'draft'
+            && $vendor instanceof VendorAccount
+            && $this->authorization->vendorCan($user, $vendor, 'products.manage')
             && $this->view($user, $product);
+    }
+
+    public function manageAssignments(User $user, Product $product): bool
+    {
+        $vendor = VendorAccount::query()
+            ->whereKey($product->vendor_account_id)
+            ->where('status', 'active')
+            ->first();
+
+        return ! $this->platformAuthorization->isBootstrapSuperAdmin($user)
+            && $vendor instanceof VendorAccount
+            && $this->authorization->vendorCan($user, $vendor, 'products.manage')
+            && $this->isVendorSuperAdmin($user, $vendor);
+    }
+
+    private function isAssigned(User $user, Product $product, VendorAccount $vendor): bool
+    {
+        $membership = $user->vendorMemberships()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('status', 'active')
+            ->first();
+
+        return $membership !== null
+            && $product->assignments()
+                ->where('vendor_membership_id', $membership->getKey())
+                ->whereNull('revoked_at')
+                ->exists();
     }
 
     private function isVendorSuperAdmin(User $user, VendorAccount $vendor): bool

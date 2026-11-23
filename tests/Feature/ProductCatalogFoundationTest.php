@@ -316,7 +316,7 @@ final class ProductCatalogFoundationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('meta.already_assigned', true);
 
-        $this->assertDatabaseCount('product_assignment_events', 1);
+        $this->assertDatabaseCount('product_assignment_events', 2);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 

@@ -7,6 +7,8 @@ namespace App\Services\Catalog;
 use App\Exceptions\ProductVersionConflictException;
 use App\Models\Product;
 use App\Models\ProductEvent;
+use App\Models\ProductAssignment;
+use App\Services\Catalog\ProductAssignmentService;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
@@ -27,6 +29,7 @@ final readonly class ProductCatalogService
         private PlatformSuperAdminAuthorization $platformAuthorization,
         private PlatformAccessAuditChainWriter $auditWriter,
         private PlatformAccessAuditChainHasher $auditHasher,
+        private ProductAssignmentService $productAssignments,
     ) {}
 
     public function vendorForRead(User $actor): ?VendorAccount
@@ -38,7 +41,8 @@ final readonly class ProductCatalogService
 
         if (
             ! $vendor instanceof VendorAccount
-            || ! $this->membershipAuthorization->vendorCan($actor, $vendor, 'products.manage')
+            || (! $this->membershipAuthorization->vendorCan($actor, $vendor, 'products.read')
+                && ! $this->membershipAuthorization->vendorCan($actor, $vendor, 'products.manage'))
         ) {
             return null;
         }
@@ -66,7 +70,19 @@ final readonly class ProductCatalogService
             ->orderBy('id');
 
         if (! $this->isVendorSuperAdmin($actor, $vendor)) {
-            $query->where('created_by_user_id', $actor->getKey());
+            $membership = VendorMembership::query()
+                ->where('vendor_account_id', $vendor->getKey())
+                ->where('user_id', $actor->getKey())
+                ->where('status', 'active')
+                ->first();
+
+            if (! $membership instanceof VendorMembership) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereHas('assignments', static fn ($assignments) => $assignments
+                    ->where('vendor_membership_id', $membership->getKey())
+                    ->whereNull('revoked_at'));
+            }
         }
 
         return $query->paginate(min(100, max(1, $perPage)));
@@ -146,6 +162,7 @@ final readonly class ProductCatalogService
                 'after' => $after,
             ]);
 
+            $normalizedRequestId = $this->normalizeRequestId($requestId);
             $this->appendProductEvent(
                 $product,
                 $actor,
@@ -153,8 +170,9 @@ final readonly class ProductCatalogService
                 $reason,
                 ['name', 'slug', 'description'],
                 $changeDigest,
-                $this->normalizeRequestId($requestId),
+                $normalizedRequestId,
             );
+            $this->productAssignments->grantCreator($actor, $product, $lockedVendor, $normalizedRequestId);
 
             return $product->refresh();
         }, 3);
@@ -341,12 +359,25 @@ final readonly class ProductCatalogService
     {
         $this->authorizeVendorManager($actor, $vendor);
 
-        if (
-            (string) $product->created_by_user_id !== (string) $actor->getKey()
-            && ! $this->isVendorSuperAdmin($actor, $vendor)
-        ) {
+        if (! $this->isVendorSuperAdmin($actor, $vendor) && ! $this->isAssigned($actor, $product, $vendor)) {
             throw new AuthorizationException('The actor is not assigned to this product.');
         }
+    }
+
+    private function isAssigned(User $actor, Product $product, VendorAccount $vendor): bool
+    {
+        $membership = VendorMembership::query()
+            ->where('vendor_account_id', $vendor->getKey())
+            ->where('user_id', $actor->getKey())
+            ->where('status', 'active')
+            ->first();
+
+        return $membership instanceof VendorMembership
+            && ProductAssignment::query()
+                ->where('product_id', $product->getKey())
+                ->where('vendor_membership_id', $membership->getKey())
+                ->whereNull('revoked_at')
+                ->exists();
     }
 
     private function isVendorSuperAdmin(User $actor, VendorAccount $vendor): bool

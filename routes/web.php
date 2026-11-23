@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CustomerOrganizationController;
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
+use App\Http\Controllers\Catalog\ProductAssignmentController;
 use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
@@ -117,6 +118,12 @@ Route::middleware([
     Route::patch('/products/{product}', [ProductCatalogController::class, 'update'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.products.update');
+    Route::post('/products/{product}/assignments', [ProductAssignmentController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.assignments.store');
+    Route::delete('/products/{product}/assignments/{membership}', [ProductAssignmentController::class, 'destroy'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.assignments.destroy');
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/role-approval-requests', [VendorRoleApprovalController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor.role-approvals.store');
