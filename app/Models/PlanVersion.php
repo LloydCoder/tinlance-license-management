@@ -20,7 +20,7 @@ use LogicException;
  * @property string|null $billing_interval
  * @property int $trial_days
  * @property int $maintenance_days
- * @property array<string, bool|int|string> $entitlements
+ * @property array<string, mixed> $entitlements
  * @property string|null $snapshot_sha256
  * @property string $created_by_user_id
  * @property Carbon|null $published_at
