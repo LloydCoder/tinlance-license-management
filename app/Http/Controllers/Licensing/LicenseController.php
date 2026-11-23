@@ -55,9 +55,9 @@ final class LicenseController
                 $requestId,
             );
         } catch (LicenseIssuanceConflictException $exception) {
-            return $this->problem($exception->getMessage(), $request, 409);
+            return $this->problem($exception->getMessage(), $requestId, 409);
         } catch (InvalidArgumentException $exception) {
-            return $this->problem($exception->getMessage(), $request, 422);
+            return $this->problem($exception->getMessage(), $requestId, 422);
         }
 
         /** @var \App\Models\License $license */
@@ -103,7 +103,7 @@ final class LicenseController
         try {
             $plaintext = $issuance->revealSecret($actor, $record, $requestId);
         } catch (LicenseSecretUnavailableException $exception) {
-            return $this->problem($exception->getMessage(), $request, 410);
+            return $this->problem($exception->getMessage(), $requestId, 410);
         } catch (LicenseIssuanceConflictException $exception) {
             return $this->problem($exception->getMessage(), $request, 409);
         }
@@ -133,7 +133,7 @@ final class LicenseController
                 : (string) Str::uuid();
     }
 
-    private function problem(string $detail, Request $request, int $status): JsonResponse
+    private function problem(string $detail, string $requestId, int $status): JsonResponse
     {
         return response()->json([
             'type' => 'about:blank',
@@ -144,7 +144,7 @@ final class LicenseController
             },
             'status' => $status,
             'detail' => $detail,
-            'request_id' => $this->requestId($request),
-        ], $status);
+            'request_id' => $requestId,
+        ], $status)->header('Content-Type', 'application/problem+json');
     }
 }
