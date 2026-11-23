@@ -82,8 +82,7 @@ final class PlanEvent extends BaseModel
             ($event->event_type === 'created' && $event->plan_version_id !== null)
             || ($event->event_type !== 'created' && $event->plan_version_id === null)
             || ! $actorMembershipExists
-            || 
-            ! $plan instanceof Plan
+            || ! $plan instanceof Plan
             || ! $product instanceof Product
             || ! $vendor instanceof VendorAccount
             || (string) $plan->product_id !== (string) $product->getKey()
