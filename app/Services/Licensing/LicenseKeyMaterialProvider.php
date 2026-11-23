@@ -28,6 +28,33 @@ final class LicenseKeyMaterialProvider
         return new LicenseKeyPepperRing($keys, $activeKeyId);
     }
 
+    public function activePepperKeyId(): string
+    {
+        $keyId = config('tlms.licensing.active_pepper_key_id');
+        if (! is_string($keyId) || $keyId === '') {
+            throw new InvalidArgumentException('The active licence-key pepper identifier is not configured.');
+        }
+
+        return $keyId;
+    }
+
+    public function activePepperMaterial(): string
+    {
+        $keys = $this->decodeKeyRing(
+            config('tlms.licensing.key_peppers_json'),
+            'licence-key pepper',
+            32,
+            128,
+        );
+        $keyId = $this->activePepperKeyId();
+
+        if (! array_key_exists($keyId, $keys)) {
+            throw new InvalidArgumentException('The active licence-key pepper is missing from the configured key ring.');
+        }
+
+        return $keys[$keyId];
+    }
+
     public function responseCipherRing(): LicenseResponseCipherRing
     {
         $keys = $this->decodeKeyRing(
