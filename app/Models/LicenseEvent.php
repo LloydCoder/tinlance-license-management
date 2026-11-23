@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\\Models;
+namespace App\Models;
 
-use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 final class LicenseEvent extends BaseModel
@@ -43,7 +43,7 @@ final class LicenseEvent extends BaseModel
                 || ($event->actor_type === 'user' && $event->actor_user_id === null)
                 || ($event->actor_type === 'system' && $event->actor_user_id !== null)
                 || ! in_array($event->event_type, ['issued', 'activated', 'suspended', 'reinstated', 'revoked', 'expired', 'key_rotated'], true)
-                || preg_match('/\\A[a-f0-9]{64}\\z/D', (string) $event->payload_sha256) !== 1
+                || preg_match('/\A[a-f0-9]{64}\z/D', (string) $event->payload_sha256) !== 1
                 || trim((string) $event->reason) === ''
                 || trim((string) $event->request_id) === ''
             ) {

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\\Models;
+namespace App\Models;
 
-use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
-use Illuminate\\Database\\Eloquent\\Relations\\HasMany;
-use Illuminate\\Support\\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use LogicException;
-use Tlms\\Domain\\Licensing\\LicenseLifecycle;
+use Tlms\Domain\Licensing\LicenseLifecycle;
 
 /**
  * @property string $vendor_account_id
@@ -58,8 +58,8 @@ final class License extends BaseModel
             if (
                 $license->status !== LicenseLifecycle::ISSUED
                 || (int) $license->version !== 1
-                || preg_match('/\\A[a-f0-9]{64}\\z/D', (string) $license->key_verifier) !== 1
-                || preg_match('/\\A[A-Za-z][A-Za-z0-9._-]{0,63}\\z/D', (string) $license->pepper_key_id) !== 1
+                || preg_match('/\A[a-f0-9]{64}\z/D', (string) $license->key_verifier) !== 1
+                || preg_match('/\A[A-Za-z][A-Za-z0-9._-]{0,63}\z/D', (string) $license->pepper_key_id) !== 1
                 || trim((string) $license->public_reference) === ''
             ) {
                 throw new LogicException('Initial licence metadata is invalid.');
