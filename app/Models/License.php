@@ -133,6 +133,12 @@ final class License extends BaseModel
         });
     }
 
+    /** @return HasMany<LicenseAllocation, $this> */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(LicenseAllocation::class);
+    }
+
     /** @return BelongsTo<VendorAccount, $this> */
     public function vendorAccount(): BelongsTo
     {
