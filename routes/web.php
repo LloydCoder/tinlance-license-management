@@ -15,6 +15,7 @@ use App\Http\Controllers\Identity\MembershipRoleController;
 use App\Http\Controllers\Identity\VendorAccountProfileController;
 use App\Http\Controllers\Identity\VendorRoleApprovalController;
 use App\Http\Controllers\Identity\WorkspaceController;
+use App\Http\Controllers\Licensing\LicenseAllocationController;
 use App\Http\Controllers\Licensing\LicenseController;
 use App\Http\Controllers\Licensing\LicenseLifecycleController;
 use App\Http\Controllers\Security\MfaEnrollmentController;
@@ -248,6 +249,12 @@ Route::middleware([
     Route::post('/licenses/{license}/renewals', [LicenseLifecycleController::class, 'renew'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
         ->name('api.licenses.renewals.store');
+    Route::post('/licenses/{license}/allocations', [LicenseAllocationController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.licenses.allocations.store');
+    Route::delete('/licenses/{license}/allocations/{allocation}', [LicenseAllocationController::class, 'destroy'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.licenses.allocations.destroy');
 });
 
 Route::middleware([
