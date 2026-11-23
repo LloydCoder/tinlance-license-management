@@ -487,7 +487,25 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ], ['X-Request-ID' => 'allocation-seat-request-000003'])
             ->assertStatus(409);
 
-        $this->assertSame(3, DB::table('license_allocations')->where('license_id', $licenseId)->where('status', 'active')->count());
+        $userPayload = [
+            'allocation_type' => 'user',
+            'subject_identifier' => 'customer-user-opaque-000000000001',
+            'reason' => 'Reserve the only user allocation allowed by this plan.',
+        ];
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', $userPayload, [
+                'X-Request-ID' => 'allocation-user-request-000001',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                ...$userPayload,
+                'subject_identifier' => 'customer-user-opaque-000000000002',
+            ], ['X-Request-ID' => 'allocation-user-request-000002'])
+            ->assertStatus(409);
+
+        $this->assertSame(4, DB::table('license_allocations')->where('license_id', $licenseId)->where('status', 'active')->count());
     }
 
     public function test_releasing_a_license_allocation_frees_the_entitlement_slot(): void
@@ -531,10 +549,11 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         $this->authenticated($actor)
             ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
                 'allocation_type' => 'site',
-                'subject_identifier' => 'site-installation-release-opaque-000002',
-                'reason' => 'Reuse the released site slot for a replacement installation.',
+                'subject_identifier' => 'site-installation-release-opaque-000001',
+                'reason' => 'Reactivate the same site subject after its previous allocation was released.',
             ], ['X-Request-ID' => 'allocation-release-reuse-000001'])
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('data.version', 3);
 
         $this->assertSame(1, DB::table('license_allocations')->where('license_id', $licenseId)->where('allocation_type', 'site')->where('status', 'active')->count());
     }
