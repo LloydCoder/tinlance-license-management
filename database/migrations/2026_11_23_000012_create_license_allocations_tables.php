@@ -68,7 +68,7 @@ return new class extends Migration
             BEGIN
                 IF NEW.status <> 'active'
                     OR NEW.version <> 1
-                    OR NEW.allocation_type NOT IN ('site', 'seat', 'user')
+                    OR NEW.allocation_type NOT IN ('site', 'seat', 'user', 'domain')
                     OR CHAR_LENGTH(NEW.subject_hash) <> 64
                     OR NEW.subject_hash NOT REGEXP '^[a-f0-9]{64}$'
                     OR CHAR_LENGTH(NEW.fingerprint_key_id) < 1
