@@ -351,6 +351,69 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertStatus(409);
     }
 
+    public function test_annual_licence_renewal_extends_expiry_once_and_is_idempotent(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue the annual professional licence before renewal.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'renewal-issuance-request-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the annual professional licence before renewal.',
+            ], ['X-Request-ID' => 'renewal-activation-request-000001'])
+            ->assertOk();
+
+        $license = License::query()->findOrFail($licenseId);
+        $originalExpiry = $license->expires_at;
+        $payload = ['reason' => 'Customer payment has been confirmed for the next annual term.'];
+        $headers = ['X-Request-ID' => 'annual-renewal-request-000001'];
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/renewals', $payload, $headers)
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('data.version', 3)
+            ->assertJsonPath('replayed', false);
+
+        $renewed = License::query()->findOrFail($licenseId);
+        $this->assertSame(
+            $originalExpiry?->copy()->addYearNoOverflow()->toDateTimeString(),
+            $renewed->expires_at?->toDateTimeString(),
+        );
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/renewals', $payload, $headers)
+            ->assertOk()
+            ->assertJsonPath('data.version', 3)
+            ->assertJsonPath('replayed', true);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/renewals', [
+                'reason' => 'Attempt to reuse the same renewal request for a different action.',
+            ], $headers)
+            ->assertStatus(409);
+
+        $this->assertSame(3, License::query()->findOrFail($licenseId)->version);
+        $this->assertSame(3, LicenseEvent::query()->where('license_id', $licenseId)->count());
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $licenseId,
+            'event_type' => 'renewed',
+            'request_id' => 'annual-renewal-request-000001',
+            'from_status' => 'active',
+            'to_status' => 'active',
+        ]);
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
