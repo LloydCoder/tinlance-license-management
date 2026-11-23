@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LogicException;
 
 /**
@@ -12,8 +13,8 @@ use LogicException;
  * @property string $vendor_account_id
  * @property string $vendor_membership_id
  * @property string $assigned_by_user_id
- * @property \Illuminate\Support\Carbon $assigned_at
- * @property \Illuminate\Support\Carbon|null $revoked_at
+ * @property Carbon $assigned_at
+ * @property Carbon|null $revoked_at
  */
 final class ProductAssignment extends BaseModel
 {
