@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\PlatformAccessAuditEvent;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
