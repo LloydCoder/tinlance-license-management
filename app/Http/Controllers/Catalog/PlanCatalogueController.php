@@ -191,8 +191,6 @@ final class PlanCatalogueController
      */
     private function serializeVersion(PlanVersion $version): array
     {
-        $publishedAt = $version->getRawOriginal('published_at');
-
         return [
             'id' => (string) $version->getKey(),
             'plan_id' => (string) $version->plan_id,
@@ -206,7 +204,7 @@ final class PlanCatalogueController
             'maintenance_days' => (int) $version->maintenance_days,
             'entitlements' => $version->entitlements,
             'snapshot_sha256' => $version->snapshot_sha256,
-            'published_at' => is_string($publishedAt) ? $publishedAt : null,
+            'published_at' => $version->published_at?->toISOString(),
         ];
     }
 
