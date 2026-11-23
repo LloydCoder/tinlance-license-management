@@ -226,6 +226,100 @@ final class ProductCatalogFoundationTest extends TestCase
         $this->assertFalse(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
+    public function test_vendor_super_admin_can_assign_and_revoke_product_access_for_an_active_developer(): void
+    {
+        [$creator, $vendor] = $this->createActor('vendor_product_manager');
+        [$vendorAdmin] = $this->createActor('super_admin', 'primary', $vendor);
+        [$developer] = $this->createActor('vendor_developer', 'primary', $vendor);
+        $product = $this->createProduct($creator);
+        $developerMembership = $developer->vendorMemberships()->firstOrFail();
+
+        $this->authenticated($vendorAdmin)
+            ->postJson('/api/v1/products/'.$product->getKey().'/assignments', [
+                'vendor_membership_id' => $developerMembership->getKey(),
+                'reason' => 'Assign the developer to the approved product.',
+            ], ['X-Request-ID' => 'product-assignment-grant-0001'])
+            ->assertCreated();
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products/'.$product->getKey())
+            ->assertOk()
+            ->assertJsonPath('data.id', (string) $product->getKey());
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->authenticated($developer)
+            ->patchJson('/api/v1/products/'.$product->getKey(), [
+                'expected_version' => 1,
+                'name' => 'Developer must not edit catalogue metadata',
+                'slug' => $product->slug,
+                'description' => 'Product developers have read-only catalogue access.',
+                'reason' => 'Attempt an unauthorized product edit.',
+            ])
+            ->assertNotFound();
+
+        $this->authenticated($vendorAdmin)
+            ->deleteJson('/api/v1/products/'.$product->getKey().'/assignments/'.$developerMembership->getKey(), [
+                'reason' => 'Remove the developer from the product.',
+            ], ['X-Request-ID' => 'product-assignment-revoke-0001'])
+            ->assertNoContent();
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products/'.$product->getKey())
+            ->assertNotFound();
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'action' => 'product.assignment_granted',
+            'request_id' => 'product-assignment-grant-0001',
+        ]);
+        $this->assertDatabaseHas('platform_access_audit_events', [
+            'action' => 'product.assignment_revoked',
+            'request_id' => 'product-assignment-revoke-0001',
+        ]);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_product_manager_cannot_assign_products_and_duplicate_assignments_are_idempotent(): void
+    {
+        [$creator, $vendor] = $this->createActor('vendor_product_manager');
+        [$otherManager] = $this->createActor('vendor_product_manager', 'primary', $vendor);
+        $product = $this->createProduct($creator);
+        $targetMembership = $otherManager->vendorMemberships()->firstOrFail();
+
+        $this->authenticated($creator)
+            ->postJson('/api/v1/products/'.$product->getKey().'/assignments', [
+                'vendor_membership_id' => $targetMembership->getKey(),
+                'reason' => 'A product manager cannot grant assignments.',
+            ])
+            ->assertForbidden();
+
+        [$vendorAdmin] = $this->createActor('super_admin', 'primary', $vendor);
+        $payload = [
+            'vendor_membership_id' => $targetMembership->getKey(),
+            'reason' => 'Assign the manager to the product.',
+        ];
+
+        $this->authenticated($vendorAdmin)
+            ->postJson('/api/v1/products/'.$product->getKey().'/assignments', $payload)
+            ->assertCreated();
+
+        $this->authenticated($vendorAdmin)
+            ->postJson('/api/v1/products/'.$product->getKey().'/assignments', $payload)
+            ->assertOk()
+            ->assertJsonPath('meta.already_assigned', true);
+
+        $this->assertDatabaseCount('product_assignment_events', 1);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
     public function test_product_audit_verifier_rejects_unreferenced_product_events(): void
     {
         [$manager] = $this->createActor('vendor_product_manager');
