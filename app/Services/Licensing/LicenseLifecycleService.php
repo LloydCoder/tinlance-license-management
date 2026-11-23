@@ -7,6 +7,7 @@ namespace App\Services\Licensing;
 use App\Exceptions\LicenseLifecycleConflictException;
 use App\Models\License;
 use App\Models\LicenseEvent;
+use App\Models\PlanVersion;
 use App\Models\Product;
 use App\Models\ProductAssignment;
 use App\Models\Role;
