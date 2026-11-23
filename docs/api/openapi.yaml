@@ -3774,12 +3774,12 @@ components:
       properties:
         allocation_type:
           type: string
-          enum: [site, seat, user]
+          enum: [site, seat, user, domain]
         subject_identifier:
           type: string
-          minLength: 16
-          maxLength: 128
-          description: Opaque caller-generated identifier; raw value is never persisted.
+          minLength: 1
+          maxLength: 253
+          description: For domain allocations, a DNS hostname normalized under IDNA and stored only as a keyed fingerprint; other allocation types use opaque identifiers.
         reason:
           type: string
           minLength: 5
