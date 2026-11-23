@@ -38,17 +38,33 @@ final class ProductAssignment extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $assignment): void {
-            if ($assignment->revoked_at !== null) {
-                throw new LogicException('A new product assignment must be active.');
+            $productVendorId = Product::query()->whereKey($assignment->product_id)->value('vendor_account_id');
+            $membershipVendorId = VendorMembership::query()->whereKey($assignment->vendor_membership_id)->value('vendor_account_id');
+
+            if (
+                $assignment->revoked_at !== null
+                || (string) $productVendorId !== (string) $assignment->vendor_account_id
+                || (string) $membershipVendorId !== (string) $assignment->vendor_account_id
+            ) {
+                throw new LogicException('A product assignment must be active and remain within one vendor tenant.');
             }
         });
 
         self::updating(static function (self $assignment): void {
-            if (
-                $assignment->isDirty(['product_id', 'vendor_account_id', 'vendor_membership_id'])
-                || ! $assignment->isDirty(['assigned_by_user_id', 'assigned_at', 'revoked_at'])
-            ) {
+            if ($assignment->isDirty(['product_id', 'vendor_account_id', 'vendor_membership_id'])) {
                 throw new LogicException('Product assignment identity is immutable.');
+            }
+
+            $wasActive = $assignment->getRawOriginal('revoked_at') === null;
+            $isActive = $assignment->revoked_at === null;
+            $assigneeMetadataChanged = $assignment->isDirty(['assigned_by_user_id', 'assigned_at']);
+
+            if (
+                $wasActive === $isActive
+                || ($wasActive && $assigneeMetadataChanged)
+                || (! $wasActive && (! $assignment->isDirty('assigned_by_user_id') || ! $assignment->isDirty('assigned_at')))
+            ) {
+                throw new LogicException('Product assignments may only transition between granted and revoked states.');
             }
         });
 
