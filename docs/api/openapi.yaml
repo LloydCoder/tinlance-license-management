@@ -2964,6 +2964,8 @@ components:
           oneOf:
             - type: boolean
             - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             - type: string
               maxLength: 1000
     PlanVersionWriteRequest:
@@ -3058,6 +3060,8 @@ components:
                 oneOf:
                   - type: boolean
                   - type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   - type: string
             snapshot_sha256:
               type: [string, 'null']
