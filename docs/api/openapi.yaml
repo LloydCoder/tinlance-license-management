@@ -1736,7 +1736,108 @@ components:
         version:
           type: string
           maxLength: 64
-          pattern: '^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?      type: object
+          description: Semantic version identifier; validated by the API.
+        release_notes:
+          type: [string, 'null']
+          maxLength: 5000
+        artifact_sha256:
+          type: [string, 'null']
+          pattern: '^[a-fA-F0-9]{64}$'
+        artifact_size_bytes:
+          type: [integer, 'null']
+          minimum: 1
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductVersionUpdateRequest:
+      type: object
+      required: [expected_version, release_notes, artifact_sha256, artifact_size_bytes, reason]
+      additionalProperties: false
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        release_notes:
+          type: [string, 'null']
+          maxLength: 5000
+        artifact_sha256:
+          type: [string, 'null']
+          pattern: '^[a-fA-F0-9]{64}$'
+        artifact_size_bytes:
+          type: [integer, 'null']
+          minimum: 1
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductVersionPublishRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductVersion:
+      type: object
+      required: [id, product_id, version, status, version_number, published_at, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        product_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        version:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        release_notes:
+          type: [string, 'null']
+        artifact_sha256:
+          type: [string, 'null']
+          pattern: '^[a-f0-9]{64}$'
+        artifact_size_bytes:
+          type: [integer, 'null']
+        version_number:
+          type: integer
+          minimum: 1
+        published_at:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: [string, 'null']
+          format: date-time
+        updated_at:
+          type: [string, 'null']
+          format: date-time
+    ProductVersionResult:
+      type: object
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProductVersion'
+        request_id:
+          type: string
+    ProductVersionCollection:
+      type: object
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVersion'
+        meta:
+          $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+    ProductAssignmentCreateRequest:
+      type: object
       required: [vendor_membership_id, reason]
       additionalProperties: false
       properties:
