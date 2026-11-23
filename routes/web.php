@@ -108,6 +108,18 @@ Route::middleware([
     EnsureRecentPasswordConfirmation::class,
     EnsureMfaEnrolled::class,
 ])->prefix('/api/v1')->group(function (): void {
+    Route::post('/products/{product}/plans', [PlanCatalogueController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.plans.store');
+    Route::post('/plans/{plan}/versions', [PlanCatalogueController::class, 'createVersion'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.plans.versions.store');
+    Route::post('/plans/{plan}/versions/{version}/publish', [PlanCatalogueController::class, 'publish'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.plans.versions.publish');
+    Route::patch('/plans/{plan}/versions/{version}', [PlanCatalogueController::class, 'updateVersion'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.plans.versions.update');
     Route::get('/products', [ProductCatalogController::class, 'index'])
         ->middleware('throttle:60,1')
         ->name('api.products.index');
