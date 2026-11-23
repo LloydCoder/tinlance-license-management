@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Licensing;
 use App\Exceptions\LicenseIssuanceConflictException;
 use App\Exceptions\LicenseSecretUnavailableException;
 use App\Models\CustomerOrganization;
+use App\Models\License;
 use App\Models\LicenseIssuanceRequest;
 use App\Models\PlanVersion;
 use App\Models\Product;
@@ -60,7 +61,7 @@ final class LicenseController
             return $this->problem($exception->getMessage(), $requestId, 422);
         }
 
-        /** @var \App\Models\License $license */
+        /** @var License $license */
         $license = $result['license'];
         /** @var LicenseIssuanceRequest $issuanceRequest */
         $issuanceRequest = $result['issuance_request'];
@@ -105,7 +106,7 @@ final class LicenseController
         } catch (LicenseSecretUnavailableException $exception) {
             return $this->problem($exception->getMessage(), $requestId, 410);
         } catch (LicenseIssuanceConflictException $exception) {
-            return $this->problem($exception->getMessage(), $request, 409);
+            return $this->problem($exception->getMessage(), $requestId, 409);
         }
 
         return response()->json([
