@@ -320,6 +320,19 @@ final class ProductCatalogFoundationTest extends TestCase
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 
+    public function test_product_assignment_metadata_cannot_be_rewritten_without_a_state_transition(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+        $product = $this->createProduct($manager);
+        $assignment = ProductAssignment::query()
+            ->where('product_id', $product->getKey())
+            ->firstOrFail();
+
+        $this->expectException(\LogicException::class);
+
+        $assignment->forceFill(['assigned_at' => now()->addMinute()])->save();
+    }
+
     public function test_product_audit_verifier_rejects_unreferenced_product_events(): void
     {
         [$manager] = $this->createActor('vendor_product_manager');
