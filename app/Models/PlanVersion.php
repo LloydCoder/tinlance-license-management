@@ -169,6 +169,7 @@ final class PlanVersion extends BaseModel
             || $maintenanceDays < 0
             || $maintenanceDays > 3650
             || ! is_array($entitlements)
+            || count($entitlements) > 100
         ) {
             throw new LogicException('Plan version metadata is invalid.');
         }
