@@ -3537,7 +3537,49 @@ components:
           type: string
           minLength: 16
           maxLength: 128
-          pattern: '^[A-Za-z0-9._:-]{16,128}      type: object
+          description: Opaque caller-generated identifier; raw value is never persisted.
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseAllocationReleaseRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseAllocationResult:
+      type: object
+      additionalProperties: false
+      required: [data, replayed, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, allocation_type, status, version]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            allocation_type:
+              type: string
+              enum: [site, seat, user]
+            status:
+              type: string
+              enum: [active, released]
+            version:
+              type: integer
+              minimum: 1
+        replayed:
+          type: boolean
+        request_id:
+          type: string
+    LicenseRenewalRequest:
+      type: object
       additionalProperties: false
       required: [reason]
       properties:
@@ -3568,13 +3610,12 @@ components:
               type: integer
               minimum: 2
             expires_at:
-              type: [string, 'null']
+              type: string
               format: date-time
         replayed:
           type: boolean
         request_id:
           type: string
-
     LicenseLifecycleTransitionRequest:
       type: object
       additionalProperties: false
