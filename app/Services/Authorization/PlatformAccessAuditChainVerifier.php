@@ -211,7 +211,39 @@ final readonly class PlatformAccessAuditChainVerifier
             })
             ->exists();
 
-        return ! $releaseChannelStateMismatchExists;
+        $unreferencedPlanEventsExist = DB::table('plan_events')
+            ->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('platform_access_audit_events')
+                    ->whereColumn('platform_access_audit_events.details_ref_id', 'plan_events.id')
+                    ->where('platform_access_audit_events.hash_version', 2)
+                    ->whereIn('platform_access_audit_events.action', [
+                        'plan.created',
+                        'plan_version.created',
+                        'plan_version.updated',
+                        'plan_version.published',
+                    ]);
+            })
+            ->exists();
+
+        if ($unreferencedPlanEventsExist) {
+            return false;
+        }
+
+        $duplicatePlanReferencesExist = DB::table('platform_access_audit_events')
+            ->select('details_ref_id')
+            ->where('hash_version', 2)
+            ->whereIn('action', [
+                'plan.created',
+                'plan_version.created',
+                'plan_version.updated',
+                'plan_version.published',
+            ])
+            ->groupBy('details_ref_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        return ! $releaseChannelStateMismatchExists && ! $duplicatePlanReferencesExist;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
@@ -226,6 +258,7 @@ final readonly class PlatformAccessAuditChainVerifier
             'product.assignment_granted', 'product.assignment_revoked' => $this->verifyProductAssignmentDetails($auditEvent),
             'product_version.created', 'product_version.updated', 'product_version.published' => $this->verifyProductVersionDetails($auditEvent),
             'release_channel.created', 'release_channel.promoted' => $this->verifyReleaseChannelDetails($auditEvent),
+            'plan.created', 'plan_version.created', 'plan_version.updated', 'plan_version.published' => $this->verifyPlanDetails($auditEvent),
             default => false,
         };
     }
@@ -620,6 +653,115 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $assignmentEvent->reason,
             (string) $assignmentEvent->request_id,
             (string) $assignmentEvent->created_at,
+        );
+
+        return hash_equals($detailsHash, $expectedDetailsHash);
+    }
+
+    private function verifyPlanDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+        $action = $row['action'] ?? null;
+
+        if (
+            ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
+            || ! in_array($action, [
+                'plan.created',
+                'plan_version.created',
+                'plan_version.updated',
+                'plan_version.published',
+            ], true)
+        ) {
+            return false;
+        }
+
+        $event = DB::table('plan_events')
+            ->join('plans', 'plans.id', '=', 'plan_events.plan_id')
+            ->join('products', 'products.id', '=', 'plan_events.product_id')
+            ->leftJoin('plan_versions', 'plan_versions.id', '=', 'plan_events.plan_version_id')
+            ->where('plan_events.id', $detailsReferenceId)
+            ->first([
+                'plan_events.id',
+                'plan_events.plan_id',
+                'plan_events.plan_version_id',
+                'plan_events.product_id',
+                'plan_events.vendor_account_id',
+                'plan_events.actor_user_id',
+                'plan_events.event_type',
+                'plan_events.reason',
+                'plan_events.request_id',
+                'plan_events.event_payload',
+                'plan_events.created_at',
+                'plans.product_id as plan_product_id',
+                'plans.vendor_account_id as plan_vendor_account_id',
+                'products.vendor_account_id as product_vendor_account_id',
+                'plan_versions.plan_id as version_plan_id',
+                'plan_versions.product_id as version_product_id',
+                'plan_versions.vendor_account_id as version_vendor_account_id',
+            ]);
+
+        if ($event === null) {
+            return false;
+        }
+
+        $expectedEventType = match ($action) {
+            'plan.created' => 'created',
+            'plan_version.created' => 'version_created',
+            'plan_version.updated' => 'version_updated',
+            default => 'version_published',
+        };
+        $expectedResourceId = $action === 'plan.created'
+            ? (string) $event->plan_id
+            : (string) ($event->plan_version_id ?? '');
+
+        if (
+            $event->event_type !== $expectedEventType
+            || $expectedResourceId !== $resourceId
+            || (string) $event->plan_product_id !== (string) $event->product_id
+            || (string) $event->plan_vendor_account_id !== $tenantVendorAccountId
+            || (string) $event->vendor_account_id !== $tenantVendorAccountId
+            || (string) $event->product_vendor_account_id !== $tenantVendorAccountId
+            || (string) $event->actor_user_id !== $actorUserId
+            || (string) $event->request_id !== $requestId
+            || ($action === 'plan.created' && $event->plan_version_id !== null)
+            || ($action !== 'plan.created' && (
+                $event->plan_version_id === null
+                || (string) $event->version_plan_id !== (string) $event->plan_id
+                || (string) $event->version_product_id !== (string) $event->product_id
+                || (string) $event->version_vendor_account_id !== $tenantVendorAccountId
+            ))
+        ) {
+            return false;
+        }
+
+        $payload = json_decode((string) $event->event_payload, true);
+        if (! is_array($payload) || array_is_list($payload)) {
+            return false;
+        }
+
+        $expectedDetailsHash = $this->hasher->hashPlanEvent(
+            (string) $event->id,
+            (string) $event->plan_id,
+            $event->plan_version_id === null ? null : (string) $event->plan_version_id,
+            (string) $event->product_id,
+            (string) $event->vendor_account_id,
+            (string) $event->actor_user_id,
+            (string) $event->event_type,
+            (string) $event->reason,
+            (string) $event->request_id,
+            $payload,
+            (string) $event->created_at,
         );
 
         return hash_equals($detailsHash, $expectedDetailsHash);
