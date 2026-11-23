@@ -43,7 +43,7 @@ final readonly class LicenseAllocationService
         string $requestId,
     ): array {
         $allocationType = trim($allocationType);
-        $subjectIdentifier = trim($subjectIdentifier);
+        $subjectIdentifier = $allocationType === 'domain' ? $subjectIdentifier : trim($subjectIdentifier);
         $reason = trim($reason);
         $requestId = trim($requestId);
 
