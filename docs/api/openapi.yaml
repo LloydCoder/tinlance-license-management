@@ -954,7 +954,7 @@ paths:
     get:
       tags: [Products]
       operationId: listProducts
-      description: Lists products in the authenticated vendor scope. Product managers see products they created; vendor Super Admins see all products in their vendor account.
+      description: Lists products in the authenticated vendor scope. Product managers and developers see products assigned to their active vendor membership; vendor Super Admins see all products in their vendor account.
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -1010,7 +1010,7 @@ paths:
     get:
       tags: [Products]
       operationId: getProduct
-      description: Returns a product only when the caller is within its vendor scope and is its creator or a vendor Super Admin.
+      description: Returns a product only when the caller is within its vendor scope and has an active product assignment, or is a vendor Super Admin.
       responses:
         '200':
           description: Product details
@@ -1047,6 +1047,95 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /products/{productId}/assignments:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Products]
+      operationId: assignProduct
+      description: Assigns a product to an active vendor membership with a product-scoped role. Only a non-bootstrap vendor Super Admin may grant or restore assignments. Requires recent password confirmation and fresh MFA step-up. Repeated active grants are idempotent.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductAssignmentCreateRequest'
+      responses:
+        '200':
+          description: Assignment already active; no duplicate event was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAssignmentResult'
+        '201':
+          description: Product assignment granted with immutable audit evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductAssignmentResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /products/{productId}/assignments/{membershipId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+      - name: membershipId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    delete:
+      tags: [Products]
+      operationId: revokeProductAssignment
+      description: Revokes the target vendor membership's product assignment. Only a non-bootstrap vendor Super Admin may revoke assignments. Requires recent password confirmation, fresh MFA step-up and a reason. Repeated revocation is idempotent.
+      security:
+        - AdminSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductAssignmentRevokeRequest'
+      responses:
+        '204':
+          description: Assignment revoked or already inactive
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
         '423':
@@ -1468,6 +1557,59 @@ components:
             $ref: '#/components/schemas/Product'
         meta:
           $ref: '#/components/schemas/Pagination'
+        request_id:
+          type: string
+    ProductAssignmentCreateRequest:
+      type: object
+      required: [vendor_membership_id, reason]
+      additionalProperties: false
+      properties:
+        vendor_membership_id:
+          type: string
+          minLength: 26
+          maxLength: 26
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductAssignmentRevokeRequest:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    ProductAssignmentResult:
+      type: object
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: object
+          required: [id, product_id, vendor_membership_id, assigned_at]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            product_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            vendor_membership_id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            assigned_at:
+              type: string
+              format: date-time
+        meta:
+          type: object
+          required: [already_assigned]
+          properties:
+            already_assigned:
+              type: boolean
         request_id:
           type: string
     Pagination:
