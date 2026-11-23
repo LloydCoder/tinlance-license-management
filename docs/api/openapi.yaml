@@ -1661,6 +1661,14 @@ paths:
     get:
       tags: [Products]
       operationId: listProductPlans
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
       summary: List plans for an authorized product
       security:
         - AdminSession: []
@@ -1749,6 +1757,14 @@ paths:
     get:
       tags: [Products]
       operationId: listPlanVersions
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
       summary: List versions for a tenant-authorized plan
       security:
         - AdminSession: []
