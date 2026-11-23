@@ -164,7 +164,7 @@ final readonly class LicenseLifecycleService
         if (
             mb_strlen($reason) < 5
             || mb_strlen($reason) > 500
-            || preg_match('/\\A[A-Za-z0-9._:-]{1,128}\\z/D', $requestId) !== 1
+            || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) !== 1
         ) {
             throw new InvalidArgumentException('Licence renewal request metadata is invalid.');
         }
