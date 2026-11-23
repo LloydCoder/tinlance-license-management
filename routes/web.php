@@ -3,8 +3,8 @@
 use App\Http\Controllers\Admin\CustomerOrganizationController;
 use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
-use App\Http\Controllers\Catalog\ProductCatalogController;
 use App\Http\Controllers\Catalog\ProductAssignmentController;
+use App\Http\Controllers\Catalog\ProductCatalogController;
 use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
