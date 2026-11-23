@@ -13,7 +13,7 @@ final class LicenseIssuanceFingerprint
      * Hash a canonical, scope-bound issuance payload. Secret key material must never
      * be included in this payload; only normalized request semantics belong here.
      *
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public static function create(string $vendorAccountId, string $actorUserId, array $payload): string
     {
