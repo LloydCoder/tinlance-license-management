@@ -384,7 +384,7 @@ final class ProductCatalogFoundationTest extends TestCase
                 'artifact_size_bytes' => 8192,
                 'reason' => 'Attempt to mutate a published version.',
             ])
-            ->assertNotFound();
+            ->assertForbidden();
 
         $this->assertDatabaseHas('product_version_events', [
             'product_version_id' => $versionId,
