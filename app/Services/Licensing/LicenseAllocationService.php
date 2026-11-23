@@ -18,6 +18,7 @@ use App\Models\VendorAccount;
 use App\Models\VendorMembership;
 use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
+use Tlms\Domain\Licensing\DomainName;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -47,8 +48,8 @@ final readonly class LicenseAllocationService
         $requestId = trim($requestId);
 
         if (
-            ! in_array($allocationType, ['site', 'seat', 'user'], true)
-            || preg_match('/\A[A-Za-z0-9._:-]{16,128}\z/D', $subjectIdentifier) !== 1
+            ! in_array($allocationType, ['site', 'seat', 'user', 'domain'], true)
+            || ($allocationType !== 'domain' && preg_match('/\A[A-Za-z0-9._:-]{16,128}\z/D', $subjectIdentifier) !== 1)
             || mb_strlen($reason) < 5
             || mb_strlen($reason) > 500
             || preg_match('/\A[A-Za-z0-9._:-]{1,128}\z/D', $requestId) !== 1
@@ -57,7 +58,9 @@ final readonly class LicenseAllocationService
         }
 
         $vendorId = (string) $license->vendor_account_id;
-        $normalizedSubject = mb_strtolower($subjectIdentifier, 'UTF-8');
+        $normalizedSubject = $allocationType === 'domain'
+            ? DomainName::normalize($subjectIdentifier)
+            : mb_strtolower($subjectIdentifier, 'UTF-8');
 
         return DB::transaction(function () use (
             $actor,
@@ -141,6 +144,7 @@ final readonly class LicenseAllocationService
                 'site' => 'sites',
                 'seat' => 'seats',
                 'user' => 'users',
+                'domain' => 'domains',
             };
             $entitlements = $planVersion->entitlements;
             $limit = $entitlements[$limitKey] ?? null;
