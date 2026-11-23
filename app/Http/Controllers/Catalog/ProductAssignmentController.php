@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Catalog\ProductAssignmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -50,7 +51,7 @@ final class ProductAssignmentController
                 'id' => (string) $assignment->getKey(),
                 'product_id' => (string) $assignment->product_id,
                 'vendor_membership_id' => (string) $assignment->vendor_membership_id,
-                'assigned_at' => $assignment->assigned_at?->toISOString(),
+                'assigned_at' => $assignment->assigned_at->toISOString(),
             ],
             'meta' => ['already_assigned' => $alreadyAssigned],
             'request_id' => $this->requestId($request),
@@ -62,7 +63,7 @@ final class ProductAssignmentController
         Product $product,
         string $membership,
         ProductAssignmentService $assignments,
-    ): JsonResponse {
+    ): Response {
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
         Gate::forUser($actor)->authorize('manageAssignments', $product);
