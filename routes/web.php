@@ -245,6 +245,9 @@ Route::middleware([
     Route::post('/licenses/{license}/transitions', [LicenseLifecycleController::class, 'transition'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.licenses.transitions.store');
+    Route::post('/licenses/{license}/renewals', [LicenseLifecycleController::class, 'renew'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:5,1'])
+        ->name('api.licenses.renewals.store');
 });
 
 Route::middleware([
