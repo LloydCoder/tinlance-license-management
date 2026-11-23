@@ -4567,7 +4567,7 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
 
-              writeOnly: true
+              readOnly: true
             delivery:
               type: string
               const: one_time
