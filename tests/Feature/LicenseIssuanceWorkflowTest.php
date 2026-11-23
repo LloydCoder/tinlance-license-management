@@ -18,6 +18,7 @@ use App\Services\Licensing\LicenseKeyMaterialProvider;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Tests\TestCase;
 use Tlms\Domain\Licensing\LicenseKey;
 
@@ -29,7 +30,13 @@ final class LicenseIssuanceWorkflowTest extends TestCase
     {
         parent::setUp();
         $this->seed(AuthorizationCatalogSeeder::class);
-        $this->withoutMiddleware(ThrottleRequests::class);
+        $this->withoutMiddleware([
+            ThrottleRequests::class,
+            ThrottleRequestsWithRedis::class,
+            'throttle:api',
+            'throttle:5,1',
+            'throttle:3,1',
+        ]);
         $this->configureKeyMaterial();
     }
 
