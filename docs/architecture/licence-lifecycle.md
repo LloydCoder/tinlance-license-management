@@ -66,3 +66,14 @@ This increment does not yet implement successor-based transfer/replacement workf
 - Laravel schedules the command every five minutes with overlap prevention. Shared-hosting operators must invoke Laravel's scheduler from the hosting cron facility once per minute (for example, `php artisan schedule:run` from the application directory). No persistent worker is required.
 - Operators may run `php artisan tlms:licenses:expire --limit=100` manually for controlled catch-up. The batch limit must be between 1 and 1,000.
 - The scheduler is intentionally eventual within its five-minute cadence; real-time verification must independently reject licences whose effective expiry boundary has passed.
+
+
+## Usage metering policy
+
+- Usage is product-scoped through the immutable published plan version and is represented by entitlement keys `usage.{metric}.{period}`, where period is `monthly`, `annual` or `lifetime` and the value is a positive integer quota.
+- Monthly and annual counters use UTC calendar-month and calendar-year windows respectively. Lifetime counters begin at the licence start time (or creation time when no start time is set) and do not reset.
+- Only active, in-window licences can consume usage. Suspended, revoked, expired, not-yet-started and grace-expired licences are rejected.
+- A licence row lock serializes concurrent metering for that licence. The mutable counter projection and append-only usage event are committed in one transaction.
+- Vendor-scoped request IDs are payload-bound and unique across issuance/lifecycle, allocation and usage event streams. Replays do not increment usage a second time.
+- Usage events contain metric, period, positive delta, resulting counter, actor, reason and a payload digest; they do not contain customer database contents or installation identifiers.
+- The initial API records usage on behalf of an authorized vendor operator with recent password confirmation and fresh MFA step-up. It is not yet the machine-authenticated SDK ingestion endpoint; SDK credentials and installation-bound authentication are delivered in later activation/SDK phases.
