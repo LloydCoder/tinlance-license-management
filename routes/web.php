@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Security\SessionController;
 use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Catalog\ProductAssignmentController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
+use App\Http\Controllers\Catalog\PlanCatalogueController;
 use App\Http\Controllers\Catalog\ProductVersionController;
 use App\Http\Controllers\Catalog\ReleaseChannelController;
 use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
