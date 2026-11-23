@@ -511,11 +511,14 @@ final readonly class PlanCatalogueService
             return;
         }
 
-        if (! ProductAssignment::query()
+        $assignment = ProductAssignment::query()
             ->where('product_id', $product->getKey())
             ->where('vendor_membership_id', $membership->getKey())
             ->whereNull('revoked_at')
-            ->exists()) {
+            ->lockForUpdate()
+            ->first();
+
+        if (! $assignment instanceof ProductAssignment) {
             throw new AuthorizationException('The actor is not assigned to this product.');
         }
     }
