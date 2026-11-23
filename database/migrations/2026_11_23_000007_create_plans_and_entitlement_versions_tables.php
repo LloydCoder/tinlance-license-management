@@ -211,6 +211,14 @@ return new class extends Migration
                 END IF;
 
                 IF NOT EXISTS (
+                    SELECT 1 FROM vendor_accounts
+                    WHERE id = NEW.vendor_account_id AND status = 'active'
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan events require an active vendor tenant';
+                END IF;
+
+                IF NOT EXISTS (
                     SELECT 1 FROM vendor_memberships
                     WHERE vendor_account_id = NEW.vendor_account_id
                         AND user_id = NEW.actor_user_id
