@@ -245,7 +245,7 @@ final readonly class LicenseUsageService
         if ($period === 'lifetime') {
             $start = $license->starts_at ?? $license->created_at ?? Carbon::now('UTC');
 
-            return [$start->copy()->utc(), null];
+            return [Carbon::parse($start)->utc(), null];
         }
 
         $start = Carbon::now('UTC');
