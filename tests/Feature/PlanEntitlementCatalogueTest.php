@@ -257,7 +257,7 @@ final class PlanEntitlementCatalogueTest extends TestCase
 
     public function test_product_readers_only_see_published_plan_versions(): void
     {
-        [$manager, $vendor] = $this->createActor('vendor_super_admin');
+        [$manager, $vendor] = $this->createActor('super_admin');
 
         $productId = $this->authenticated($manager)
             ->postJson('/api/v1/products', [
@@ -308,7 +308,7 @@ final class PlanEntitlementCatalogueTest extends TestCase
             'joined_at' => now(),
         ]);
         $readerMembership->roles()->attach(
-            Role::query()->where('scope', 'vendor')->where('slug', 'vendor_product_reader')->firstOrFail(),
+            Role::query()->where('scope', 'vendor')->where('slug', 'vendor_developer')->firstOrFail(),
         );
         $reader->forceFill([
             'email_verified_at' => now(),
