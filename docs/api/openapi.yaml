@@ -2011,7 +2011,7 @@ paths:
             Cache-Control:
               schema:
                 type: string
-                const: 'no-store, private, max-age=0'
+                pattern: '(^|,\\s*)no-store(,|$)'
             Pragma:
               schema:
                 type: string
