@@ -108,10 +108,11 @@ final class ProductActivationLifecycleTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
-        $product = Product::query()->findOrFail($productId);
+        /** @var Product $product */
+        $product = Product::query()->whereKey($productId)->firstOrFail();
 
         try {
-            $product->forceFill([
+            $product->fill([
                 'status' => 'active',
                 'version' => 2,
                 'updated_by_user_id' => $actor->getKey(),
