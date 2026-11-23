@@ -16,6 +16,7 @@ use App\Models\VendorMembership;
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Database\QueryException;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use LogicException;
