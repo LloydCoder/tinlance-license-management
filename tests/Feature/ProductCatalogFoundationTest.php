@@ -47,7 +47,7 @@ final class ProductCatalogFoundationTest extends TestCase
             ->assertJsonPath('data.slug', 'threatfade');
 
         $productId = $created->json('data.id');
-        $product = Product::query()->findOrFail($productId);
+        $product = Product::query()->whereKey($productId)->firstOrFail();
         $this->assertSame($vendor->getKey(), $product->vendor_account_id);
         $this->assertSame($manager->getKey(), $product->created_by_user_id);
         $this->assertSame(1, $product->version);
@@ -264,7 +264,7 @@ final class ProductCatalogFoundationTest extends TestCase
 
         $response->assertCreated();
 
-        return Product::query()->findOrFail((string) $response->json('data.id'));
+        return Product::query()->whereKey((string) $response->json('data.id'))->firstOrFail();
     }
 
     /**
