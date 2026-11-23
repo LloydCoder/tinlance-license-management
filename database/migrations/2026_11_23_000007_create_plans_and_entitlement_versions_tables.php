@@ -150,10 +150,21 @@ return new class extends Migration
                     OR NEW.vendor_account_id <> OLD.vendor_account_id
                     OR NEW.code <> OLD.code
                     OR NEW.created_by_user_id <> OLD.created_by_user_id
-                    OR NEW.status <> OLD.status
                     OR NEW.version <> OLD.version + 1 THEN
                     SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Plan identity is immutable and updates must advance the aggregate version';
+                END IF;
+
+                IF NEW.status <> OLD.status AND NOT (
+                    OLD.status = 'draft'
+                    AND NEW.status = 'active'
+                    AND EXISTS (
+                        SELECT 1 FROM plan_versions
+                        WHERE plan_id = OLD.id AND status = 'published'
+                    )
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'A plan becomes active only after its first version is published';
                 END IF;
             END
             SQL);
@@ -168,7 +179,7 @@ return new class extends Migration
                     WHERE id = NEW.plan_id
                         AND product_id = NEW.product_id
                         AND vendor_account_id = NEW.vendor_account_id
-                        AND status = 'draft'
+                        AND status IN ('draft', 'active')
                 ) THEN
                     SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Plan versions must belong to a draft plan in the same tenant';
