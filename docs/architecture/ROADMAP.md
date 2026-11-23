@@ -83,3 +83,8 @@ The initial product aggregate and tenant-scoped API are implemented: stable publ
 ### Phase 4 implementation increment — product assignment ABAC
 
 Explicit product assignments are now implemented as a tenant-bound aggregate. Product managers and developers can only list/read products assigned to their active vendor membership; developers are read-only, and product managers can update assigned draft products. Vendor Super Admins alone can grant/revoke assignments, with recent password confirmation, fresh MFA, row locking, immutable assignment events and version-2 audit-chain coverage. This closes product-level assignment ABAC only; plan, licence, payment, reseller and release authorization remain open.
+
+
+### Phase 5 implementation increment — product version lifecycle
+
+Product versions now have a tenant-scoped semantic-version identity, draft/published lifecycle, release notes, SHA-256 artifact metadata and optimistic concurrency. Product managers can create/update drafts for assigned products; developers can read assigned versions; vendor Super Admins retain vendor-wide authority. Publishing is step-up protected and requires a valid artifact digest and positive size. Published versions are immutable and every transition is represented by immutable event records linked to the version-2 audit chain. Artifact storage/signing, release channels and update distribution remain later Phase 5/7/10 work.

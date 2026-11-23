@@ -124,7 +124,33 @@ final readonly class PlatformAccessAuditChainVerifier
             ->havingRaw('COUNT(*) > 1')
             ->exists();
 
-        return ! $duplicateAssignmentReferencesExist;
+        if ($duplicateAssignmentReferencesExist) {
+            return false;
+        }
+
+        $unreferencedVersionEventsExist = DB::table('product_version_events')
+            ->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('platform_access_audit_events')
+                    ->whereColumn('platform_access_audit_events.details_ref_id', 'product_version_events.id')
+                    ->where('platform_access_audit_events.hash_version', 2)
+                    ->whereIn('platform_access_audit_events.action', ['product_version.created', 'product_version.updated', 'product_version.published']);
+            })
+            ->exists();
+
+        if ($unreferencedVersionEventsExist) {
+            return false;
+        }
+
+        $duplicateVersionReferencesExist = DB::table('platform_access_audit_events')
+            ->select('details_ref_id')
+            ->where('hash_version', 2)
+            ->whereIn('action', ['product_version.created', 'product_version.updated', 'product_version.published'])
+            ->groupBy('details_ref_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        return ! $duplicateVersionReferencesExist;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
@@ -137,6 +163,7 @@ final readonly class PlatformAccessAuditChainVerifier
             'vendor_account.profile_updated' => $this->verifyVendorProfileDetails($auditEvent),
             'product.created', 'product.updated' => $this->verifyProductDetails($auditEvent),
             'product.assignment_granted', 'product.assignment_revoked' => $this->verifyProductAssignmentDetails($auditEvent),
+            'product_version.created', 'product_version.updated', 'product_version.published' => $this->verifyProductVersionDetails($auditEvent),
             default => false,
         };
     }
@@ -271,6 +298,95 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $productEvent->change_digest,
             (string) $productEvent->request_id,
             (string) $productEvent->created_at,
+        );
+
+        return hash_equals($detailsHash, $expectedDetailsHash);
+    }
+
+    private function verifyProductVersionDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+        $action = $row['action'] ?? null;
+
+        if (
+            ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
+            || ! in_array($action, ['product_version.created', 'product_version.updated', 'product_version.published'], true)
+        ) {
+            return false;
+        }
+
+        $versionEvent = DB::table('product_version_events')
+            ->join('product_versions', 'product_versions.id', '=', 'product_version_events.product_version_id')
+            ->join('products', 'products.id', '=', 'product_version_events.product_id')
+            ->where('product_version_events.id', $detailsReferenceId)
+            ->first([
+                'product_version_events.id',
+                'product_version_events.product_version_id',
+                'product_version_events.product_id',
+                'product_version_events.vendor_account_id',
+                'product_version_events.actor_user_id',
+                'product_version_events.event_type',
+                'product_version_events.reason',
+                'product_version_events.changed_fields',
+                'product_version_events.change_digest',
+                'product_version_events.request_id',
+                'product_version_events.created_at',
+                'product_versions.product_id as version_product_id',
+                'product_versions.vendor_account_id as version_vendor_account_id',
+                'products.vendor_account_id as product_vendor_account_id',
+            ]);
+
+        $expectedEventType = match ($action) {
+            'product_version.created' => 'created',
+            'product_version.updated' => 'updated',
+            default => 'published',
+        };
+
+        if (
+            $versionEvent === null
+            || $versionEvent->event_type !== $expectedEventType
+            || (string) $versionEvent->product_version_id !== $resourceId
+            || (string) $versionEvent->version_product_id !== (string) $versionEvent->product_id
+            || (string) $versionEvent->product_id !== (string) $versionEvent->version_product_id
+            || (string) $versionEvent->vendor_account_id !== $tenantVendorAccountId
+            || (string) $versionEvent->version_vendor_account_id !== $tenantVendorAccountId
+            || (string) $versionEvent->product_vendor_account_id !== $tenantVendorAccountId
+            || (string) $versionEvent->actor_user_id !== $actorUserId
+            || (string) $versionEvent->request_id !== $requestId
+            || ! is_string($versionEvent->change_digest)
+            || preg_match('/\A[a-f0-9]{64}\z/D', $versionEvent->change_digest) !== 1
+        ) {
+            return false;
+        }
+
+        $changedFields = json_decode((string) $versionEvent->changed_fields, true);
+        if (! is_array($changedFields) || ! array_is_list($changedFields)) {
+            return false;
+        }
+
+        $expectedDetailsHash = $this->hasher->hashProductVersionEvent(
+            (string) $versionEvent->id,
+            (string) $versionEvent->product_version_id,
+            (string) $versionEvent->product_id,
+            (string) $versionEvent->vendor_account_id,
+            (string) $versionEvent->actor_user_id,
+            (string) $versionEvent->event_type,
+            (string) $versionEvent->reason,
+            $changedFields,
+            (string) $versionEvent->change_digest,
+            (string) $versionEvent->request_id,
+            (string) $versionEvent->created_at,
         );
 
         return hash_equals($detailsHash, $expectedDetailsHash);

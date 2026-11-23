@@ -467,3 +467,12 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - Grant/revoke writes require the existing recent-password and fresh five-minute TOTP/passkey step-up middleware. The service locks and revalidates product, vendor, actor and target membership in one transaction.
 - Each grant/revoke creates an immutable product_assignment_events record and a version-2 platform audit-chain event. The verifier checks assignment/product/vendor/membership/actor/request binding, complete event coverage and duplicate references. MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect assignment-event rows.
 - This closes the product-assignment portion of Phase 4 resource-level ABAC. It does not complete Phase 4: generalized policies for plans, licences, payments, resellers and releases, broader privileged-operation approvals and full portals remain open.
+
+
+## Phase 5 increment — immutable product version lifecycle (2026-11-23)
+
+- Adds product-scoped semantic versions with unique (product_id, version), draft/published states, release notes, SHA-256 artifact metadata and optimistic version numbers.
+- Product managers with plans.entitlements.manage can create/update drafts only for assigned products; developers can read versions for assigned products but cannot create or edit them. Vendor Super Admins retain vendor-wide product version authority.
+- Publishing requires releases.publish, a positive artifact size, a 64-character SHA-256 digest, recent password confirmation and fresh TOTP/passkey step-up. Published version metadata is immutable.
+- Product version events are immutable, transactionally linked to version-2 platform audit events, verified for tenant/actor/request/payload binding and complete unique event coverage. MySQL/MariaDB triggers protect event history and enforce version state transitions.
+- Artifact bytes, artifact storage, signing, release channels, rollout policies and update distribution are not implemented by this increment.

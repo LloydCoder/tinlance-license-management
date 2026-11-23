@@ -97,4 +97,10 @@ final class Product extends BaseModel
     {
         return $this->hasMany(ProductAssignment::class);
     }
+
+    /** @return HasMany<ProductVersion, $this> */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(ProductVersion::class);
+    }
 }
