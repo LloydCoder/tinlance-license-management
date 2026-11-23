@@ -255,6 +255,58 @@ final class PlanEntitlementCatalogueTest extends TestCase
     }
 
 
+
+    public function test_entitlement_integers_are_bounded_to_json_safe_values(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+
+        $productId = $this->authenticated($manager)
+            ->postJson('/api/v1/products', [
+                'name' => 'Safe Integer Product',
+                'slug' => 'safe-integer-product',
+                'description' => 'JSON safe entitlement integer fixture.',
+                'reason' => 'Create the safe integer product.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $planId = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$productId.'/plans', [
+                'code' => 'safe-integer',
+                'name' => 'Safe Integer',
+                'reason' => 'Create the safe integer plan.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $payload = [
+            'expected_version' => 1,
+            'billing_model' => 'perpetual',
+            'currency' => 'NGN',
+            'price_minor' => 0,
+            'trial_days' => 0,
+            'maintenance_days' => 0,
+            'entitlements' => [
+                ['key' => 'seat_limit', 'type' => 'integer', 'value' => 9007199254740992],
+            ],
+            'reason' => 'Reject an unsafe JSON integer entitlement.',
+        ];
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions', $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PLAN_INVALID');
+
+        $this->assertDatabaseCount('plan_versions', 0);
+
+        $payload['entitlements'][0]['value'] = 9007199254740991;
+        $payload['reason'] = 'Accept the largest safe JSON integer entitlement.';
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$planId.'/versions', $payload)
+            ->assertCreated();
+    }
+
     public function test_product_readers_only_see_published_plan_versions(): void
     {
         [$manager, $vendor] = $this->createActor('super_admin');
