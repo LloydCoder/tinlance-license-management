@@ -994,6 +994,65 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_domain_allocations_normalize_idna_hosts_and_enforce_domain_quota_without_persisting_raw_domains(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue a licence to verify domain allocation limits.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'domain-allocation-issuance-0001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the licence before allocating a domain.',
+            ], ['X-Request-ID' => 'domain-allocation-activation-0001'])
+            ->assertOk();
+
+        $first = $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'domain',
+                'subject_identifier' => 'EXAMPLE.COM.',
+                'reason' => 'Bind the first canonical domain to the licence.',
+            ], ['X-Request-ID' => 'domain-allocation-first-0001'])
+            ->assertCreated()
+            ->assertJsonPath('data.allocation_type', 'domain');
+
+        $firstId = (string) $first->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'domain',
+                'subject_identifier' => 'example.com',
+                'reason' => 'Attempt to allocate the same canonical domain again.',
+            ], ['X-Request-ID' => 'domain-allocation-duplicate-0001'])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'domain',
+                'subject_identifier' => 'bücher.example',
+                'reason' => 'Attempt to exceed the single-domain entitlement.',
+            ], ['X-Request-ID' => 'domain-allocation-over-quota-0001'])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('license_allocations', [
+            'id' => $firstId,
+            'allocation_type' => 'domain',
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseMissing('license_allocations', [
+            'subject_hash' => 'example.com',
+        ]);
+        $this->assertSame(1, DB::table('license_allocations')->where('license_id', $licenseId)->where('allocation_type', 'domain')->where('status', 'active')->count());
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
@@ -1067,6 +1126,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                     ['key' => 'seats', 'type' => 'integer', 'value' => 2],
                     ['key' => 'sites', 'type' => 'integer', 'value' => 1],
                     ['key' => 'users', 'type' => 'integer', 'value' => 1],
+                    ['key' => 'domains', 'type' => 'integer', 'value' => 1],
                     ['key' => 'usage.api_calls.monthly', 'type' => 'integer', 'value' => 100],
                     ['key' => 'usage.exports.lifetime', 'type' => 'integer', 'value' => 10],
                     ['key' => 'offline', 'type' => 'boolean', 'value' => true],
