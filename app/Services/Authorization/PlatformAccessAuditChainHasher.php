@@ -128,6 +128,41 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
+     * @param  array<string, mixed>  $entitlements
+     *
+     * @throws JsonException
+     */
+    public function hashPlanVersionSnapshot(
+        string $planId,
+        int $versionNumber,
+        string $billingModel,
+        string $currency,
+        int $priceMinor,
+        ?string $billingInterval,
+        int $trialDays,
+        int $maintenanceDays,
+        array $entitlements,
+    ): string {
+        $snapshot = [
+            'plan_id' => $planId,
+            'version_number' => $versionNumber,
+            'billing_model' => $billingModel,
+            'currency' => $currency,
+            'price_minor' => $priceMinor,
+            'billing_interval' => $billingInterval,
+            'trial_days' => $trialDays,
+            'maintenance_days' => $maintenanceDays,
+            'entitlements' => (object) $this->sortJsonObjectKeys($entitlements),
+        ];
+        ksort($snapshot, SORT_STRING);
+
+        return hash('sha256', json_encode(
+            $snapshot,
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        ));
+    }
+
+    /**
      * @param  array<string, mixed>  $eventPayload
      *
      * @throws JsonException

@@ -14,7 +14,6 @@ tags:
   - name: Health
   - name: Identity
   - name: Products
-  - name: Plans
   - name: Licences
   - name: Integrations
   - name: Payments
@@ -1660,26 +1659,34 @@ paths:
           minLength: 26
           maxLength: 26
     get:
-      tags: [Plans]
+      tags: [Products]
       operationId: listProductPlans
-      description: Lists tenant-scoped plans for a product visible to the active vendor membership. Results are paginated.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      summary: List plans for an authorized product
+      security:
+        - AdminSession: []
       responses:
         '200':
-          description: Product plans
+          description: Tenant-scoped plan catalogue
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlanCollection'
+                $ref: '#/components/schemas/PlanListResult'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/RateLimited'
     post:
-      tags: [Plans]
+      tags: [Products]
       operationId: createProductPlan
       summary: Create a draft plan for an assigned product
       description: Requires plans.entitlements.manage, recent password confirmation and fresh MFA step-up. Plan codes are unique within the product vendor tenant.
@@ -1720,12 +1727,14 @@ paths:
           minLength: 26
           maxLength: 26
     get:
-      tags: [Plans]
-      operationId: getPlan
-      description: Returns a plan only when the caller can view its parent product in the same vendor tenant.
+      tags: [Products]
+      operationId: showPlan
+      summary: Retrieve a tenant-authorized plan
+      security:
+        - AdminSession: []
       responses:
         '200':
-          description: Plan detail
+          description: Plan metadata
           content:
             application/json:
               schema:
@@ -1736,8 +1745,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/RateLimited'
   /plans/{planId}/versions:
     parameters:
       - name: planId
@@ -1748,26 +1755,34 @@ paths:
           minLength: 26
           maxLength: 26
     get:
-      tags: [Plans]
+      tags: [Products]
       operationId: listPlanVersions
-      description: Lists draft and published versions for a plan visible to the caller. Results are tenant-scoped and paginated.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      summary: List versions for a tenant-authorized plan
+      security:
+        - AdminSession: []
       responses:
         '200':
-          description: Plan versions
+          description: Plan version history
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlanVersionCollection'
+                $ref: '#/components/schemas/PlanVersionListResult'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '429':
-          $ref: '#/components/responses/RateLimited'
     post:
-      tags: [Plans]
+      tags: [Products]
       operationId: createPlanVersion
       summary: Create a typed entitlement version
       description: Uses optimistic aggregate version control, tenant-scoped product assignment, a database transaction and immutable hash-chain-linked event evidence.
@@ -1800,7 +1815,7 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-  /plans/{planId}/versions/{planVersionId}:
+  /plans/{planId}/versions/{versionId}:
     parameters:
       - name: planId
         in: path
@@ -1809,7 +1824,7 @@ paths:
           type: string
           minLength: 26
           maxLength: 26
-      - name: planVersionId
+      - name: versionId
         in: path
         required: true
         schema:
@@ -1817,7 +1832,7 @@ paths:
           minLength: 26
           maxLength: 26
     patch:
-      tags: [Plans]
+      tags: [Products]
       operationId: updateDraftPlanVersion
       summary: Update an unpublished plan version
       description: Published snapshots are immutable. Updates use optimistic aggregate version control and append immutable audit evidence in the same transaction.
@@ -1850,7 +1865,7 @@ paths:
           $ref: '#/components/responses/Locked'
         '429':
           $ref: '#/components/responses/RateLimited'
-  /plans/{planId}/versions/{planVersionId}/publish:
+  /plans/{planId}/versions/{versionId}/publish:
     parameters:
       - name: planId
         in: path
@@ -1859,7 +1874,7 @@ paths:
           type: string
           minLength: 26
           maxLength: 26
-      - name: planVersionId
+      - name: versionId
         in: path
         required: true
         schema:
@@ -1867,7 +1882,7 @@ paths:
           minLength: 26
           maxLength: 26
     post:
-      tags: [Plans]
+      tags: [Products]
       operationId: publishPlanVersion
       summary: Publish an immutable plan and entitlement snapshot
       description: Requires releases.publish, fresh MFA step-up and the current aggregate version. Snapshot objects use stable sorted keys and interoperable integer price bounds.
@@ -2878,10 +2893,60 @@ components:
               type: [string, 'null']
             status:
               type: string
-              enum: [draft]
+              enum: [draft, active]
             version:
               type: integer
               minimum: 1
+        request_id:
+          type: string
+    PlanListResult:
+      type: object
+      additionalProperties: false
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanResult/properties/data'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [page, per_page, total]
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            per_page:
+              type: integer
+              minimum: 1
+            total:
+              type: integer
+              minimum: 0
+        request_id:
+          type: string
+    PlanVersionListResult:
+      type: object
+      additionalProperties: false
+      required: [data, meta, request_id]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanVersionResult/properties/data'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [page, per_page, total]
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            per_page:
+              type: integer
+              minimum: 1
+            total:
+              type: integer
+              minimum: 0
         request_id:
           type: string
     TypedEntitlementInput:
@@ -2899,6 +2964,8 @@ components:
           oneOf:
             - type: boolean
             - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
             - type: string
               maxLength: 1000
     PlanVersionWriteRequest:
@@ -2993,6 +3060,8 @@ components:
                 oneOf:
                   - type: boolean
                   - type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
                   - type: string
             snapshot_sha256:
               type: [string, 'null']
@@ -3002,101 +3071,6 @@ components:
               format: date-time
         request_id:
           type: string
-    PlanCollection:
-      type: object
-      additionalProperties: false
-      required: [data, meta, request_id]
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required: [id, product_id, code, name, description, status, version]
-            properties:
-              id:
-                type: string
-                minLength: 26
-                maxLength: 26
-              product_id:
-                type: string
-                minLength: 26
-                maxLength: 26
-              code:
-                type: string
-              name:
-                type: string
-              description:
-                type: [string, 'null']
-              status:
-                type: string
-                enum: [draft]
-              version:
-                type: integer
-                minimum: 1
-        meta:
-          $ref: '#/components/schemas/Pagination'
-        request_id:
-          type: string
-    PlanVersionCollection:
-      type: object
-      additionalProperties: false
-      required: [data, meta, request_id]
-      properties:
-        data:
-          type: array
-          items:
-            type: object
-            additionalProperties: false
-            required: [id, plan_id, version_number, status, billing_model, currency, price_minor, billing_interval, trial_days, maintenance_days, entitlements, snapshot_sha256, published_at]
-            properties:
-              id:
-                type: string
-                minLength: 26
-                maxLength: 26
-              plan_id:
-                type: string
-                minLength: 26
-                maxLength: 26
-              version_number:
-                type: integer
-                minimum: 1
-              status:
-                type: string
-                enum: [draft, published]
-              billing_model:
-                type: string
-                enum: [perpetual, subscription, annual, trial]
-              currency:
-                type: string
-                pattern: '^[A-Z]{3}$'
-              price_minor:
-                type: integer
-                minimum: 0
-              billing_interval:
-                type: [string, 'null']
-              trial_days:
-                type: integer
-              maintenance_days:
-                type: integer
-              entitlements:
-                type: object
-                additionalProperties:
-                  oneOf:
-                    - type: boolean
-                    - type: integer
-                    - type: string
-              snapshot_sha256:
-                type: [string, 'null']
-                pattern: '^[a-f0-9]{64}$'
-              published_at:
-                type: [string, 'null']
-                format: date-time
-        meta:
-          $ref: '#/components/schemas/Pagination'
-        request_id:
-          type: string
-
   responses:
     BadRequest:
       description: Invalid request

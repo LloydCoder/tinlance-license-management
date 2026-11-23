@@ -251,21 +251,29 @@ final readonly class PlanCatalogueService
 
             $this->authorizeProductManager($actor, $product, $vendor, 'releases.publish');
 
-            $snapshot = $this->versionSnapshot($locked);
-            ksort($snapshot, SORT_STRING);
-            $entitlements = $snapshot['entitlements'];
-            if (is_array($entitlements)) {
-                ksort($entitlements, SORT_STRING);
-                $snapshot['entitlements'] = (object) $entitlements;
-            }
+            $snapshotHash = $this->auditHasher->hashPlanVersionSnapshot(
+                (string) $locked->plan_id,
+                (int) $locked->version_number,
+                (string) $locked->billing_model,
+                (string) $locked->currency,
+                (int) $locked->price_minor,
+                $locked->billing_interval,
+                (int) $locked->trial_days,
+                (int) $locked->maintenance_days,
+                $locked->entitlements,
+            );
 
             $locked->forceFill([
                 'status' => 'published',
                 'published_at' => now(),
-                'snapshot_sha256' => hash('sha256', json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)),
+                'snapshot_sha256' => $snapshotHash,
             ])->save();
 
-            $lockedPlan->forceFill(['version' => (int) $lockedPlan->version + 1])->save();
+            $planChanges = ['version' => (int) $lockedPlan->version + 1];
+            if ($lockedPlan->status === 'draft') {
+                $planChanges['status'] = 'active';
+            }
+            $lockedPlan->forceFill($planChanges)->save();
 
             $this->event(
                 $lockedPlan,
@@ -323,7 +331,7 @@ final readonly class PlanCatalogueService
             $value = $entry['value'];
             $valid = match ($entry['type']) {
                 'boolean' => is_bool($value),
-                'integer' => is_int($value),
+                'integer' => is_int($value) && $value >= -9007199254740991 && $value <= 9007199254740991,
                 'string' => is_string($value) && mb_strlen($value) <= 1000,
                 default => false,
             };
@@ -507,11 +515,14 @@ final readonly class PlanCatalogueService
             return;
         }
 
-        if (! ProductAssignment::query()
+        $assignment = ProductAssignment::query()
             ->where('product_id', $product->getKey())
             ->where('vendor_membership_id', $membership->getKey())
             ->whereNull('revoked_at')
-            ->exists()) {
+            ->lockForUpdate()
+            ->first();
+
+        if (! $assignment instanceof ProductAssignment) {
             throw new AuthorizationException('The actor is not assigned to this product.');
         }
     }
