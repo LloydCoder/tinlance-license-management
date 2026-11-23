@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\PlatformAccessAuditEvent;
 use App\Models\PlatformInstallation;
 use App\Models\Product;
+use App\Models\ProductAssignment;
 use App\Models\ProductEvent;
 use App\Models\Role;
 use App\Models\User;
