@@ -128,6 +128,85 @@ final class PlatformAccessAuditChainHasher
     }
 
     /**
+     * @param array<string, mixed> $eventPayload
+     *
+     * @throws JsonException
+     */
+    public function hashPlanEvent(
+        string $id,
+        string $planId,
+        ?string $planVersionId,
+        string $productId,
+        string $vendorAccountId,
+        string $actorUserId,
+        string $eventType,
+        string $reason,
+        string $requestId,
+        array $eventPayload,
+        string $createdAt,
+    ): string {
+        $canonicalEvent = [
+            'version' => 1,
+            'id' => $id,
+            'plan_id' => $planId,
+            'plan_version_id' => $planVersionId,
+            'product_id' => $productId,
+            'vendor_account_id' => $vendorAccountId,
+            'actor_user_id' => $actorUserId,
+            'event_type' => $eventType,
+            'reason' => $reason,
+            'request_id' => $requestId,
+            'event_payload' => $this->sortJsonObjectKeys($eventPayload),
+            'created_at' => $createdAt,
+        ];
+
+        return hash('sha256', json_encode(
+            $canonicalEvent,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        ));
+    }
+
+    /**
+     * @param array<string, mixed> $value
+     * @return array<string, mixed>
+     */
+    private function sortJsonObjectKeys(array $value): array
+    {
+        foreach ($value as $key => $entry) {
+            if (is_array($entry)) {
+                $value[$key] = array_is_list($entry)
+                    ? array_map(fn (mixed $item): mixed => is_array($item) ? $this->sortNestedJson($item) : $item, $entry)
+                    : $this->sortNestedJson($entry);
+            }
+        }
+
+        ksort($value, SORT_STRING);
+
+        return $value;
+    }
+
+    /**
+     * @param array<mixed> $value
+     * @return array<mixed>
+     */
+    private function sortNestedJson(array $value): array
+    {
+        foreach ($value as $key => $entry) {
+            if (is_array($entry)) {
+                $value[$key] = array_is_list($entry)
+                    ? array_map(fn (mixed $item): mixed => is_array($item) ? $this->sortNestedJson($item) : $item, $entry)
+                    : $this->sortNestedJson($entry);
+            }
+        }
+
+        if (! array_is_list($value)) {
+            ksort($value, SORT_STRING);
+        }
+
+        return $value;
+    }
+
+    /**
      * @throws JsonException
      */
     public function hashReleaseChannelEvent(
