@@ -558,6 +558,51 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         $this->assertSame(1, DB::table('license_allocations')->where('license_id', $licenseId)->where('allocation_type', 'site')->where('status', 'active')->count());
     }
 
+    public function test_allocation_request_ids_cannot_be_reused_by_lifecycle_operations(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue a licence for cross-stream request identifier verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'allocation-stream-issuance-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the licence for cross-stream request identifier verification.',
+            ], ['X-Request-ID' => 'allocation-stream-activation-000001'])
+            ->assertOk();
+
+        $sharedRequestId = 'shared-vendor-request-identifier-000001';
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'site',
+                'subject_identifier' => 'site-cross-stream-opaque-000000001',
+                'reason' => 'Reserve a site using the request identifier that must remain unique.',
+            ], ['X-Request-ID' => $sharedRequestId])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'suspended',
+                'reason' => 'Attempt to reuse an allocation request identifier for suspension.',
+            ], ['X-Request-ID' => $sharedRequestId])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('licenses', [
+            'id' => $licenseId,
+            'status' => 'active',
+            'version' => 2,
+        ]);
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
