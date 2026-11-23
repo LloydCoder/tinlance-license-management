@@ -287,6 +287,13 @@ final readonly class LicenseAllocationService
                 return ['allocation' => $lockedAllocation->refresh(), 'replayed' => true];
             }
 
+            if (LicenseEvent::query()
+                ->where('vendor_account_id', $vendorId)
+                ->where('request_id', $requestId)
+                ->exists()) {
+                throw new LicenseAllocationConflictException('The request identifier was already used by another licence operation.');
+            }
+
             if ($lockedAllocation->status !== 'active') {
                 throw new LicenseAllocationConflictException('Only active licence allocations can be released.');
             }
