@@ -6,8 +6,8 @@ namespace App\Services\Catalog;
 
 use App\Exceptions\ReleaseChannelConflictException;
 use App\Models\Product;
-use App\Models\ProductEvent;
 use App\Models\ProductAssignment;
+use App\Models\ProductEvent;
 use App\Models\ProductVersion;
 use App\Models\ReleaseChannel;
 use App\Models\ReleaseChannelEvent;
