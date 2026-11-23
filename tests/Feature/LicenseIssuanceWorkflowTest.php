@@ -299,7 +299,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
     private function createActor(string $vendorName): array
     {
         $vendor = VendorAccount::query()->create([
-            'installation_key' => 'primary',
+            'installation_key' => $vendorName === 'TLMS Licence Vendor' ? 'primary' : 'foreign-'.str()->random(12),
             'legal_name' => $vendorName.' Limited',
             'display_name' => $vendorName,
             'status' => 'active',
