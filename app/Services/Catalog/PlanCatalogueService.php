@@ -28,7 +28,7 @@ final readonly class PlanCatalogueService
     ) {}
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      */
     public function create(User $actor, Product $product, array $input, string $requestId): Plan
     {
@@ -85,7 +85,7 @@ final readonly class PlanCatalogueService
     }
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      */
     public function createVersion(User $actor, Plan $plan, array $input, string $requestId): PlanVersion
     {
@@ -138,7 +138,7 @@ final readonly class PlanCatalogueService
     }
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      */
     public function updateDraftVersion(
         User $actor,
@@ -278,7 +278,7 @@ final readonly class PlanCatalogueService
     }
 
     /**
-     * @param array<string, mixed> $input
+     * @param  array<string, mixed>  $input
      * @return array{
      *   billing_model: string,
      *   currency: string,
@@ -358,7 +358,7 @@ final readonly class PlanCatalogueService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function event(
         Plan $plan,
