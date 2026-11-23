@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Product;
+use App\Models\ProductEvent;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VendorAccount;
@@ -82,11 +83,11 @@ final class ProductActivationLifecycleTest extends TestCase
             'status' => 'active',
             'version' => 2,
         ]);
-        $this->assertDatabaseHas('product_events', [
-            'product_id' => $productId,
-            'event_type' => 'activated',
-            'changed_fields' => json_encode(['status']),
-        ]);
+        $activationEvent = ProductEvent::query()
+            ->where('product_id', $productId)
+            ->where('event_type', 'activated')
+            ->firstOrFail();
+        $this->assertSame(['status'], $activationEvent->changed_fields);
         $this->assertDatabaseHas('platform_access_audit_events', [
             'action' => 'product.activated',
             'resource_type' => 'product',
