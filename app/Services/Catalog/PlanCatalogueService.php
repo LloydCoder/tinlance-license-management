@@ -323,9 +323,14 @@ final readonly class PlanCatalogueService
             ? (string) $input['billing_interval']
             : null;
         $trialDays = (int) $input['trial_days'];
+        $priceMinor = (int) $input['price_minor'];
+        $currency = strtoupper((string) $input['currency']);
 
         if (
-            ($billingModel === 'subscription' && ! in_array($billingInterval, ['month', 'year'], true))
+            $priceMinor < 0
+            || $priceMinor > 9007199254740991
+            || preg_match('/\\A[A-Z]{3}\\z/D', $currency) !== 1
+            || ($billingModel === 'subscription' && ! in_array($billingInterval, ['month', 'year'], true))
             || ($billingModel !== 'subscription' && $billingInterval !== null)
             || ($billingModel === 'trial' && $trialDays < 1)
         ) {
@@ -334,8 +339,8 @@ final readonly class PlanCatalogueService
 
         return [
             'billing_model' => $billingModel,
-            'currency' => strtoupper((string) $input['currency']),
-            'price_minor' => (int) $input['price_minor'],
+            'currency' => $currency,
+            'price_minor' => $priceMinor,
             'billing_interval' => $billingInterval,
             'trial_days' => $trialDays,
             'maintenance_days' => (int) $input['maintenance_days'],
