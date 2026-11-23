@@ -77,3 +77,13 @@ This increment does not yet implement successor-based transfer/replacement workf
 - Vendor-scoped request IDs are payload-bound and unique across issuance/lifecycle, allocation and usage event streams. Replays do not increment usage a second time.
 - Usage events contain metric, period, positive delta, resulting counter, actor, reason and a payload digest; they do not contain customer database contents or installation identifiers.
 - The initial API records usage on behalf of an authorized vendor operator with recent password confirmation and fresh MFA step-up. It is not yet the machine-authenticated SDK ingestion endpoint; SDK credentials and installation-bound authentication are delivered in later activation/SDK phases.
+
+
+## Successor transfer and replacemen
+
+- Transfer and replacement never mutate a licence's customer, product, plan version or credential identity in place. They create a new successor licence and revoke the source in one transaction.
+- Transfer requires a different active customer organization in the same vendor; replacement retains the current customer.
+- The successor inherits the source plan version, original start time, expiry and grace deadline. It receives a fresh random key; the key is never returned in the successor response and remains available only through the existing one-time issuance secret-delivery workflow.
+- The immutable successor relation binds source, successor, vendor, product, source/destination customer, actor, reason, request fingerprint, idempotency key and payload digest.
+- A source licence can have only one successor. A successor may later itself be transferred or replaced, producing a new link in the chain.
+- Only active, in-term licences may be transferred or replaced. The source becomes terminally revoked; the successor begins issued and must be activated separately.
