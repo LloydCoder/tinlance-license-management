@@ -116,7 +116,7 @@ final class AuthorizationCatalogSeeder extends Seeder
                 ],
                 'finance_admin' => [
                     'name' => 'Finance Admin',
-                    'permissions' => ['vendor.account.read', 'licences.issue', 'payments.read', 'payments.refund', 'ledger.adjust', 'audit.read'],
+                    'permissions' => ['vendor.account.read', 'licences.issue', 'licences.mutate', 'payments.read', 'payments.refund', 'ledger.adjust', 'audit.read'],
                 ],
                 'support_agent' => [
                     'name' => 'Support Agent',
