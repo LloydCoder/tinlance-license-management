@@ -77,12 +77,13 @@ final readonly class PlatformAccessAuditChainVerifier
     private function verifyProductEventCoverage(): bool
     {
         $unreferencedEventsExist = DB::table('product_events')
+            ->whereIn('product_events.event_type', ['created', 'updated', 'activated'])
             ->whereNotExists(static function ($query): void {
                 $query->selectRaw('1')
                     ->from('platform_access_audit_events')
                     ->whereColumn('platform_access_audit_events.details_ref_id', 'product_events.id')
                     ->where('platform_access_audit_events.hash_version', 2)
-                    ->whereIn('platform_access_audit_events.action', ['product.created', 'product.updated']);
+                    ->whereIn('platform_access_audit_events.action', ['product.created', 'product.updated', 'product.activated']);
             })
             ->exists();
 
@@ -93,7 +94,7 @@ final readonly class PlatformAccessAuditChainVerifier
         $duplicateReferencesExist = DB::table('platform_access_audit_events')
             ->select('details_ref_id')
             ->where('hash_version', 2)
-            ->whereIn('action', ['product.created', 'product.updated'])
+            ->whereIn('action', ['product.created', 'product.updated', 'product.activated'])
             ->groupBy('details_ref_id')
             ->havingRaw('COUNT(*) > 1')
             ->exists();
@@ -254,7 +255,7 @@ final readonly class PlatformAccessAuditChainVerifier
             'customer_organization.created',
             'customer_organization.profile_updated' => $this->verifyCustomerProfileDetails($auditEvent),
             'vendor_account.profile_updated' => $this->verifyVendorProfileDetails($auditEvent),
-            'product.created', 'product.updated' => $this->verifyProductDetails($auditEvent),
+            'product.created', 'product.updated', 'product.activated' => $this->verifyProductDetails($auditEvent),
             'product.assignment_granted', 'product.assignment_revoked' => $this->verifyProductAssignmentDetails($auditEvent),
             'product_version.created', 'product_version.updated', 'product_version.published' => $this->verifyProductVersionDetails($auditEvent),
             'release_channel.created', 'release_channel.promoted' => $this->verifyReleaseChannelDetails($auditEvent),
@@ -339,7 +340,7 @@ final readonly class PlatformAccessAuditChainVerifier
             || ! is_string($actorUserId)
             || ! is_string($tenantVendorAccountId)
             || ! is_string($requestId)
-            || ! in_array($action, ['product.created', 'product.updated'], true)
+            || ! in_array($action, ['product.created', 'product.updated', 'product.activated'], true)
         ) {
             return false;
         }
@@ -361,7 +362,12 @@ final readonly class PlatformAccessAuditChainVerifier
                 'products.vendor_account_id as product_vendor_account_id',
             ]);
 
-        $expectedEventType = $action === 'product.created' ? 'created' : 'updated';
+        $expectedEventType = match ($action) {
+            'product.created' => 'created',
+            'product.updated' => 'updated',
+            'product.activated' => 'activated',
+            default => null,
+        };
 
         if (
             $productEvent === null
