@@ -92,15 +92,11 @@ final readonly class LicenseUsageService
                 throw new AuthorizationException('The licence does not belong to the authorized vendor.');
             }
 
-            $this->assertUsable($lockedLicense);
-
             $entitlementKey = 'usage.'.$metric.'.'.$period;
             $limit = $planVersion->entitlements[$entitlementKey] ?? null;
             if (! is_int($limit) || $limit < 1) {
                 throw new LicenseUsageConflictException('The published plan does not grant this usage metric and period.');
             }
-
-            [$periodStart, $periodEnd] = $this->periodWindow($lockedLicense, $period);
 
             $existingEvent = LicenseUsageEvent::query()
                 ->where('vendor_account_id', $vendorId)
@@ -120,8 +116,8 @@ final readonly class LicenseUsageService
                     || (int) $existingEvent->quantity_delta !== $quantity
                     || (string) $existingEvent->reason !== $reason
                     || ! $payloadIsValid
-                    || ($payload['period_start'] ?? null) !== $periodStart->toISOString()
-                    || ($payload['period_end'] ?? null) !== $periodEnd?->toISOString()
+                    || ! is_string($payload['period_start'] ?? null)
+                    || ! array_key_exists('period_end', $payload)
                 ) {
                     throw new LicenseUsageConflictException('The request identifier was already used for a different usage operation.');
                 }
@@ -147,6 +143,9 @@ final readonly class LicenseUsageService
             ) {
                 throw new LicenseUsageConflictException('The request identifier was already used by another licence operation.');
             }
+
+            $this->assertUsable($lockedLicense);
+            [$periodStart, $periodEnd] = $this->periodWindow($lockedLicense, $period);
 
             /** @var LicenseUsageCounter|null $counter */
             $counter = LicenseUsageCounter::query()
