@@ -866,6 +866,14 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertOk();
         $source = License::query()->findOrFail($sourceId);
         $sourceExpiry = $source->expires_at?->toISOString();
+        $allocation = $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/allocations', [
+                'allocation_type' => 'site',
+                'subject_identifier' => 'source-installation-123456',
+                'reason' => 'Reserve a source installation before transferring the licence.',
+            ], ['X-Request-ID' => 'successor-transfer-allocation-0001'])
+            ->assertCreated();
+        $allocationId = (string) $allocation->json('data.id');
 
         $payload = [
             'relation_type' => 'transfer',
@@ -890,6 +898,15 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             'id' => $sourceId,
             'status' => 'revoked',
             'version' => 2,
+        ]);
+        $this->assertDatabaseHas('license_allocations', [
+            'id' => $allocationId,
+            'status' => 'released',
+            'version' => 2,
+        ]);
+        $this->assertDatabaseHas('license_allocation_events', [
+            'allocation_id' => $allocationId,
+            'event_type' => 'released',
         ]);
         $this->assertDatabaseHas('licenses', [
             'id' => $successorId,
