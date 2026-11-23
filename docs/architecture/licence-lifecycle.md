@@ -56,3 +56,13 @@ Each accepted action appends an immutable licence event with actor, reason, requ
 ## Remaining Phase 6 scope
 
 This increment does not yet implement successor-based transfer/replacement workflows, full usage metering, or automated expiry processing. Domain normalization, installation identity and activation leases remain Phase 8 work. Do not mark the licence engine phase complete until those Phase 6 acceptance requirements and their concurrency/tenant-isolation tests are delivered.
+
+
+## Automated expiry processing
+
+- The `tlms:licenses:expire` command processes a bounded batch (default 100; maximum 1,000) of issued, active or suspended licences whose expiry and configured grace deadline have both elapsed.
+- Each candidate is rechecked under a row lock. The status transition and immutable system-authored `expired` event commit atomically; retries and concurrent scheduler invocations cannot append a second expiry event for the same aggregate version.
+- The event records the previous status, expiry/grace boundary, next aggregate version and a deterministic system request identifier. No customer database or installation data is transmitted.
+- Laravel schedules the command every five minutes with overlap prevention. Shared-hosting operators must invoke Laravel's scheduler from the hosting cron facility once per minute (for example, `php artisan schedule:run` from the application directory). No persistent worker is required.
+- Operators may run `php artisan tlms:licenses:expire --limit=100` manually for controlled catch-up. The batch limit must be between 1 and 1,000.
+- The scheduler is intentionally eventual within its five-minute cadence; real-time verification must independently reject licences whose effective expiry boundary has passed.

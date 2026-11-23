@@ -2,8 +2,10 @@
 
 use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use App\Services\Hosting\HostingPreflight;
+use App\Services\Licensing\LicenseExpiryProcessor;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('tlms:about', function (): void {
     $this->line('Tinlance License Management System');
@@ -40,3 +42,23 @@ Artisan::command('tlms:audit:verify', function (PlatformAccessAuditChainVerifier
 
     return Command::FAILURE;
 })->purpose('Verify platform access audit hash-chain integrity');
+
+Artisan::command('tlms:licenses:expire {--limit=100 : Maximum number of licences to process (1–1000)}', function (LicenseExpiryProcessor $processor): int {
+    $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT);
+
+    if ($limit === false || $limit < 1 || $limit > 1000) {
+        $this->error('The expiry batch limit must be an integer between 1 and 1000.');
+
+        return Command::INVALID;
+    }
+
+    $expired = $processor->expireDue($limit);
+    $noun = $expired === 1 ? 'licence' : 'licences';
+    $this->info(sprintf('%d %s expired.', $expired, $noun));
+
+    return Command::SUCCESS;
+})->purpose('Expire overdue licences after their configured grace deadlines');
+
+Schedule::command('tlms:licenses:expire --limit=100')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10);
