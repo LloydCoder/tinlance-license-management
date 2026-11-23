@@ -53,6 +53,47 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertJsonPath('data.version', 1);
     }
 
+    public function test_assigned_product_manager_can_list_and_read_product_plans(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+
+        $product = $this->authenticated($manager)
+            ->postJson('/api/v1/products', [
+                'name' => 'Readable Product',
+                'slug' => 'readable-product',
+                'description' => 'Plan read fixture.',
+                'reason' => 'Create the plan read fixture.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $plan = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product.'/plans', [
+                'code' => 'readable',
+                'name' => 'Readable',
+                'reason' => 'Create the readable plan.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->authenticated($manager)
+            ->getJson('/api/v1/products/'.$product.'/plans')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $plan)
+            ->assertJsonPath('data.0.code', 'readable');
+
+        $this->authenticated($manager)
+            ->getJson('/api/v1/plans/'.$plan)
+            ->assertOk()
+            ->assertJsonPath('data.id', $plan)
+            ->assertJsonPath('data.name', 'Readable');
+
+        $this->authenticated($manager)
+            ->getJson('/api/v1/plans/'.$plan.'/versions')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 0);
+    }
+
     public function test_draft_plan_version_can_be_updated_and_rejects_stale_plan_versions(): void
     {
         [$manager] = $this->createActor('vendor_product_manager');

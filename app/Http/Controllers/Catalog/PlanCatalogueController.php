@@ -18,6 +18,74 @@ use InvalidArgumentException;
 
 final class PlanCatalogueController
 {
+    public function index(Request $request, string $product): JsonResponse
+    {
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        $record = Product::query()->findOrFail($product);
+        Gate::forUser($actor)->authorize('view', $record);
+
+        $plans = Plan::query()
+            ->where('product_id', $record->getKey())
+            ->orderBy('code')
+            ->paginate(25);
+
+        return response()->json([
+            'data' => $plans->getCollection()
+                ->map(fn (Plan $plan): array => $this->serializePlan($plan))
+                ->values(),
+            'meta' => [
+                'page' => $plans->currentPage(),
+                'per_page' => $plans->perPage(),
+                'total' => $plans->total(),
+            ],
+            'request_id' => $this->requestId($request),
+        ]);
+    }
+
+    public function show(Request $request, string $plan): JsonResponse
+    {
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        $record = Plan::query()->findOrFail($plan);
+        $product = Product::query()->findOrFail($record->product_id);
+        Gate::forUser($actor)->authorize('view', $product);
+
+        return response()->json([
+            'data' => $this->serializePlan($record),
+            'request_id' => $this->requestId($request),
+        ]);
+    }
+
+    public function versions(Request $request, string $plan): JsonResponse
+    {
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 401);
+
+        $record = Plan::query()->findOrFail($plan);
+        $product = Product::query()->findOrFail($record->product_id);
+        Gate::forUser($actor)->authorize('view', $product);
+
+        $versions = PlanVersion::query()
+            ->where('plan_id', $record->getKey())
+            ->orderByDesc('version_number')
+            ->paginate(25);
+
+        return response()->json([
+            'data' => $versions->getCollection()
+                ->map(fn (PlanVersion $version): array => $this->serializeVersion($version))
+                ->values(),
+            'meta' => [
+                'page' => $versions->currentPage(),
+                'per_page' => $versions->perPage(),
+                'total' => $versions->total(),
+            ],
+            'request_id' => $this->requestId($request),
+        ]);
+    }
+
     public function store(Request $request, string $product, PlanCatalogueService $catalogue): JsonResponse
     {
         $actor = $request->user();

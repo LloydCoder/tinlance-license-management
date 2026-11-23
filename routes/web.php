@@ -109,6 +109,15 @@ Route::middleware([
     EnsureRecentPasswordConfirmation::class,
     EnsureMfaEnrolled::class,
 ])->prefix('/api/v1')->group(function (): void {
+    Route::get('/products/{product}/plans', [PlanCatalogueController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.products.plans.index');
+    Route::get('/plans/{plan}', [PlanCatalogueController::class, 'show'])
+        ->middleware('throttle:60,1')
+        ->name('api.plans.show');
+    Route::get('/plans/{plan}/versions', [PlanCatalogueController::class, 'versions'])
+        ->middleware('throttle:60,1')
+        ->name('api.plans.versions.index');
     Route::post('/products/{product}/plans', [PlanCatalogueController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.products.plans.store');
