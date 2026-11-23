@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Models\Product;
 use App\Models\ProductVersion;
 use App\Models\User;
 
@@ -13,18 +14,26 @@ final readonly class ProductVersionPolicy
 
     public function view(User $user, ProductVersion $version): bool
     {
-        return $this->products->view($user, $version->product);
+        $product = $version->product;
+
+        return $product instanceof Product && $this->products->view($user, $product);
     }
 
     public function update(User $user, ProductVersion $version): bool
     {
+        $product = $version->product;
+
         return $version->status === 'draft'
-            && $this->products->manageVersions($user, $version->product);
+            && $product instanceof Product
+            && $this->products->manageVersions($user, $product);
     }
 
     public function publish(User $user, ProductVersion $version): bool
     {
+        $product = $version->product;
+
         return $version->status === 'draft'
-            && $this->products->publishVersions($user, $version->product);
+            && $product instanceof Product
+            && $this->products->publishVersions($user, $product);
     }
 }
