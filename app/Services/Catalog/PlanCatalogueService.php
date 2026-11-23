@@ -64,6 +64,7 @@ final class PlanCatalogueService
                 'maintenance_days'=>$input['maintenance_days'],'entitlements'=>$entitlements,
                 'created_by_user_id'=>$actor->getKey(),
             ]);
+            $locked->forceFill(['version' => (int) $locked->version + 1])->save();
             $this->event($locked, $version, $actor, 'version_created', $input['reason'], $requestId, ['version_number'=>$number]);
             return $version->refresh();
         }, 3);
