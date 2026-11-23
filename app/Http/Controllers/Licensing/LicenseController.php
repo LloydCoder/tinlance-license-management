@@ -42,6 +42,7 @@ final class LicenseController
             ->where('product_id', $productRecord->getKey())
             ->firstOrFail();
 
+        $requestId = $this->requestId($request);
         try {
             $result = $issuance->issue(
                 $actor,
@@ -51,7 +52,7 @@ final class LicenseController
                 isset($input['starts_at']) ? (string) $input['starts_at'] : null,
                 (string) $input['reason'],
                 (string) $request->header('Idempotency-Key', ''),
-                $this->requestId($request),
+                $requestId,
             );
         } catch (LicenseIssuanceConflictException $exception) {
             return $this->problem($exception->getMessage(), $request, 409);
@@ -84,7 +85,7 @@ final class LicenseController
                 'secret_delivery' => 'one_time',
             ],
             'replayed' => $result['replayed'],
-            'request_id' => $this->requestId($request),
+            'request_id' => $requestId,
         ], $result['replayed'] ? 200 : 201);
     }
 
@@ -98,8 +99,9 @@ final class LicenseController
 
         $record = LicenseIssuanceRequest::query()->findOrFail($issuanceRequest);
 
+        $requestId = $this->requestId($request);
         try {
-            $plaintext = $issuance->revealSecret($actor, $record);
+            $plaintext = $issuance->revealSecret($actor, $record, $requestId);
         } catch (LicenseSecretUnavailableException $exception) {
             return $this->problem($exception->getMessage(), $request, 410);
         }
@@ -110,7 +112,7 @@ final class LicenseController
                 'license_key' => $plaintext,
                 'delivery' => 'one_time',
             ],
-            'request_id' => $this->requestId($request),
+            'request_id' => $requestId,
         ])->withHeaders([
             'Cache-Control' => 'no-store, private, max-age=0',
             'Pragma' => 'no-cache',
