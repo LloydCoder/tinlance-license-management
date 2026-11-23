@@ -62,10 +62,14 @@ final class LicenseAllocationEvent extends BaseModel
                 ->where('license_id', $event->license_id)
                 ->where('vendor_account_id', $event->vendor_account_id)
                 ->where('product_id', $event->product_id)
-                ->exists();
+                ->first();
 
-            if (! $allocation) {
-                throw new LogicException('Licence allocation event scope does not match its allocation.');
+            if (
+                ! $allocation instanceof LicenseAllocation
+                || ($event->event_type === 'allocated' && $allocation->status !== 'active')
+                || ($event->event_type === 'released' && $allocation->status !== 'released')
+            ) {
+                throw new LogicException('Licence allocation event scope or state does not match its allocation.');
             }
         });
 
