@@ -146,6 +146,7 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'vendor_account.profile_updated',
                     'product.created',
                     'product.updated',
+                    'product.activated',
                     'product.assignment_granted',
                     'product.assignment_revoked',
                     'product_version.created',
