@@ -185,6 +185,12 @@ return new class extends Migration
                         AND product_id = NEW.product_id
                         AND vendor_account_id = NEW.vendor_account_id
                         AND status IN ('draft', 'active')
+                ) OR NOT EXISTS (
+                    SELECT 1 FROM products
+                    WHERE id = NEW.product_id AND vendor_account_id = NEW.vendor_account_id
+                ) OR NOT EXISTS (
+                    SELECT 1 FROM vendor_accounts
+                    WHERE id = NEW.vendor_account_id AND status = 'active'
                 ) THEN
                     SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Plan versions must belong to an active plan in the same tenant';
