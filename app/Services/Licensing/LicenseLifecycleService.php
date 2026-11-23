@@ -83,10 +83,6 @@ final readonly class LicenseLifecycleService
 
                 $existingAggregateVersion = (int) $versionValue;
 
-                if ($existingAggregateVersion < 1) {
-                    throw new LicenseLifecycleConflictException('The existing lifecycle event payload is invalid.');
-                }
-
                 $expectedPayload = $this->eventPayload(
                     (string) $lockedLicense->getKey(),
                     $existingFrom,
