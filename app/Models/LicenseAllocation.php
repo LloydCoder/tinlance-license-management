@@ -44,7 +44,7 @@ final class LicenseAllocation extends BaseModel
             if (
                 $allocation->status !== 'active'
                 || (int) $allocation->version !== 1
-                || ! in_array($allocation->allocation_type, ['site', 'seat', 'user'], true)
+                || ! in_array($allocation->allocation_type, ['site', 'seat', 'user', 'domain'], true)
                 || preg_match('/\A[a-f0-9]{64}\z/D', (string) $allocation->subject_hash) !== 1
                 || preg_match('/\A[A-Za-z][A-Za-z0-9._-]{0,63}\z/D', (string) $allocation->fingerprint_key_id) !== 1
             ) {
