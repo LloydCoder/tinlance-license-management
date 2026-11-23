@@ -6,6 +6,4 @@ namespace App\Exceptions;
 
 use RuntimeException;
 
-final class LicenseSecretUnavailableException extends RuntimeException
-{
-}
+final class LicenseSecretUnavailableException extends RuntimeException {}
