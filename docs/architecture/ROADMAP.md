@@ -88,3 +88,8 @@ Explicit product assignments are now implemented as a tenant-bound aggregate. Pr
 ### Phase 5 implementation increment — product version lifecycle
 
 Product versions now have a tenant-scoped semantic-version identity, draft/published lifecycle, release notes, SHA-256 artifact metadata and optimistic concurrency. Product managers can create/update drafts for assigned products; developers can read assigned versions; vendor Super Admins retain vendor-wide authority. Publishing is step-up protected and requires a valid artifact digest and positive size. Published versions are immutable and every transition is represented by immutable event records linked to the version-2 audit chain. Artifact storage/signing, release channels and update distribution remain later Phase 5/7/10 work.
+
+
+### Phase 5 implementation increment — release channels
+
+Product-scoped release channels now provide unique named streams and a current published-version pointer. Product managers can create channels for assigned products; developers can read but not mutate them. Promotions require releases.publish, fresh MFA, optimistic concurrency, a same-product published version and an audit reason. Re-promoting the current version is idempotent; selecting an earlier published version supports controlled rollback. Channel history is immutable and linked to the version-2 audit chain. Artifact storage/signing and actual update distribution remain Phase 7/10 work.

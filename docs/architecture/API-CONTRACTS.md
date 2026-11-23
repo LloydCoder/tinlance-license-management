@@ -197,3 +197,13 @@ The OpenAPI document is a first contract draft and must pass schema validation, 
 - POST /api/v1/products/{productId}/versions/{productVersionId}/publish requires releases.publish, a SHA-256 artifact digest, a positive artifact size, a reason and fresh MFA step-up. Publishing freezes the version metadata.
 - Version creation, update and publish create immutable product_version_events rows and version-2 platform audit events in the same transaction. The chain verifier checks the product/version/vendor/actor/request binding, event payload digest, complete event coverage and duplicate references.
 - Artifact bytes are not stored or distributed by this increment. Artifact upload/storage, signing, release channels, rollout policy and SDK update distribution remain separate phases.
+
+
+## Release channels
+
+- GET /api/v1/products/{productId}/release-channels lists channels for products the active membership may read. Assigned developers are read-only.
+- POST /api/v1/products/{productId}/release-channels creates a product-scoped channel with a unique slug. The caller needs plans.entitlements.manage, an active assignment (or vendor Super Admin authority), recent password confirmation and fresh MFA step-up.
+- POST /api/v1/products/{productId}/release-channels/{releaseChannelId}/promote changes the channel's current version. The target must be a published version of the same product. The caller needs releases.publish, expected_version optimistic locking, a reason and fresh MFA step-up.
+- Repeating the current promotion is idempotent. Promoting an earlier published version supports controlled rollback; every actual pointer change increments the channel version number.
+- Channel creation and promotion append immutable release_channel_events and version-2 audit-chain events in the same transaction. The verifier binds channel/product/vendor/actor/previous-version/new-version/request data and checks complete event coverage and unique references.
+- Channels are metadata pointers only. Artifact upload/storage, signing, rollout policy, client update polling and distribution remain future Phase 7/10 work.

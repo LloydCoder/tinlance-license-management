@@ -103,4 +103,10 @@ final class Product extends BaseModel
     {
         return $this->hasMany(ProductVersion::class);
     }
+
+    /** @return HasMany<ReleaseChannel, $this> */
+    public function releaseChannels(): HasMany
+    {
+        return $this->hasMany(ReleaseChannel::class);
+    }
 }

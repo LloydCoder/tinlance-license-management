@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\SuperAdminDashboardController;
 use App\Http\Controllers\Catalog\ProductAssignmentController;
 use App\Http\Controllers\Catalog\ProductCatalogController;
 use App\Http\Controllers\Catalog\ProductVersionController;
+use App\Http\Controllers\Catalog\ReleaseChannelController;
 use App\Http\Controllers\Identity\CustomerOrganizationProfileController;
 use App\Http\Controllers\Identity\MembershipInvitationController;
 use App\Http\Controllers\Identity\MembershipLifecycleController;
@@ -140,6 +141,15 @@ Route::middleware([
     Route::post('/products/{product}/versions/{productVersion}/publish', [ProductVersionController::class, 'publish'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.products.versions.publish');
+    Route::get('/products/{product}/release-channels', [ReleaseChannelController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('api.products.release-channels.index');
+    Route::post('/products/{product}/release-channels', [ReleaseChannelController::class, 'store'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.release-channels.store');
+    Route::post('/products/{product}/release-channels/{releaseChannel}/promote', [ReleaseChannelController::class, 'promote'])
+        ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
+        ->name('api.products.release-channels.promote');
     Route::post('/vendor-accounts/{vendor}/memberships/{membership}/role-approval-requests', [VendorRoleApprovalController::class, 'store'])
         ->middleware([EnsureRecentMfaStepUp::class, 'throttle:10,1'])
         ->name('api.vendor.role-approvals.store');

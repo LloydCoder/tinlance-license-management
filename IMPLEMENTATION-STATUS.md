@@ -476,3 +476,13 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - Publishing requires releases.publish, a positive artifact size, a 64-character SHA-256 digest, recent password confirmation and fresh TOTP/passkey step-up. Published version metadata is immutable.
 - Product version events are immutable, transactionally linked to version-2 platform audit events, verified for tenant/actor/request/payload binding and complete unique event coverage. MySQL/MariaDB triggers protect event history and enforce version state transitions.
 - Artifact bytes, artifact storage, signing, release channels, rollout policies and update distribution are not implemented by this increment.
+
+
+## Phase 5 increment — release channels and promotion control (2026-11-23)
+
+- Adds product-scoped release channels with unique slugs, active lifecycle, immutable identity and optimistic version numbers.
+- Product managers with plans.entitlements.manage can create channels for assigned products; assigned developers can list/read channels but cannot create or promote them.
+- Promotion requires releases.publish, recent password confirmation, fresh TOTP/passkey step-up, a same-product published version, a reason and expected_version. Repeating the current version is idempotent; promoting an earlier published version provides a controlled rollback path.
+- Channel creation/promotion writes immutable release_channel_events and version-2 platform audit events. The verifier checks channel/product/vendor/actor/version/request binding, complete event coverage and duplicate references. MySQL/MariaDB triggers protect event history and enforce pointer/version transitions.
+- Semantic-version validation now enforces SemVer 2.0.0 identifier rules, including no leading zeros in numeric prerelease identifiers.
+- Artifact storage, artifact signing, rollout policies, update polling/distribution, plan catalogue, entitlements, pricing and trials remain incomplete.
