@@ -46,6 +46,8 @@ final class PlanEvent extends BaseModel
     protected static function booted(): void
     {
         self::creating(static function (self $event): void {
+            self::assertTenantIntegrity($event);
+
             if (
                 ! in_array($event->event_type, ['created', 'version_created', 'version_updated', 'version_published'], true)
                 || mb_strlen(trim((string) $event->reason)) < 5
@@ -63,6 +65,36 @@ final class PlanEvent extends BaseModel
         self::deleting(static function (): never {
             throw new LogicException('Plan events are immutable.');
         });
+    }
+
+    private static function assertTenantIntegrity(self $event): void
+    {
+        $plan = Plan::query()->whereKey($event->plan_id)->first();
+        $product = Product::query()->whereKey($event->product_id)->first();
+        $vendor = VendorAccount::query()->whereKey($event->vendor_account_id)->first();
+
+        if (
+            ! $plan instanceof Plan
+            || ! $product instanceof Product
+            || ! $vendor instanceof VendorAccount
+            || (string) $plan->product_id !== (string) $product->getKey()
+            || (string) $plan->vendor_account_id !== (string) $vendor->getKey()
+            || (string) $product->vendor_account_id !== (string) $vendor->getKey()
+        ) {
+            throw new LogicException('Plan event references must remain within one vendor tenant.');
+        }
+
+        if ($event->plan_version_id !== null) {
+            $version = PlanVersion::query()->whereKey($event->plan_version_id)->first();
+            if (
+                ! $version instanceof PlanVersion
+                || (string) $version->plan_id !== (string) $plan->getKey()
+                || (string) $version->product_id !== (string) $product->getKey()
+                || (string) $version->vendor_account_id !== (string) $vendor->getKey()
+            ) {
+                throw new LogicException('Plan event version references must match the parent plan tenant.');
+            }
+        }
     }
 
     /** @return BelongsTo<Plan, $this> */
