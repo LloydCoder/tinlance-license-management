@@ -18,6 +18,7 @@ use App\Services\Licensing\LicenseKeyMaterialProvider;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Tests\TestCase;
 use Tlms\Domain\Licensing\LicenseKey;
