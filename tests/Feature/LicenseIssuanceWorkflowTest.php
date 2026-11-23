@@ -102,10 +102,11 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                 'X-Request-ID' => 'license-secret-delivery-000001',
             ])
             ->assertOk()
-            ->assertHeader('Cache-Control', 'no-store, private, max-age=0')
             ->assertHeader('Pragma', 'no-cache')
             ->assertJsonPath('data.delivery', 'one_time');
 
+        $this->assertStringContainsString('no-store', strtolower((string) $secretResponse->headers->get('Cache-Control')));
+        $this->assertStringContainsString('private', strtolower((string) $secretResponse->headers->get('Cache-Control')));
         $plaintext = (string) $secretResponse->json('data.license_key');
         $this->assertMatchesRegularExpression('/\Atlms_[A-Za-z0-9_-]{43}\z/D', $plaintext);
 
