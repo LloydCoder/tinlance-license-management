@@ -381,7 +381,7 @@ final readonly class LicenseAllocationService
     }
 
     /**
-     * @param array<array-key, mixed> $payload
+     * @param  array<array-key, mixed>  $payload
      */
     private function payloadHash(array $payload): string
     {
