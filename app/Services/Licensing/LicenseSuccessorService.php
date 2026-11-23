@@ -7,6 +7,7 @@ namespace App\Services\Licensing;
 use App\Exceptions\LicenseSuccessorConflictException;
 use App\Models\CustomerOrganization;
 use App\Models\License;
+use App\Models\LicenseAllocation;
 use App\Models\LicenseAllocationEvent;
 use App\Models\LicenseEvent;
 use App\Models\LicenseIssuanceRequest;
@@ -188,6 +189,56 @@ final readonly class LicenseSuccessorService
 
             /** @var License $successor */
             $successor = $issued['license'];
+
+            $activeAllocations = LicenseAllocation::query()
+                ->where('license_id', $lockedSource->getKey())
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($activeAllocations as $allocation) {
+                $allocationRequestId = 'successor-release:'.hash(
+                    'sha256',
+                    $requestId.':'.(string) $allocation->getKey(),
+                );
+                if (LicenseAllocationEvent::query()
+                    ->where('vendor_account_id', $vendorId)
+                    ->where('request_id', $allocationRequestId)
+                    ->exists()) {
+                    throw new LicenseSuccessorConflictException('A reserved allocation-release request identifier is already in use.');
+                }
+
+                $allocationVersion = (int) $allocation->version + 1;
+                $allocation->fill([
+                    'status' => 'released',
+                    'version' => $allocationVersion,
+                ])->save();
+
+                $allocationPayload = [
+                    'allocation_id' => (string) $allocation->getKey(),
+                    'aggregate_version' => $allocationVersion,
+                    'allocation_type' => (string) $allocation->allocation_type,
+                    'reason' => $reason,
+                    'status' => 'released',
+                    'subject_hash' => (string) $allocation->subject_hash,
+                ];
+                ksort($allocationPayload, SORT_STRING);
+
+                LicenseAllocationEvent::query()->create([
+                    'allocation_id' => $allocation->getKey(),
+                    'license_id' => $lockedSource->getKey(),
+                    'vendor_account_id' => $vendorId,
+                    'product_id' => $product->getKey(),
+                    'actor_user_id' => $actorId,
+                    'event_type' => 'released',
+                    'reason' => $reason,
+                    'request_id' => $allocationRequestId,
+                    'payload_sha256' => $this->payloadHash($allocationPayload),
+                    'event_payload' => $allocationPayload,
+                    'created_at' => now(),
+                ]);
+            }
+
             $sourceVersion = (int) $lockedSource->version + 1;
             $lockedSource->fill([
                 'status' => 'revoked',
