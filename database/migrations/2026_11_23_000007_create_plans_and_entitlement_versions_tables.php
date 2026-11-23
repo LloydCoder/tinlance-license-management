@@ -145,7 +145,7 @@ return new class extends Migration
             BEFORE UPDATE ON plans
             FOR EACH ROW
             BEGIN
-                IF OLD.status <> 'draft'
+                IF OLD.status NOT IN ('draft', 'active')
                     OR NEW.product_id <> OLD.product_id
                     OR NEW.vendor_account_id <> OLD.vendor_account_id
                     OR NEW.code <> OLD.code
