@@ -2775,65 +2775,7 @@ components:
       properties:
         code:
           type: string
-          pattern: '^[a-z0-9]+(-[a-z0-9]+)*    BadRequest:
-      description: Invalid request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Unauthorized:
-      description: Authentication required or invalid
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Forbidden:
-      description: Authenticated actor is not authorized
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    NotFound:
-      description: Resource not found in caller scope
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Conflict:
-      description: State or idempotency conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ValidationError:
-      description: Request validation failed
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Locked:
-      description: Recent password confirmation or fresh MFA step-up is missing or expired
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    RateLimited:
-      description: Request rate limit exceeded
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ServiceUnavailable:
-      description: Service is not ready
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
           minLength: 2
           maxLength: 80
         name:
@@ -2882,65 +2824,7 @@ components:
       properties:
         key:
           type: string
-          pattern: '^[a-z][a-z0-9_.-]{0,63}    BadRequest:
-      description: Invalid request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Unauthorized:
-      description: Authentication required or invalid
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Forbidden:
-      description: Authenticated actor is not authorized
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    NotFound:
-      description: Resource not found in caller scope
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Conflict:
-      description: State or idempotency conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ValidationError:
-      description: Request validation failed
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Locked:
-      description: Recent password confirmation or fresh MFA step-up is missing or expired
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    RateLimited:
-      description: Request rate limit exceeded
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ServiceUnavailable:
-      description: Service is not ready
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
+          pattern: '^[a-z][a-z0-9_.-]{0,63}$'
         type:
           type: string
           enum: [boolean, integer, string]
@@ -2963,65 +2847,7 @@ components:
           enum: [perpetual, subscription, annual, trial]
         currency:
           type: string
-          pattern: '^[A-Za-z]{3}    BadRequest:
-      description: Invalid request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Unauthorized:
-      description: Authentication required or invalid
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Forbidden:
-      description: Authenticated actor is not authorized
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    NotFound:
-      description: Resource not found in caller scope
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Conflict:
-      description: State or idempotency conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ValidationError:
-      description: Request validation failed
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Locked:
-      description: Recent password confirmation or fresh MFA step-up is missing or expired
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    RateLimited:
-      description: Request rate limit exceeded
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ServiceUnavailable:
-      description: Service is not ready
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
+          pattern: '^[A-Za-z]{3}$'
         price_minor:
           type: integer
           minimum: 0
@@ -3083,65 +2909,7 @@ components:
               enum: [perpetual, subscription, annual, trial]
             currency:
               type: string
-              pattern: '^[A-Z]{3}    BadRequest:
-      description: Invalid request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Unauthorized:
-      description: Authentication required or invalid
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Forbidden:
-      description: Authenticated actor is not authorized
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    NotFound:
-      description: Resource not found in caller scope
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Conflict:
-      description: State or idempotency conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ValidationError:
-      description: Request validation failed
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Locked:
-      description: Recent password confirmation or fresh MFA step-up is missing or expired
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    RateLimited:
-      description: Request rate limit exceeded
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ServiceUnavailable:
-      description: Service is not ready
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
+              pattern: '^[A-Z]{3}$'
             price_minor:
               type: integer
               minimum: 0
@@ -3161,65 +2929,7 @@ components:
                   - type: string
             snapshot_sha256:
               type: [string, 'null']
-              pattern: '^[a-f0-9]{64}    BadRequest:
-      description: Invalid request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Unauthorized:
-      description: Authentication required or invalid
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Forbidden:
-      description: Authenticated actor is not authorized
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    NotFound:
-      description: Resource not found in caller scope
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Conflict:
-      description: State or idempotency conflict
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ValidationError:
-      description: Request validation failed
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    Locked:
-      description: Recent password confirmation or fresh MFA step-up is missing or expired
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    RateLimited:
-      description: Request rate limit exceeded
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-    ServiceUnavailable:
-      description: Service is not ready
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
+              pattern: '^[a-f0-9]{64}$'
             published_at:
               type: [string, 'null']
               format: date-time
