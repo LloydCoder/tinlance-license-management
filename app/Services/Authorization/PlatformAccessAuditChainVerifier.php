@@ -98,7 +98,33 @@ final readonly class PlatformAccessAuditChainVerifier
             ->havingRaw('COUNT(*) > 1')
             ->exists();
 
-        return ! $duplicateReferencesExist;
+        if ($duplicateReferencesExist) {
+            return false;
+        }
+
+        $unreferencedAssignmentEventsExist = DB::table('product_assignment_events')
+            ->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('platform_access_audit_events')
+                    ->whereColumn('platform_access_audit_events.details_ref_id', 'product_assignment_events.id')
+                    ->where('platform_access_audit_events.hash_version', 2)
+                    ->whereIn('platform_access_audit_events.action', ['product.assignment_granted', 'product.assignment_revoked']);
+            })
+            ->exists();
+
+        if ($unreferencedAssignmentEventsExist) {
+            return false;
+        }
+
+        $duplicateAssignmentReferencesExist = DB::table('platform_access_audit_events')
+            ->select('details_ref_id')
+            ->where('hash_version', 2)
+            ->whereIn('action', ['product.assignment_granted', 'product.assignment_revoked'])
+            ->groupBy('details_ref_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        return ! $duplicateAssignmentReferencesExist;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
@@ -110,6 +136,7 @@ final readonly class PlatformAccessAuditChainVerifier
             'customer_organization.profile_updated' => $this->verifyCustomerProfileDetails($auditEvent),
             'vendor_account.profile_updated' => $this->verifyVendorProfileDetails($auditEvent),
             'product.created', 'product.updated' => $this->verifyProductDetails($auditEvent),
+            'product.assignment_granted', 'product.assignment_revoked' => $this->verifyProductAssignmentDetails($auditEvent),
             default => false,
         };
     }
@@ -244,6 +271,86 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $productEvent->change_digest,
             (string) $productEvent->request_id,
             (string) $productEvent->created_at,
+        );
+
+        return hash_equals($detailsHash, $expectedDetailsHash);
+    }
+
+    private function verifyProductAssignmentDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+        $action = $row['action'] ?? null;
+
+        if (
+            ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
+            || ! in_array($action, ['product.assignment_granted', 'product.assignment_revoked'], true)
+        ) {
+            return false;
+        }
+
+        $assignmentEvent = DB::table('product_assignment_events')
+            ->join('product_assignments', 'product_assignments.id', '=', 'product_assignment_events.assignment_id')
+            ->join('products', 'products.id', '=', 'product_assignment_events.product_id')
+            ->join('vendor_memberships', 'vendor_memberships.id', '=', 'product_assignment_events.target_vendor_membership_id')
+            ->where('product_assignment_events.id', $detailsReferenceId)
+            ->first([
+                'product_assignment_events.id',
+                'product_assignment_events.assignment_id',
+                'product_assignment_events.product_id',
+                'product_assignment_events.vendor_account_id',
+                'product_assignment_events.actor_user_id',
+                'product_assignment_events.target_vendor_membership_id',
+                'product_assignment_events.event_type',
+                'product_assignment_events.reason',
+                'product_assignment_events.request_id',
+                'product_assignment_events.created_at',
+                'product_assignments.product_id as assignment_product_id',
+                'product_assignments.vendor_account_id as assignment_vendor_account_id',
+                'product_assignments.vendor_membership_id as assignment_membership_id',
+                'products.vendor_account_id as product_vendor_account_id',
+                'vendor_memberships.vendor_account_id as membership_vendor_account_id',
+            ]);
+
+        $expectedEventType = $action === 'product.assignment_granted' ? 'granted' : 'revoked';
+
+        if (
+            $assignmentEvent === null
+            || $assignmentEvent->event_type !== $expectedEventType
+            || (string) $assignmentEvent->product_id !== $resourceId
+            || (string) $assignmentEvent->assignment_product_id !== $resourceId
+            || (string) $assignmentEvent->vendor_account_id !== $tenantVendorAccountId
+            || (string) $assignmentEvent->assignment_vendor_account_id !== $tenantVendorAccountId
+            || (string) $assignmentEvent->product_vendor_account_id !== $tenantVendorAccountId
+            || (string) $assignmentEvent->membership_vendor_account_id !== $tenantVendorAccountId
+            || (string) $assignmentEvent->assignment_membership_id !== (string) $assignmentEvent->target_vendor_membership_id
+            || (string) $assignmentEvent->actor_user_id !== $actorUserId
+            || (string) $assignmentEvent->request_id !== $requestId
+        ) {
+            return false;
+        }
+
+        $expectedDetailsHash = $this->hasher->hashProductAssignmentEvent(
+            (string) $assignmentEvent->id,
+            (string) $assignmentEvent->assignment_id,
+            (string) $assignmentEvent->product_id,
+            (string) $assignmentEvent->vendor_account_id,
+            (string) $assignmentEvent->actor_user_id,
+            (string) $assignmentEvent->target_vendor_membership_id,
+            (string) $assignmentEvent->event_type,
+            (string) $assignmentEvent->reason,
+            (string) $assignmentEvent->request_id,
+            (string) $assignmentEvent->created_at,
         );
 
         return hash_equals($detailsHash, $expectedDetailsHash);

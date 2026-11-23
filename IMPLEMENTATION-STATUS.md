@@ -457,3 +457,13 @@ PR #47 implements tenant-scoped maker-checker approval for high-risk vendor role
 - The audit verifier checks product, vendor/tenant, actor, event type, request ID, reason, changed fields and canonical before/after digest. Eloquent guards and MySQL/MariaDB triggers protect product event history.
 - Exact PR merge-ref CI and Security Analysis are required before merge.
 - This is the product catalogue foundation only. Product versions/release channels, plans/plan versions, entitlement definitions/snapshots, price versions, trials and licence issuance remain incomplete.
+
+
+## Phase 4 increment — explicit product assignment ABAC (2026-11-23)
+
+- Adds a stable product-assignment aggregate scoped to product, vendor account and active vendor membership. One assignment row per product/membership supports audited revoke and regrant transitions without deleting history.
+- Product creators receive an initial assignment. Non-bootstrap vendor Super Admins can grant/revoke assignments only for active same-vendor members whose roles carry products.read or products.manage.
+- Vendor product managers can list/read and update assigned draft products. Vendor developers can list/read assigned products but cannot edit catalogue metadata. Vendor Super Admins retain vendor-wide product visibility and draft management.
+- Grant/revoke writes require the existing recent-password and fresh five-minute TOTP/passkey step-up middleware. The service locks and revalidates product, vendor, actor and target membership in one transaction.
+- Each grant/revoke creates an immutable product_assignment_events record and a version-2 platform audit-chain event. The verifier checks assignment/product/vendor/membership/actor/request binding, complete event coverage and duplicate references. MySQL/MariaDB BEFORE UPDATE/DELETE triggers protect assignment-event rows.
+- This closes the product-assignment portion of Phase 4 resource-level ABAC. It does not complete Phase 4: generalized policies for plans, licences, payments, resellers and releases, broader privileged-operation approvals and full portals remain open.

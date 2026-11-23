@@ -50,6 +50,8 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'vendor_account.profile_updated',
                 'product.created',
                 'product.updated',
+                'product.assignment_granted',
+                'product.assignment_revoked',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated',
@@ -59,7 +61,7 @@ final class PlatformAccessAuditEvent extends BaseModel
 
             $expectedResourceType = match ($event->action) {
                 'vendor.read', 'vendor_account.profile_updated' => 'vendor_account',
-                'product.created', 'product.updated' => 'product',
+                'product.created', 'product.updated', 'product.assignment_granted', 'product.assignment_revoked' => 'product',
                 'customer_organization.read',
                 'customer_organization.created',
                 'customer_organization.profile_updated' => 'customer_organization',
@@ -74,6 +76,7 @@ final class PlatformAccessAuditEvent extends BaseModel
                 ],
                 'vendor_account.profile_updated' => ['vendor_account_profile_management'],
                 'product.created', 'product.updated' => ['product_catalog_management'],
+                'product.assignment_granted', 'product.assignment_revoked' => ['product_assignment_management'],
                 'customer_organization.created' => ['vendor_customer_management'],
                 'customer_organization.profile_updated' => [
                     'vendor_customer_management',
@@ -87,6 +90,8 @@ final class PlatformAccessAuditEvent extends BaseModel
                 'vendor_account.profile_updated',
                 'product.created',
                 'product.updated',
+                'product.assignment_granted',
+                'product.assignment_revoked',
             ], true);
 
             if (
@@ -113,6 +118,8 @@ final class PlatformAccessAuditEvent extends BaseModel
                     'vendor_account.profile_updated',
                     'product.created',
                     'product.updated',
+                    'product.assignment_granted',
+                    'product.assignment_revoked',
                 ], true)
                     || ! is_string($event->details_ref_id)
                     || preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/D', strtoupper($event->details_ref_id)) !== 1
