@@ -210,6 +210,16 @@ return new class extends Migration
                         SET MESSAGE_TEXT = 'Plan events must remain within the plan product vendor tenant';
                 END IF;
 
+                IF NOT EXISTS (
+                    SELECT 1 FROM vendor_memberships
+                    WHERE vendor_account_id = NEW.vendor_account_id
+                        AND user_id = NEW.actor_user_id
+                        AND status = 'active'
+                ) THEN
+                    SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Plan event actors must have an active vendor membership';
+                END IF;
+
                 IF NEW.plan_version_id IS NOT NULL AND NOT EXISTS (
                     SELECT 1 FROM plan_versions
                     WHERE id = NEW.plan_version_id
