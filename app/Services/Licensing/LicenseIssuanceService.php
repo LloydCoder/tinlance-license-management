@@ -155,7 +155,7 @@ final readonly class LicenseIssuanceService
             }
 
             $issuedKey = LicenseKey::issue(
-                $this->keyMaterial->pepperRingValue($this->keyMaterial->pepperRing()),
+                $this->keyMaterial->activePepperMaterial(),
                 $this->keyMaterial->activePepperKeyId(),
             );
 
@@ -296,7 +296,8 @@ final readonly class LicenseIssuanceService
     private function authorizeIssuer(User $actor, VendorAccount $vendor, Product $product): void
     {
         if (
-            $this->platformAuthorization->isBootstrapSuperAdmin($actor)
+            $vendor->status !== 'active'
+            || $this->platformAuthorization->isBootstrapSuperAdmin($actor)
             || ! $this->membershipAuthorization->vendorCan($actor, $vendor, 'licences.issue')
         ) {
             throw new AuthorizationException('The actor may not issue licences for this vendor.');
