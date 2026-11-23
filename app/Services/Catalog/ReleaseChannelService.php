@@ -117,10 +117,8 @@ final readonly class ReleaseChannelService
 
         return DB::transaction(function () use ($actor, $releaseChannel, $productVersionId, $expectedVersion, $reason, $requestId): array {
             $channel = ReleaseChannel::query()->whereKey($releaseChannel->getKey())->lockForUpdate()->firstOrFail();
+            /** @var Product $product */
             $product = Product::query()->whereKey($channel->product_id)->lockForUpdate()->firstOrFail();
-            if (! $product instanceof Product) {
-                throw new AuthorizationException('The release channel product is unavailable.');
-            }
             $vendor = VendorAccount::query()
                 ->whereKey($channel->vendor_account_id)
                 ->where('status', 'active')
@@ -182,7 +180,7 @@ final readonly class ReleaseChannelService
     private function activateProduct(Product $product, User $actor, string $reason, string $requestId): void
     {
         $before = ['status' => (string) $product->status];
-        $product->forceFill([
+        $product->fill([
             'status' => 'active',
             'version' => (int) $product->version + 1,
             'updated_by_user_id' => $actor->getKey(),
