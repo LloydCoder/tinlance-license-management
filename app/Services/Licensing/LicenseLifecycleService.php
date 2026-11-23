@@ -198,7 +198,7 @@ final readonly class LicenseLifecycleService
                 ->first();
 
             if ($existingEvent instanceof LicenseEvent) {
-                $existingPayload = $existingEvent->event_payload;
+                $existingPayload = json_decode((string) $existingEvent->getRawOriginal('event_payload'), true);
                 $payloadIsValid = is_array($existingPayload)
                     && hash_equals(
                         (string) $existingEvent->payload_sha256,
@@ -364,9 +364,6 @@ final readonly class LicenseLifecycleService
         return $payload;
     }
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
     private function payloadHash(array $payload): string
     {
         return hash('sha256', json_encode(
