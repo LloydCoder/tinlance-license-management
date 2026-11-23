@@ -87,3 +87,12 @@ This increment does not yet implement successor-based transfer/replacement workf
 - The immutable successor relation binds source, successor, vendor, product, source/destination customer, actor, reason, request fingerprint, idempotency key and payload digest.
 - A source licence can have only one successor. A successor may later itself be transferred or replaced, producing a new link in the chain.
 - Only active, in-term licences may be transferred or replaced. The source becomes terminally revoked; the successor begins issued and must be activated separately.
+
+
+## Domain allocation normalization
+
+- Domain allocations use the `domains` integer entitlement and the same versioned allocation/event ledger as sites, seats and users.
+- Hostnames are normalized with the shared IDNA/UTS #46 `DomainName` value object: lowercase ASCII A-label, optional terminal dot removed, and invalid URL syntax, wildcards, IP literals and invalid DNS names rejected.
+- Only the keyed HMAC fingerprint is persisted; the raw hostname is not stored in the allocation table or event payload.
+- The domain quota is enforced atomically with the other allocation types. A canonical hostname cannot be allocated twice concurrently, and released allocations may be reactivated under the normal version/event rules.
+- Existing deployments receive the updated MySQL/MariaDB insert guard through a forward migration; the original allocation migration remains unchanged.

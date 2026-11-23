@@ -22,8 +22,8 @@ final class LicenseAllocationController
         abort_unless($actor instanceof User, 401);
 
         $input = $request->validate([
-            'allocation_type' => ['required', 'string', 'in:site,seat,user'],
-            'subject_identifier' => ['required', 'string', 'min:16', 'max:128', 'regex:/\A[A-Za-z0-9._:-]{16,128}\z/D'],
+            'allocation_type' => ['required', 'string', 'in:site,seat,user,domain'],
+            'subject_identifier' => ['required', 'string', 'min:1', 'max:253'],
             'reason' => ['required', 'string', 'min:5', 'max:500'],
         ]);
 
