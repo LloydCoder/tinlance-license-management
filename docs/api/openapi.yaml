@@ -2095,6 +2095,59 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+
+  /licenses/{licenseId}/renewals:
+    parameters:
+      - name: licenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Licences]
+      operationId: renewLicence
+      summary: Renew an active or suspended annual/subscription licence
+      description: Requires licences.mutate, active vendor membership, product assignment (except vendor Super Admin), recent password confirmation and fresh MFA step-up. Renewal uses the immutable published plan version, extends from the current effective expiry, preserves the current lifecycle status and is idempotent by vendor-scoped X-Request-ID. The licence version and immutable renewal event are committed atomically.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseRenewalRequest'
+      responses:
+        '200':
+          description: Renewal applied or idempotently replayed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseRenewalResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
 components:
   securitySchemes:
     AdminSession:
@@ -3351,6 +3404,45 @@ components:
             delivery:
               type: string
               const: one_time
+        request_id:
+          type: string
+
+    LicenseRenewalRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseRenewalResult:
+      type: object
+      additionalProperties: false
+      required: [data, replayed, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, public_reference, status, version, expires_at]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            public_reference:
+              type: string
+            status:
+              type: string
+              enum: [active, suspended]
+            version:
+              type: integer
+              minimum: 2
+            expires_at:
+              type: [string, 'null']
+              format: date-time
+        replayed:
+          type: boolean
         request_id:
           type: string
 
