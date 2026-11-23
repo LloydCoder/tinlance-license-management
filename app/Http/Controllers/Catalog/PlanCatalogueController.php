@@ -26,10 +26,13 @@ final class PlanCatalogueController
         $record = Product::query()->findOrFail($product);
         Gate::forUser($actor)->authorize('view', $record);
 
-        $plans = Plan::query()
-            ->where('product_id', $record->getKey())
-            ->orderBy('code')
-            ->paginate(25);
+        $canViewDrafts = Gate::forUser($actor)->allows('manageVersions', $record)
+            || Gate::forUser($actor)->allows('publishVersions', $record);
+        $plansQuery = Plan::query()->where('product_id', $record->getKey());
+        if (! $canViewDrafts) {
+            $plansQuery->whereHas('versions', static fn ($query) => $query->where('status', 'published'));
+        }
+        $plans = $plansQuery->orderBy('code')->paginate(25);
 
         return response()->json([
             'data' => $plans->getCollection()
@@ -52,6 +55,9 @@ final class PlanCatalogueController
         $record = Plan::query()->findOrFail($plan);
         $product = Product::query()->findOrFail($record->product_id);
         Gate::forUser($actor)->authorize('view', $product);
+        $canViewDrafts = Gate::forUser($actor)->allows('manageVersions', $product)
+            || Gate::forUser($actor)->allows('publishVersions', $product);
+        abort_unless($canViewDrafts || $record->versions()->where('status', 'published')->exists(), 404);
 
         return response()->json([
             'data' => $this->serializePlan($record),
@@ -68,10 +74,13 @@ final class PlanCatalogueController
         $product = Product::query()->findOrFail($record->product_id);
         Gate::forUser($actor)->authorize('view', $product);
 
-        $versions = PlanVersion::query()
-            ->where('plan_id', $record->getKey())
-            ->orderByDesc('version_number')
-            ->paginate(25);
+        $canViewDrafts = Gate::forUser($actor)->allows('manageVersions', $product)
+            || Gate::forUser($actor)->allows('publishVersions', $product);
+        $versionsQuery = PlanVersion::query()->where('plan_id', $record->getKey());
+        if (! $canViewDrafts) {
+            $versionsQuery->where('status', 'published');
+        }
+        $versions = $versionsQuery->orderByDesc('version_number')->paginate(25);
 
         return response()->json([
             'data' => $versions->getCollection()
