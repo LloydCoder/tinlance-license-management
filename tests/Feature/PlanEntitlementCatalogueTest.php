@@ -50,6 +50,84 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertJsonPath('data.version', 1);
     }
 
+
+    public function test_draft_plan_version_can_be_updated_and_rejects_stale_plan_versions(): void
+    {
+        [$manager] = $this->createActor('vendor_product_manager');
+
+        $product = $this->authenticated($manager)
+            ->postJson('/api/v1/products', [
+                'name' => 'Editable Product',
+                'slug' => 'editable-product',
+                'description' => 'Draft version update fixture.',
+                'reason' => 'Create the draft version update fixture.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $plan = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product.'/plans', [
+                'code' => 'starter',
+                'name' => 'Starter',
+                'reason' => 'Create the starter plan.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $version = $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$plan.'/versions', [
+                'expected_version' => 1,
+                'billing_model' => 'subscription',
+                'currency' => 'NGN',
+                'price_minor' => 250000,
+                'billing_interval' => 'month',
+                'trial_days' => 7,
+                'maintenance_days' => 30,
+                'entitlements' => [
+                    ['key' => 'seats', 'type' => 'integer', 'value' => 5],
+                ],
+                'reason' => 'Create the initial draft plan version.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->authenticated($manager)
+            ->patchJson('/api/v1/plans/'.$plan.'/versions/'.$version, [
+                'expected_version' => 2,
+                'billing_model' => 'subscription',
+                'currency' => 'NGN',
+                'price_minor' => 500000,
+                'billing_interval' => 'year',
+                'trial_days' => 14,
+                'maintenance_days' => 365,
+                'entitlements' => [
+                    ['key' => 'seats', 'type' => 'integer', 'value' => 25],
+                    ['key' => 'updates', 'type' => 'boolean', 'value' => true],
+                ],
+                'reason' => 'Revise the draft entitlement package.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.price_minor', 500000)
+            ->assertJsonPath('data.entitlements.seats', 25)
+            ->assertJsonPath('data.entitlements.updates', true);
+
+        $this->authenticated($manager)
+            ->patchJson('/api/v1/plans/'.$plan.'/versions/'.$version, [
+                'expected_version' => 2,
+                'billing_model' => 'subscription',
+                'currency' => 'NGN',
+                'price_minor' => 1,
+                'billing_interval' => 'month',
+                'trial_days' => 0,
+                'maintenance_days' => 0,
+                'entitlements' => [],
+                'reason' => 'Attempt a stale draft update.',
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'PLAN_VERSION_CONFLICT');
+    }
+
     public function test_plan_version_entitlements_are_typed_and_snapshotted_when_published(): void
     {
         [$manager] = $this->createActor('vendor_product_manager');
