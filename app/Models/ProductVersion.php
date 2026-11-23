@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\SemanticVersion;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use LogicException;
@@ -50,7 +51,7 @@ final class ProductVersion extends BaseModel
     {
         self::creating(static function (self $version): void {
             if (
-                ! preg_match('/\A(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\z/D', (string) $version->version)
+                ! SemanticVersion::isValid((string) $version->version)
                 || $version->status !== 'draft'
                 || (int) $version->version_number !== 1
                 || ($version->artifact_sha256 !== null && preg_match('/\A[a-f0-9]{64}\z/D', (string) $version->artifact_sha256) !== 1)

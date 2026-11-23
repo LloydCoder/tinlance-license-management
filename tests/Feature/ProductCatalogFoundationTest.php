@@ -17,6 +17,7 @@ use App\Services\Authorization\PlatformAccessAuditChainVerifier;
 use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 use Tests\TestCase;
@@ -318,6 +319,139 @@ final class ProductCatalogFoundationTest extends TestCase
             ->assertJsonPath('meta.already_assigned', true);
 
         $this->assertDatabaseCount('product_assignment_events', 2);
+        $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
+    }
+
+    public function test_product_manager_can_create_release_channels_and_promote_published_same_product_versions(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+        [$manager, $vendor] = $this->createActor('vendor_product_manager');
+        [$vendorAdmin] = $this->createActor('super_admin', 'primary', $vendor);
+        [$developer] = $this->createActor('vendor_developer', 'primary', $vendor);
+        $product = $this->createProduct($manager);
+        $otherProduct = $this->createProduct($manager);
+
+        $channel = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels', [
+                'slug' => 'stable',
+                'name' => 'Stable',
+                'reason' => 'Create the stable release channel.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.slug', 'stable')
+            ->assertJsonPath('data.version_number', 1);
+
+        $channelId = (string) $channel->json('data.id');
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels', [
+                'slug' => 'stable',
+                'name' => 'Duplicate Stable',
+                'reason' => 'Attempt a duplicate release channel.',
+            ])
+            ->assertUnprocessable();
+
+        $version = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions', [
+                'version' => '3.0.0',
+                'release_notes' => 'Stable release.',
+                'artifact_sha256' => str_repeat('a', 64),
+                'artifact_size_bytes' => 4096,
+                'reason' => 'Create a stable product version.',
+            ])
+            ->assertCreated();
+
+        $versionId = (string) $version->json('data.id');
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/versions/'.$versionId.'/publish', [
+                'reason' => 'Publish the stable product version.',
+            ])
+            ->assertOk();
+
+        $otherVersion = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$otherProduct->getKey().'/versions', [
+                'version' => '1.0.0',
+                'release_notes' => 'Other product release.',
+                'artifact_sha256' => str_repeat('b', 64),
+                'artifact_size_bytes' => 2048,
+                'reason' => 'Create a different product version.',
+            ])
+            ->assertCreated();
+
+        $otherVersionId = (string) $otherVersion->json('data.id');
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$otherProduct->getKey().'/versions/'.$otherVersionId.'/publish', [
+                'reason' => 'Publish the other product version.',
+            ])
+            ->assertOk();
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels/'.$channelId.'/promote', [
+                'product_version_id' => $otherVersionId,
+                'expected_version' => 1,
+                'reason' => 'Reject a cross-product channel promotion.',
+            ])
+            ->assertUnprocessable();
+
+        $promoted = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels/'.$channelId.'/promote', [
+                'product_version_id' => $versionId,
+                'expected_version' => 1,
+                'reason' => 'Promote the stable product version.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.current_product_version_id', $versionId)
+            ->assertJsonPath('data.version_number', 2)
+            ->assertJsonPath('meta.already_promoted', false);
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels/'.$channelId.'/promote', [
+                'product_version_id' => $versionId,
+                'expected_version' => 1,
+                'reason' => 'Reject a stale channel promotion.',
+            ])
+            ->assertStatus(409);
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels/'.$channelId.'/promote', [
+                'product_version_id' => $versionId,
+                'expected_version' => 2,
+                'reason' => 'Repeat the current channel promotion.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('meta.already_promoted', true);
+
+        $this->authenticated($vendorAdmin)
+            ->postJson('/api/v1/products/'.$product->getKey().'/assignments', [
+                'vendor_membership_id' => $developer->vendorMemberships()->firstOrFail()->getKey(),
+                'reason' => 'Assign developer access to release channels.',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($developer)
+            ->getJson('/api/v1/products/'.$product->getKey().'/release-channels')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->authenticated($developer)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels', [
+                'slug' => 'beta',
+                'name' => 'Beta',
+                'reason' => 'Developer cannot create release channels.',
+            ])
+            ->assertForbidden();
+
+        $this->authenticated($developer)
+            ->postJson('/api/v1/products/'.$product->getKey().'/release-channels/'.$channelId.'/promote', [
+                'product_version_id' => $versionId,
+                'expected_version' => 2,
+                'reason' => 'Developer cannot promote releases.',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('release_channel_events', 2);
         $this->assertTrue(app(PlatformAccessAuditChainVerifier::class)->verify());
     }
 

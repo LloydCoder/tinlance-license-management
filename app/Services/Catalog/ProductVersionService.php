@@ -16,6 +16,7 @@ use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\PlatformAccessAuditChainHasher;
 use App\Services\Authorization\PlatformAccessAuditChainWriter;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
+use App\Support\SemanticVersion;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -364,7 +365,7 @@ final readonly class ProductVersionService
         string $reason,
     ): void {
         if (
-            preg_match('/\A(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\z/D', $version) !== 1
+            ! SemanticVersion::isValid($version)
             || ($releaseNotes !== null && mb_strlen($releaseNotes) > 5000)
             || ($artifactSha256 !== null && preg_match('/\A[a-f0-9]{64}\z/D', $artifactSha256) !== 1)
             || ($artifactSizeBytes !== null && $artifactSizeBytes < 1)

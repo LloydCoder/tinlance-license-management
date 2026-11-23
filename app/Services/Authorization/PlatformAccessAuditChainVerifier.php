@@ -150,7 +150,68 @@ final readonly class PlatformAccessAuditChainVerifier
             ->havingRaw('COUNT(*) > 1')
             ->exists();
 
-        return ! $duplicateVersionReferencesExist;
+        if ($duplicateVersionReferencesExist) {
+            return false;
+        }
+
+        $unreferencedReleaseChannelEventsExist = DB::table('release_channel_events')
+            ->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('platform_access_audit_events')
+                    ->whereColumn('platform_access_audit_events.details_ref_id', 'release_channel_events.id')
+                    ->where('platform_access_audit_events.hash_version', 2)
+                    ->whereIn('platform_access_audit_events.action', ['release_channel.created', 'release_channel.promoted']);
+            })
+            ->exists();
+
+        if ($unreferencedReleaseChannelEventsExist) {
+            return false;
+        }
+
+        $duplicateReleaseChannelReferencesExist = DB::table('platform_access_audit_events')
+            ->select('details_ref_id')
+            ->where('hash_version', 2)
+            ->whereIn('action', ['release_channel.created', 'release_channel.promoted'])
+            ->groupBy('details_ref_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->exists();
+
+        if ($duplicateReleaseChannelReferencesExist) {
+            return false;
+        }
+
+        $invalidReleaseChannelSequencesExist = DB::table('release_channel_events')
+            ->select('release_channel_id')
+            ->groupBy('release_channel_id')
+            ->havingRaw('MIN(channel_version_number) <> 1 OR MAX(channel_version_number) <> COUNT(*)')
+            ->exists();
+
+        if ($invalidReleaseChannelSequencesExist) {
+            return false;
+        }
+
+        $releaseChannelStateMismatchExists = DB::table('release_channels as channels')
+            ->leftJoin('release_channel_events as latest_event', function ($join): void {
+                $join->on('latest_event.release_channel_id', '=', 'channels.id')
+                    ->on('latest_event.channel_version_number', '=', 'channels.version_number');
+            })
+            ->where(function ($query): void {
+                $query->whereNull('latest_event.id')
+                    ->orWhere(function ($mismatch): void {
+                        $mismatch->whereColumn('channels.current_product_version_id', '<>', 'latest_event.product_version_id')
+                            ->orWhere(function ($nullMismatch): void {
+                                $nullMismatch->whereNull('channels.current_product_version_id')
+                                    ->whereNotNull('latest_event.product_version_id');
+                            })
+                            ->orWhere(function ($nullMismatch): void {
+                                $nullMismatch->whereNotNull('channels.current_product_version_id')
+                                    ->whereNull('latest_event.product_version_id');
+                            });
+                    });
+            })
+            ->exists();
+
+        return ! $releaseChannelStateMismatchExists;
     }
 
     private function verifyVersionTwoDetails(object $auditEvent): bool
@@ -164,6 +225,7 @@ final readonly class PlatformAccessAuditChainVerifier
             'product.created', 'product.updated' => $this->verifyProductDetails($auditEvent),
             'product.assignment_granted', 'product.assignment_revoked' => $this->verifyProductAssignmentDetails($auditEvent),
             'product_version.created', 'product_version.updated', 'product_version.published' => $this->verifyProductVersionDetails($auditEvent),
+            'release_channel.created', 'release_channel.promoted' => $this->verifyReleaseChannelDetails($auditEvent),
             default => false,
         };
     }
@@ -298,6 +360,97 @@ final readonly class PlatformAccessAuditChainVerifier
             (string) $productEvent->change_digest,
             (string) $productEvent->request_id,
             (string) $productEvent->created_at,
+        );
+
+        return hash_equals($detailsHash, $expectedDetailsHash);
+    }
+
+    private function verifyReleaseChannelDetails(object $auditEvent): bool
+    {
+        $row = (array) $auditEvent;
+        $detailsReferenceId = $row['details_ref_id'] ?? null;
+        $detailsHash = $row['details_hash'] ?? null;
+        $resourceId = $row['resource_id'] ?? null;
+        $actorUserId = $row['actor_user_id'] ?? null;
+        $tenantVendorAccountId = $row['tenant_vendor_account_id'] ?? null;
+        $requestId = $row['request_id'] ?? null;
+        $action = $row['action'] ?? null;
+
+        if (
+            ! is_string($detailsReferenceId)
+            || ! is_string($detailsHash)
+            || ! is_string($resourceId)
+            || ! is_string($actorUserId)
+            || ! is_string($tenantVendorAccountId)
+            || ! is_string($requestId)
+            || ! in_array($action, ['release_channel.created', 'release_channel.promoted'], true)
+        ) {
+            return false;
+        }
+
+        $event = DB::table('release_channel_events')
+            ->join('release_channels', 'release_channels.id', '=', 'release_channel_events.release_channel_id')
+            ->join('products', 'products.id', '=', 'release_channel_events.product_id')
+            ->leftJoin('product_versions as previous_versions', 'previous_versions.id', '=', 'release_channel_events.previous_product_version_id')
+            ->leftJoin('product_versions as promoted_versions', 'promoted_versions.id', '=', 'release_channel_events.product_version_id')
+            ->where('release_channel_events.id', $detailsReferenceId)
+            ->first([
+                'release_channel_events.id',
+                'release_channel_events.release_channel_id',
+                'release_channel_events.product_id',
+                'release_channel_events.vendor_account_id',
+                'release_channel_events.actor_user_id',
+                'release_channel_events.event_type',
+                'release_channel_events.channel_version_number',
+                'release_channel_events.previous_product_version_id',
+                'release_channel_events.product_version_id',
+                'release_channel_events.reason',
+                'release_channel_events.request_id',
+                'release_channel_events.created_at',
+                'release_channels.product_id as channel_product_id',
+                'release_channels.vendor_account_id as channel_vendor_account_id',
+                'products.vendor_account_id as product_vendor_account_id',
+                'previous_versions.product_id as previous_product_id',
+                'promoted_versions.product_id as promoted_product_id',
+                'promoted_versions.status as promoted_version_status',
+            ]);
+
+        $expectedEventType = $action === 'release_channel.created' ? 'created' : 'promoted';
+
+        if (
+            $event === null
+            || $event->event_type !== $expectedEventType
+            || (string) $event->release_channel_id !== $resourceId
+            || (string) $event->channel_product_id !== (string) $event->product_id
+            || (string) $event->vendor_account_id !== $tenantVendorAccountId
+            || (string) $event->channel_vendor_account_id !== $tenantVendorAccountId
+            || (string) $event->product_vendor_account_id !== $tenantVendorAccountId
+            || (string) $event->actor_user_id !== $actorUserId
+            || (string) $event->request_id !== $requestId
+            || ($event->previous_product_version_id !== null && (string) $event->previous_product_id !== (string) $event->product_id)
+            || ($event->product_version_id !== null && (
+                (string) $event->promoted_product_id !== (string) $event->product_id
+                || $event->promoted_version_status !== 'published'
+            ))
+            || ($expectedEventType === 'created' && ($event->previous_product_version_id !== null || $event->product_version_id !== null))
+            || ($expectedEventType === 'promoted' && $event->product_version_id === null)
+        ) {
+            return false;
+        }
+
+        $expectedDetailsHash = $this->hasher->hashReleaseChannelEvent(
+            (string) $event->id,
+            (string) $event->release_channel_id,
+            (string) $event->product_id,
+            (string) $event->vendor_account_id,
+            (string) $event->actor_user_id,
+            (string) $event->event_type,
+            (int) $event->channel_version_number,
+            $event->previous_product_version_id === null ? null : (string) $event->previous_product_version_id,
+            $event->product_version_id === null ? null : (string) $event->product_version_id,
+            (string) $event->reason,
+            (string) $event->request_id,
+            (string) $event->created_at,
         );
 
         return hash_equals($detailsHash, $expectedDetailsHash);
