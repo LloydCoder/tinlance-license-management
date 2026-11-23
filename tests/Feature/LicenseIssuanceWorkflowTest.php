@@ -455,6 +455,19 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('replayed', true);
 
+        $siteAllocation = DB::table('license_allocations')
+            ->where('license_id', $licenseId)
+            ->where('allocation_type', 'site')
+            ->first();
+        $this->assertNotNull($siteAllocation);
+        $this->assertSame(64, strlen((string) $siteAllocation->subject_hash));
+        $this->assertNotSame($sitePayload['subject_identifier'], $siteAllocation->subject_hash);
+
+        $siteEventPayload = (string) DB::table('license_allocation_events')
+            ->where('request_id', 'allocation-site-request-000001')
+            ->value('event_payload');
+        $this->assertStringNotContainsString($sitePayload['subject_identifier'], $siteEventPayload);
+
         $this->authenticated($actor)
             ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
                 ...$sitePayload,
@@ -547,6 +560,14 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ->assertJsonPath('data.status', 'released');
 
         $this->authenticated($actor)
+            ->deleteJson('/api/v1/licenses/'.$licenseId.'/allocations/'.$allocationId, [
+                'reason' => 'The customer decommissioned this site installation.',
+            ], ['X-Request-ID' => 'allocation-release-delete-000001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'released')
+            ->assertJsonPath('replayed', true);
+
+        $this->authenticated($actor)
             ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
                 'allocation_type' => 'site',
                 'subject_identifier' => 'site-installation-release-opaque-000001',
@@ -594,6 +615,17 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                 'to_status' => 'suspended',
                 'reason' => 'Attempt to reuse an allocation request identifier for suspension.',
             ], ['X-Request-ID' => $sharedRequestId])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Attempt to reuse an allocation request identifier for issuance.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => $sharedRequestId,
+            ])
             ->assertStatus(409);
 
         $this->assertDatabaseHas('licenses', [
