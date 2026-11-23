@@ -6,9 +6,8 @@ namespace App\Services\Catalog;
 
 use App\Exceptions\ProductVersionConflictException;
 use App\Models\Product;
-use App\Models\ProductEvent;
 use App\Models\ProductAssignment;
-use App\Services\Catalog\ProductAssignmentService;
+use App\Models\ProductEvent;
 use App\Models\User;
 use App\Models\VendorAccount;
 use App\Models\VendorMembership;
