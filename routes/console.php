@@ -61,4 +61,4 @@ Artisan::command('tlms:licenses:expire {--limit=100 : Maximum number of licences
 
 Schedule::command('tlms:licenses:expire --limit=100')
     ->everyFiveMinutes()
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
