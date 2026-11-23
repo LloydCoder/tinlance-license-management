@@ -239,7 +239,7 @@ final readonly class LicenseLifecycleService
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function payloadHash(array $payload): string
     {
