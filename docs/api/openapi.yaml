@@ -2173,7 +2173,49 @@ paths:
             type: string
             minLength: 32
             maxLength: 128
-            pattern: '^[A-Za-z0-9._~-]{32,128}    parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseSuccessorRequest'
+      responses:
+        '201':
+          description: Successor created and source licence revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseSuccessorResult'
+        '200':
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseSuccessorResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /licenses/{licenseId}/usage:
+    parameters:
       - name: licenseId
         in: path
         required: true
