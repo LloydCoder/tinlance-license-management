@@ -74,11 +74,6 @@ final readonly class PlatformAccessAuditChainVerifier
         });
     }
 
-    /**
-     * Every product event must be represented exactly once in the version-2 audit chain.
-     *
-     * @return bool
-     */
     private function verifyProductEventCoverage(): bool
     {
         $unreferencedEventsExist = DB::table('product_events')
