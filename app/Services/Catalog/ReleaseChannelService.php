@@ -167,8 +167,68 @@ final readonly class ReleaseChannelService
                 'updated_by_user_id' => $actor->getKey(),
             ])->save();
 
+            if ($product->status === 'draft') {
+                $this->activateProduct($product, $actor, $reason, $requestId);
+            }
+
             return [$channel->refresh(), false];
         }, 3);
+    }
+
+    private function activateProduct(Product $product, User $actor, string $reason, string $requestId): void
+    {
+        $before = ['status' => (string) $product->status];
+        $product->forceFill([
+            'status' => 'active',
+            'version' => (int) $product->version + 1,
+            'updated_by_user_id' => $actor->getKey(),
+        ])->save();
+
+        $after = ['status' => 'active'];
+        $productRequestId = substr($requestId, 0, 118).'.activated';
+        $changeDigest = $this->auditHasher->hashProfileChangeSet([
+            'before' => $before,
+            'after' => $after,
+        ]);
+
+        $event = ProductEvent::query()->create([
+            'product_id' => $product->getKey(),
+            'vendor_account_id' => $product->vendor_account_id,
+            'actor_user_id' => $actor->getKey(),
+            'event_type' => 'activated',
+            'reason' => $reason,
+            'changed_fields' => ['status'],
+            'change_digest' => $changeDigest,
+            'request_id' => $productRequestId,
+            'created_at' => now(),
+        ]);
+
+        $createdAt = (string) DB::table('product_events')->where('id', $event->getKey())->value('created_at');
+        $detailsHash = $this->auditHasher->hashProductEvent(
+            (string) $event->getKey(),
+            (string) $event->product_id,
+            (string) $event->vendor_account_id,
+            (string) $event->actor_user_id,
+            (string) $event->event_type,
+            (string) $event->reason,
+            $event->changed_fields,
+            (string) $event->change_digest,
+            (string) $event->request_id,
+            $createdAt,
+        );
+
+        $this->auditWriter->append(
+            (string) $actor->getKey(),
+            'product.activated',
+            'product',
+            (string) $product->getKey(),
+            (string) $product->vendor_account_id,
+            'allowed',
+            'product_lifecycle_management',
+            $productRequestId,
+            (string) $event->getKey(),
+            $detailsHash,
+        );
     }
 
     private function authorizeProductManager(User $actor, Product $product, VendorAccount $vendor, string $permission): void
