@@ -6,6 +6,7 @@ use Tlms\Tests\Unit\Domain\LicenseIssuanceFingerprintTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyPepperRingTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyTest;
 use Tlms\Tests\Unit\Domain\LicenseLifecycleTest;
+use Tlms\Tests\Unit\Domain\LicenseResponseCipherRingTest;
 
 require __DIR__.'/bootstrap.php';
 
@@ -15,6 +16,7 @@ $tests = [
     new DomainNameTest,
     new LicenseLifecycleTest,
     new LicenseIssuanceFingerprintTest,
+    new LicenseResponseCipherRingTest,
 ];
 
 $failures = 0;
