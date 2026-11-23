@@ -16,7 +16,6 @@ use App\Models\VendorMembership;
 use App\Services\Authorization\MembershipAuthorization;
 use App\Services\Authorization\PlatformSuperAdminAuthorization;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Tlms\Domain\Licensing\LicenseLifecycle;
@@ -73,11 +72,20 @@ final readonly class LicenseLifecycleService
             if ($existingEvent instanceof LicenseEvent) {
                 $existingFrom = (string) $existingEvent->from_status;
                 $expectedEventType = $this->eventType($existingFrom, $toStatus);
+                $existingPayload = $existingEvent->event_payload;
+                $existingAggregateVersion = is_array($existingPayload)
+                    ? (int) ($existingPayload['aggregate_version'] ?? 0)
+                    : 0;
+
+                if ($existingAggregateVersion < 1) {
+                    throw new LicenseLifecycleConflictException('The existing lifecycle event payload is invalid.');
+                }
+
                 $expectedPayload = $this->eventPayload(
                     (string) $lockedLicense->getKey(),
                     $existingFrom,
                     $toStatus,
-                    (int) $existingEvent->license?->version,
+                    $existingAggregateVersion,
                     $reason,
                 );
                 $expectedHash = $this->payloadHash($expectedPayload);
