@@ -727,6 +727,112 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_usage_metering_is_atomic_idempotent_and_enforces_the_published_period_quota(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue a licence for usage metering verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'usage-issuance-request-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the licence before recording metered usage.',
+            ], ['X-Request-ID' => 'usage-activation-request-000001'])
+            ->assertOk();
+
+        $payload = [
+            'metric' => 'api_calls',
+            'period' => 'monthly',
+            'quantity' => 60,
+            'reason' => 'Record API calls consumed by the customer application.',
+        ];
+        $headers = ['X-Request-ID' => 'usage-consumption-request-000001'];
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/usage', $payload, $headers)
+            ->assertCreated()
+            ->assertJsonPath('data.metric', 'api_calls')
+            ->assertJsonPath('data.period', 'monthly')
+            ->assertJsonPath('data.quantity', 60)
+            ->assertJsonPath('data.limit', 100)
+            ->assertJsonPath('replayed', false);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/usage', $payload, $headers)
+            ->assertOk()
+            ->assertJsonPath('data.quantity', 60)
+            ->assertJsonPath('replayed', true);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/usage', [
+                ...$payload,
+                'quantity' => 50,
+            ], ['X-Request-ID' => 'usage-consumption-request-000002'])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('license_usage_counters', [
+            'license_id' => $licenseId,
+            'metric' => 'api_calls',
+            'period' => 'monthly',
+            'quantity' => 60,
+            'version' => 1,
+        ]);
+        $this->assertSame(1, DB::table('license_usage_events')->where('license_id', $licenseId)->count());
+    }
+
+    public function test_usage_metering_rejects_inactive_licences_and_request_id_collisions(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue an inactive licence for usage metering policy verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'usage-inactive-issuance-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $payload = [
+            'metric' => 'api_calls',
+            'period' => 'monthly',
+            'quantity' => 1,
+            'reason' => 'Attempt to record usage before licence activation.',
+        ];
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/usage', $payload, [
+                'X-Request-ID' => 'usage-inactive-request-000001',
+            ])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'suspended',
+                'reason' => 'Suspend the licence before testing usage request identifier reuse.',
+            ], ['X-Request-ID' => 'usage-shared-request-000001'])
+            ->assertOk();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/usage', $payload, [
+                'X-Request-ID' => 'usage-shared-request-000001',
+            ])
+            ->assertStatus(409);
+
+        $this->assertSame(0, DB::table('license_usage_counters')->where('license_id', $licenseId)->count());
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
@@ -800,6 +906,8 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                     ['key' => 'seats', 'type' => 'integer', 'value' => 2],
                     ['key' => 'sites', 'type' => 'integer', 'value' => 1],
                     ['key' => 'users', 'type' => 'integer', 'value' => 1],
+                    ['key' => 'usage.api_calls.monthly', 'type' => 'integer', 'value' => 100],
+                    ['key' => 'usage.exports.lifetime', 'type' => 'integer', 'value' => 10],
                     ['key' => 'offline', 'type' => 'boolean', 'value' => true],
                 ],
                 'reason' => 'Create the annual professional plan version.',

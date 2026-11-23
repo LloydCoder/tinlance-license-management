@@ -48,4 +48,40 @@ final class LicensePersistenceSchemaTest extends TestCase
             'created_at',
         ]));
     }
+
+    public function test_usage_counters_and_immutable_usage_events_have_required_columns(): void
+    {
+        $this->assertTrue(Schema::hasColumns('license_usage_counters', [
+            'id',
+            'license_id',
+            'vendor_account_id',
+            'product_id',
+            'metric',
+            'period',
+            'period_start',
+            'period_end',
+            'quantity',
+            'version',
+        ]));
+
+        $this->assertTrue(Schema::hasColumns('license_usage_events', [
+            'id',
+            'counter_id',
+            'license_id',
+            'vendor_account_id',
+            'product_id',
+            'actor_user_id',
+            'metric',
+            'period',
+            'quantity_delta',
+            'resulting_quantity',
+            'period_start',
+            'period_end',
+            'reason',
+            'request_id',
+            'payload_sha256',
+            'event_payload',
+            'created_at',
+        ]));
+    }
 }
