@@ -158,7 +158,7 @@ final class PlanCatalogueController
         return [
             'billing_model' => ['required', 'in:perpetual,subscription,annual,trial'],
             'currency' => ['required', 'string', 'regex:/\A[A-Za-z]{3}\z/D'],
-            'price_minor' => ['required', 'integer', 'min:0'],
+            'price_minor' => ['required', 'integer', 'min:0', 'max:9007199254740991'],
             'billing_interval' => ['nullable', 'in:month,year'],
             'trial_days' => ['required', 'integer', 'min:0', 'max:365'],
             'maintenance_days' => ['required', 'integer', 'min:0', 'max:3650'],
