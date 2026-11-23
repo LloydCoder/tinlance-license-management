@@ -833,6 +833,153 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         $this->assertSame(0, DB::table('license_usage_counters')->where('license_id', $licenseId)->count());
     }
 
+    public function test_licence_transfer_creates_a_successor_and_revokes_the_source_atomically(): void
+    {
+        [$actor, $vendor, $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $destination = CustomerOrganization::query()->create([
+            'vendor_account_id' => $vendor->getKey(),
+            'external_reference' => 'licence-transfer-destination',
+            'legal_name' => 'Transfer Destination Limited',
+            'display_name' => 'Transfer Destination',
+            'status' => 'active',
+            'billing_email' => 'billing@transfer-destination.example',
+        ]);
+        $startsAt = now()->subMonths(2)->startOfDay()->toISOString();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => $startsAt,
+                'reason' => 'Issue a licence to verify successor transfer.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'successor-transfer-issuance-000001',
+            ])
+            ->assertCreated();
+
+        $sourceId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the source licence before transfer.',
+            ], ['X-Request-ID' => 'successor-transfer-activate-00001'])
+            ->assertOk();
+        $source = License::query()->findOrFail($sourceId);
+        $sourceExpiry = $source->expires_at?->toISOString();
+
+        $payload = [
+            'relation_type' => 'transfer',
+            'destination_customer_organization_id' => $destination->getKey(),
+            'reason' => 'Transfer the licence to the verified destination organization.',
+        ];
+        $headers = [
+            'Idempotency-Key' => 'successor-transfer-idempotency-000001',
+            'X-Request-ID' => 'successor-transfer-request-000001',
+        ];
+
+        $response = $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', $payload, $headers)
+            ->assertCreated()
+            ->assertJsonPath('data.relation_type', 'transfer')
+            ->assertJsonPath('data.source_license_id', $sourceId)
+            ->assertJsonPath('data.source_status', 'revoked')
+            ->assertJsonPath('replayed', false);
+
+        $successorId = (string) $response->json('data.successor_license_id');
+        $this->assertDatabaseHas('licenses', [
+            'id' => $sourceId,
+            'status' => 'revoked',
+            'version' => 2,
+        ]);
+        $this->assertDatabaseHas('licenses', [
+            'id' => $successorId,
+            'customer_organization_id' => $destination->getKey(),
+            'status' => 'issued',
+            'version' => 1,
+        ]);
+        $successor = License::query()->findOrFail($successorId);
+        $this->assertSame($sourceExpiry, $successor->expires_at?->toISOString());
+        $this->assertDatabaseHas('license_successor_relations', [
+            'source_license_id' => $sourceId,
+            'successor_license_id' => $successorId,
+            'relation_type' => 'transfer',
+            'vendor_account_id' => $vendor->getKey(),
+        ]);
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $sourceId,
+            'event_type' => 'transferred',
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+            'request_id' => 'successor-transfer-request-000001',
+        ]);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', $payload, $headers)
+            ->assertOk()
+            ->assertJsonPath('data.successor_license_id', $successorId)
+            ->assertJsonPath('replayed', true);
+
+        $this->assertSame(1, DB::table('license_successor_relations')->where('source_license_id', $sourceId)->count());
+    }
+
+    public function test_licence_replacement_keeps_the_customer_and_rejects_a_non_active_source(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'starts_at' => now()->subMonths(2)->startOfDay()->toISOString(),
+                'reason' => 'Issue a licence to verify replacement semantics.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'successor-replacement-issuance-0001',
+            ])
+            ->assertCreated();
+
+        $sourceId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', [
+                'relation_type' => 'replacement',
+                'reason' => 'Replace the credential while preserving the customer and remaining term.',
+            ], [
+                'Idempotency-Key' => 'successor-replacement-idempotency-0001',
+                'X-Request-ID' => 'successor-replacement-request-0001',
+            ])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the source licence before replacement.',
+            ], ['X-Request-ID' => 'successor-replacement-activate-0001'])
+            ->assertOk();
+
+        $response = $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$sourceId.'/successors', [
+                'relation_type' => 'replacement',
+                'reason' => 'Replace the credential while preserving the customer and remaining term.',
+            ], [
+                'Idempotency-Key' => 'successor-replacement-idempotency-0001',
+                'X-Request-ID' => 'successor-replacement-request-0001',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.relation_type', 'replacement');
+
+        $successorId = (string) $response->json('data.successor_license_id');
+        $this->assertDatabaseHas('licenses', [
+            'id' => $successorId,
+            'customer_organization_id' => $customer->getKey(),
+            'status' => 'issued',
+        ]);
+        $this->assertDatabaseHas('license_events', [
+            'license_id' => $sourceId,
+            'event_type' => 'replaced',
+            'from_status' => 'active',
+            'to_status' => 'revoked',
+        ]);
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
