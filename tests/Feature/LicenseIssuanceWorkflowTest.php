@@ -874,7 +874,7 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ], ['X-Request-ID' => 'successor-transfer-allocation-0001'])
             ->assertCreated();
         $allocationId = (string) $allocation->json('data.id');
-        $expectedSourceVersion = (int) $source->fresh()->version + 1;
+        $expectedSourceVersion = (int) $source->refresh()->version + 1;
 
         $payload = [
             'relation_type' => 'transfer',
