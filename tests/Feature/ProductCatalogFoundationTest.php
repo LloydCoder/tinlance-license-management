@@ -329,7 +329,7 @@ final class ProductCatalogFoundationTest extends TestCase
             ->where('product_id', $product->getKey())
             ->firstOrFail();
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
 
         $assignment->forceFill(['assigned_at' => now()->addMinute()])->save();
     }
