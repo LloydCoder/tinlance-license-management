@@ -19,6 +19,7 @@ use Database\Seeders\AuthorizationCatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 use Tlms\Domain\Licensing\LicenseKey;
 
@@ -414,6 +415,226 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_license_allocations_enforce_site_seat_and_user_entitlements_atomically(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue a licence for allocation quota verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'allocation-issuance-request-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the licence before reserving its allocation limits.',
+            ], ['X-Request-ID' => 'allocation-activation-request-000001'])
+            ->assertOk();
+
+        $sitePayload = [
+            'allocation_type' => 'site',
+            'subject_identifier' => 'site-installation-opaque-000000000001',
+            'reason' => 'Reserve the only site allocation allowed by this plan.',
+        ];
+        $siteHeaders = ['X-Request-ID' => 'allocation-site-request-000001'];
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', $sitePayload, $siteHeaders)
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonPath('replayed', false);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', $sitePayload, $siteHeaders)
+            ->assertOk()
+            ->assertJsonPath('replayed', true);
+
+        $siteAllocation = DB::table('license_allocations')
+            ->where('license_id', $licenseId)
+            ->where('allocation_type', 'site')
+            ->first();
+        $this->assertNotNull($siteAllocation);
+        $this->assertSame(64, strlen((string) $siteAllocation->subject_hash));
+        $this->assertNotSame($sitePayload['subject_identifier'], $siteAllocation->subject_hash);
+
+        $siteEventPayload = (string) DB::table('license_allocation_events')
+            ->where('request_id', 'allocation-site-request-000001')
+            ->value('event_payload');
+        $this->assertStringNotContainsString($sitePayload['subject_identifier'], $siteEventPayload);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                ...$sitePayload,
+                'subject_identifier' => 'site-installation-opaque-000000000002',
+            ], ['X-Request-ID' => 'allocation-site-request-000002'])
+            ->assertStatus(409);
+
+        $seatPayload = [
+            'allocation_type' => 'seat',
+            'subject_identifier' => 'seat-user-opaque-000000000001',
+            'reason' => 'Reserve the first seat under the published seat entitlement.',
+        ];
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', $seatPayload, [
+                'X-Request-ID' => 'allocation-seat-request-000001',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                ...$seatPayload,
+                'subject_identifier' => 'seat-user-opaque-000000000002',
+            ], ['X-Request-ID' => 'allocation-seat-request-000002'])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                ...$seatPayload,
+                'subject_identifier' => 'seat-user-opaque-000000000003',
+            ], ['X-Request-ID' => 'allocation-seat-request-000003'])
+            ->assertStatus(409);
+
+        $userPayload = [
+            'allocation_type' => 'user',
+            'subject_identifier' => 'customer-user-opaque-000000000001',
+            'reason' => 'Reserve the only user allocation allowed by this plan.',
+        ];
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', $userPayload, [
+                'X-Request-ID' => 'allocation-user-request-000001',
+            ])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                ...$userPayload,
+                'subject_identifier' => 'customer-user-opaque-000000000002',
+            ], ['X-Request-ID' => 'allocation-user-request-000002'])
+            ->assertStatus(409);
+
+        $this->assertSame(4, DB::table('license_allocations')->where('license_id', $licenseId)->where('status', 'active')->count());
+    }
+
+    public function test_releasing_a_license_allocation_frees_the_entitlement_slot(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue a licence for allocation release verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'allocation-release-issuance-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the licence before allocation release verification.',
+            ], ['X-Request-ID' => 'allocation-release-activation-000001'])
+            ->assertOk();
+
+        $allocation = $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'site',
+                'subject_identifier' => 'site-installation-release-opaque-000001',
+                'reason' => 'Reserve the site allocation before releasing it.',
+            ], ['X-Request-ID' => 'allocation-release-create-000001'])
+            ->assertCreated();
+
+        $allocationId = (string) $allocation->json('data.id');
+        $this->authenticated($actor)
+            ->deleteJson('/api/v1/licenses/'.$licenseId.'/allocations/'.$allocationId, [
+                'reason' => 'The customer decommissioned this site installation.',
+            ], ['X-Request-ID' => 'allocation-release-delete-000001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'released');
+
+        $this->authenticated($actor)
+            ->deleteJson('/api/v1/licenses/'.$licenseId.'/allocations/'.$allocationId, [
+                'reason' => 'The customer decommissioned this site installation.',
+            ], ['X-Request-ID' => 'allocation-release-delete-000001'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'released')
+            ->assertJsonPath('replayed', true);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'site',
+                'subject_identifier' => 'site-installation-release-opaque-000001',
+                'reason' => 'Reactivate the same site subject after its previous allocation was released.',
+            ], ['X-Request-ID' => 'allocation-release-reuse-000001'])
+            ->assertCreated()
+            ->assertJsonPath('data.version', 3);
+
+        $this->assertSame(1, DB::table('license_allocations')->where('license_id', $licenseId)->where('allocation_type', 'site')->where('status', 'active')->count());
+    }
+
+    public function test_allocation_request_ids_cannot_be_reused_by_lifecycle_operations(): void
+    {
+        [$actor, , $product, $planVersion, $customer] = $this->createIssuanceFixture();
+        $issued = $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Issue a licence for cross-stream request identifier verification.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => 'allocation-stream-issuance-000001',
+            ])
+            ->assertCreated();
+
+        $licenseId = (string) $issued->json('data.id');
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'active',
+                'reason' => 'Activate the licence for cross-stream request identifier verification.',
+            ], ['X-Request-ID' => 'allocation-stream-activation-000001'])
+            ->assertOk();
+
+        $sharedRequestId = 'shared-vendor-request-identifier-000001';
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'site',
+                'subject_identifier' => 'site-cross-stream-opaque-000000001',
+                'reason' => 'Reserve a site using the request identifier that must remain unique.',
+            ], ['X-Request-ID' => $sharedRequestId])
+            ->assertCreated();
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'suspended',
+                'reason' => 'Attempt to reuse an allocation request identifier for suspension.',
+            ], ['X-Request-ID' => $sharedRequestId])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/products/'.$product->getKey().'/licenses', [
+                'customer_organization_id' => $customer->getKey(),
+                'plan_version_id' => $planVersion->getKey(),
+                'reason' => 'Attempt to reuse an allocation request identifier for issuance.',
+            ], [
+                'Idempotency-Key' => str()->random(40),
+                'X-Request-ID' => $sharedRequestId,
+            ])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('licenses', [
+            'id' => $licenseId,
+            'status' => 'active',
+            'version' => 2,
+        ]);
+    }
+
     /**
      * @return array{User, VendorAccount, Product, PlanVersion, CustomerOrganization}
      */
@@ -484,7 +705,9 @@ final class LicenseIssuanceWorkflowTest extends TestCase
                 'trial_days' => 0,
                 'maintenance_days' => 30,
                 'entitlements' => [
-                    ['key' => 'seats', 'type' => 'integer', 'value' => 10],
+                    ['key' => 'seats', 'type' => 'integer', 'value' => 2],
+                    ['key' => 'sites', 'type' => 'integer', 'value' => 1],
+                    ['key' => 'users', 'type' => 'integer', 'value' => 1],
                     ['key' => 'offline', 'type' => 'boolean', 'value' => true],
                 ],
                 'reason' => 'Create the annual professional plan version.',

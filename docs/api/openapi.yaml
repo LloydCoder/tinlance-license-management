@@ -2148,6 +2148,124 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+
+  /licenses/{licenseId}/allocations:
+    parameters:
+      - name: licenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Licences]
+      operationId: allocateLicenceResource
+      summary: Reserve a site, seat or user allocation against a licence
+      description: Requires licences.mutate, active vendor membership, product assignment (except vendor Super Admin), recent password confirmation and fresh MFA step-up. The subject identifier is treated as an opaque identifier and is never persisted; its keyed fingerprint is stored with the licence pepper key identifier. The immutable published-plan entitlement limit is enforced under a licence row lock.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseAllocationRequest'
+      responses:
+        '201':
+          description: Allocation created or reactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseAllocationResult'
+        '200':
+          description: Idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseAllocationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /licenses/{licenseId}/allocations/{allocationId}:
+    parameters:
+      - name: licenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+      - name: allocationId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    delete:
+      tags: [Licences]
+      operationId: releaseLicenceResourceAllocation
+      summary: Release a site, seat or user allocation
+      description: Requires licences.mutate, active vendor membership, product assignment (except vendor Super Admin), recent password confirmation and fresh MFA step-up. Releases are versioned, idempotent and append immutable allocation event evidence.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseAllocationReleaseRequest'
+      responses:
+        '200':
+          description: Allocation released or idempotently replayed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseAllocationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
 components:
   securitySchemes:
     AdminSession:
@@ -3407,6 +3525,59 @@ components:
         request_id:
           type: string
 
+    LicenseAllocationRequest:
+      type: object
+      additionalProperties: false
+      required: [allocation_type, subject_identifier, reason]
+      properties:
+        allocation_type:
+          type: string
+          enum: [site, seat, user]
+        subject_identifier:
+          type: string
+          minLength: 16
+          maxLength: 128
+          description: Opaque caller-generated identifier; raw value is never persisted.
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseAllocationReleaseRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseAllocationResult:
+      type: object
+      additionalProperties: false
+      required: [data, replayed, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, allocation_type, status, version]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            allocation_type:
+              type: string
+              enum: [site, seat, user]
+            status:
+              type: string
+              enum: [active, released]
+            version:
+              type: integer
+              minimum: 1
+        replayed:
+          type: boolean
+        request_id:
+          type: string
     LicenseRenewalRequest:
       type: object
       additionalProperties: false
@@ -3439,13 +3610,12 @@ components:
               type: integer
               minimum: 2
             expires_at:
-              type: [string, 'null']
+              type: string
               format: date-time
         replayed:
           type: boolean
         request_id:
           type: string
-
     LicenseLifecycleTransitionRequest:
       type: object
       additionalProperties: false

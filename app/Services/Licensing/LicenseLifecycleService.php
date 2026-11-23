@@ -6,6 +6,7 @@ namespace App\Services\Licensing;
 
 use App\Exceptions\LicenseLifecycleConflictException;
 use App\Models\License;
+use App\Models\LicenseAllocationEvent;
 use App\Models\LicenseEvent;
 use App\Models\PlanVersion;
 use App\Models\Product;
@@ -104,6 +105,13 @@ final readonly class LicenseLifecycleService
                 }
 
                 return ['license' => $lockedLicense->refresh(), 'replayed' => true];
+            }
+
+            if (LicenseAllocationEvent::query()
+                ->where('vendor_account_id', $vendorId)
+                ->where('request_id', $requestId)
+                ->exists()) {
+                throw new LicenseLifecycleConflictException('The request identifier was already used by a licence allocation operation.');
             }
 
             $fromStatus = (string) $lockedLicense->status;
@@ -216,6 +224,13 @@ final readonly class LicenseLifecycleService
                 }
 
                 return ['license' => $lockedLicense->refresh(), 'replayed' => true];
+            }
+
+            if (LicenseAllocationEvent::query()
+                ->where('vendor_account_id', $vendorId)
+                ->where('request_id', $requestId)
+                ->exists()) {
+                throw new LicenseLifecycleConflictException('The request identifier was already used by a licence allocation operation.');
             }
 
             if (! in_array((string) $lockedLicense->status, [LicenseLifecycle::ACTIVE, LicenseLifecycle::SUSPENDED], true)) {

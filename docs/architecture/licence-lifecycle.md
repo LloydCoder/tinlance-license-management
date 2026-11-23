@@ -32,3 +32,27 @@ Activation and reinstatement require the licence start time to have been reached
 ## Immutable event evidence
 
 Each accepted action appends an immutable licence event with actor, reason, request ID, from/to states, aggregate version and a SHA-256 payload digest. Event records cannot be updated or deleted. Replayed requests do not append duplicate events.
+
+## Renewal policy
+
+- Only active or suspended annual and subscription licences can be renewed through the renewal endpoint.
+- The immutable published plan version determines the renewal period: annual plans add one calendar year; subscriptions add their published month/year interval.
+- Renewal extends from the effective expiry (grace deadline when present, otherwise expiry) and clears the consumed grace deadline.
+- A perpetual, trial, already-expired or otherwise terminal licence cannot be renewed through this operation.
+- Renewal preserves the current lifecycle state. Renewing a suspended licence does not silently reinstate it.
+- Renewal locks the vendor, licence and published plan version, advances the licence aggregate version exactly once and appends an immutable `renewed` event atomically.
+- Vendor-scoped `X-Request-ID` retries are payload-bound; a conflicting reuse is rejected.
+
+## Site, seat and user allocations
+
+- Allocations are allowed only for active, in-window licences.
+- `site`, `seat` and `user` allocation types map to the published plan entitlements `sites`, `seats` and `users`. Missing, non-integer or non-positive limits grant no allocation capacity.
+- A licence-row lock serializes capacity checks and reservations. The active allocation count is checked before a reservation is created or reactivated.
+- Each allocation is uniquely identified by licence, type and a keyed subject fingerprint. The raw caller-provided subject identifier is never persisted in the allocation row, event, or response.
+- Fingerprints use a domain-separated HMAC key derived from the licence's retained pepper key ID. Retaining old peppers is required while licences and allocations reference them.
+- Released allocations remain as historical records. A released subject may be reactivated with a new aggregate version; active allocations cannot be duplicated.
+- Allocation creation and release append immutable events in the same transaction. Request IDs are vendor-scoped and cannot be reused across the licence-event and allocation-event streams.
+
+## Remaining Phase 6 scope
+
+This increment does not yet implement successor-based transfer/replacement workflows, full usage metering, or automated expiry processing. Domain normalization, installation identity and activation leases remain Phase 8 work. Do not mark the licence engine phase complete until those Phase 6 acceptance requirements and their concurrency/tenant-isolation tests are delivered.

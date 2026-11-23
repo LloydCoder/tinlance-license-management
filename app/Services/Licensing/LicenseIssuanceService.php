@@ -8,6 +8,7 @@ use App\Exceptions\LicenseIssuanceConflictException;
 use App\Exceptions\LicenseSecretUnavailableException;
 use App\Models\CustomerOrganization;
 use App\Models\License;
+use App\Models\LicenseAllocationEvent;
 use App\Models\LicenseEvent;
 use App\Models\LicenseIssuanceRequest;
 use App\Models\PlanVersion;
@@ -154,7 +155,8 @@ final readonly class LicenseIssuanceService
                 ];
             }
 
-            if (LicenseEvent::query()->where('vendor_account_id', $vendorId)->where('request_id', $requestId)->exists()) {
+            if (LicenseEvent::query()->where('vendor_account_id', $vendorId)->where('request_id', $requestId)->exists()
+                || LicenseAllocationEvent::query()->where('vendor_account_id', $vendorId)->where('request_id', $requestId)->exists()) {
                 throw new LicenseIssuanceConflictException('The request identifier has already been used for a licence event.');
             }
 
@@ -276,7 +278,11 @@ final readonly class LicenseIssuanceService
             if (LicenseEvent::query()
                 ->where('vendor_account_id', $lockedRequest->vendor_account_id)
                 ->where('request_id', $requestId)
-                ->exists()) {
+                ->exists()
+                || LicenseAllocationEvent::query()
+                    ->where('vendor_account_id', $lockedRequest->vendor_account_id)
+                    ->where('request_id', $requestId)
+                    ->exists()) {
                 throw new LicenseIssuanceConflictException('The request identifier has already been used for a licence event.');
             }
 
