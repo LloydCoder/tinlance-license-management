@@ -64,6 +64,7 @@ final class PlanVersion extends BaseModel
                 throw new LogicException('Plan version lifecycle metadata is invalid.');
             }
 
+            self::assertTenantIntegrity($version);
             self::assertDraftMetadata($version);
         });
 
@@ -115,6 +116,27 @@ final class PlanVersion extends BaseModel
         self::deleting(static function (): never {
             throw new LogicException('Plan versions must be retained.');
         });
+    }
+
+    private static function assertTenantIntegrity(self $version): void
+    {
+        $plan = Plan::query()->whereKey($version->plan_id)->first();
+        $product = Product::query()->whereKey($version->product_id)->first();
+        $vendor = VendorAccount::query()
+            ->whereKey($version->vendor_account_id)
+            ->where('status', 'active')
+            ->first();
+
+        if (
+            ! $plan instanceof Plan
+            || ! $product instanceof Product
+            || ! $vendor instanceof VendorAccount
+            || (string) $plan->product_id !== (string) $product->getKey()
+            || (string) $plan->vendor_account_id !== (string) $vendor->getKey()
+            || (string) $product->vendor_account_id !== (string) $vendor->getKey()
+        ) {
+            throw new LogicException('A plan version must remain within its plan product vendor tenant.');
+        }
     }
 
     private static function assertDraftMetadata(self $version): void
