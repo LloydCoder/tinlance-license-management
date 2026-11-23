@@ -209,6 +209,69 @@ final class PlanEntitlementCatalogueTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_database_rejects_commercial_term_mutation_during_publication(): void
+    {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            $this->markTestSkipped('Database trigger verification runs on MySQL and MariaDB integration jobs.');
+        }
+
+        [$manager] = $this->createActor('vendor_product_manager');
+
+        $product = $this->authenticated($manager)
+            ->postJson('/api/v1/products', [
+                'name' => 'Immutable Product',
+                'slug' => 'immutable-product',
+                'description' => 'Database publication invariant fixture.',
+                'reason' => 'Create the immutable publication fixture.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $plan = $this->authenticated($manager)
+            ->postJson('/api/v1/products/'.$product.'/plans', [
+                'code' => 'immutable',
+                'name' => 'Immutable',
+                'reason' => 'Create the immutable plan.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $version = $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$plan.'/versions', [
+                'expected_version' => 1,
+                'billing_model' => 'subscription',
+                'currency' => 'NGN',
+                'price_minor' => 250000,
+                'billing_interval' => 'month',
+                'trial_days' => 0,
+                'maintenance_days' => 30,
+                'entitlements' => [
+                    ['key' => 'seats', 'type' => 'integer', 'value' => 5],
+                ],
+                'reason' => 'Create the immutable draft version.',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->authenticated($manager)
+            ->postJson('/api/v1/plans/'.$plan.'/versions/'.$version.'/publish', [
+                'expected_version' => 2,
+                'reason' => 'Publish the immutable plan version.',
+            ])
+            ->assertOk();
+
+        $this->expectException(QueryException::class);
+
+        DB::table('plan_versions')
+            ->where('id', $version)
+            ->update([
+                'status' => 'published',
+                'price_minor' => 999999,
+                'published_at' => now(),
+                'snapshot_sha256' => str_repeat('a', 64),
+            ]);
+    }
+
     /**
      * @return array{0: User, 1: VendorAccount}
      */
