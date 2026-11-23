@@ -238,9 +238,14 @@ final readonly class LicenseIssuanceService
         }, 3);
     }
 
-    public function revealSecret(User $actor, LicenseIssuanceRequest $issuanceRequest): string
+    public function revealSecret(User $actor, LicenseIssuanceRequest $issuanceRequest, string $requestId): string
     {
-        return DB::transaction(function () use ($actor, $issuanceRequest): string {
+        $requestId = trim($requestId);
+        if (preg_match('/\\A[A-Za-z0-9._:-]{1,128}\\z/D', $requestId) !== 1) {
+            throw new InvalidArgumentException('The secret-delivery request identifier is invalid.');
+        }
+
+        return DB::transaction(function () use ($actor, $issuanceRequest, $requestId): string {
             /** @var LicenseIssuanceRequest $lockedRequest */
             $lockedRequest = LicenseIssuanceRequest::query()->whereKey($issuanceRequest->getKey())->lockForUpdate()->firstOrFail();
             if ((string) $lockedRequest->actor_user_id !== (string) $actor->getKey()) {
@@ -283,11 +288,37 @@ final readonly class LicenseIssuanceService
                 throw new RuntimeException('The encrypted licence secret does not match its stored verifier.');
             }
 
+            $deliveredAt = now();
             $lockedRequest->fill([
                 'status' => 'delivered',
                 'response_ciphertext' => null,
-                'response_delivered_at' => now(),
+                'response_delivered_at' => $deliveredAt,
             ])->save();
+
+            $eventPayload = [
+                'issuance_request_id' => (string) $lockedRequest->getKey(),
+                'delivery' => 'one_time_api',
+                'delivered_at' => $deliveredAt->toISOString(),
+            ];
+            ksort($eventPayload, SORT_STRING);
+            LicenseEvent::query()->create([
+                'license_id' => $license->getKey(),
+                'vendor_account_id' => $vendor->getKey(),
+                'product_id' => $product->getKey(),
+                'actor_type' => 'user',
+                'actor_user_id' => $actor->getKey(),
+                'event_type' => 'secret_delivered',
+                'from_status' => (string) $license->status,
+                'to_status' => (string) $license->status,
+                'reason' => 'One-time issuance secret delivered to the issuing actor.',
+                'request_id' => $requestId,
+                'payload_sha256' => hash('sha256', json_encode(
+                    $eventPayload,
+                    JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+                )),
+                'event_payload' => $eventPayload,
+                'created_at' => $deliveredAt,
+            ]);
 
             return $plaintext;
         }, 3);
