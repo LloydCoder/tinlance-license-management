@@ -68,6 +68,14 @@ final readonly class LicenseIssuanceService
         }
 
         $normalizedStart = ($startsAt === null ? now() : Carbon::parse($startsAt))->utc();
+        $expiryOverride = $expiresAtOverride === null ? null : Carbon::parse($expiresAtOverride)->utc();
+        $graceOverride = $graceUntilOverride === null ? null : Carbon::parse($graceUntilOverride)->utc();
+        if (
+            ($expiryOverride !== null && $expiryOverride->lessThanOrEqualTo($normalizedStart))
+            || ($graceOverride !== null && ($expiryOverride === null || $graceOverride->lessThan($expiryOverride)))
+        ) {
+            throw new InvalidArgumentException('Successor licence term overrides are invalid.');
+        }
         $startValue = $normalizedStart->format('Y-m-d\TH:i:s.u\Z');
         $fingerprintPayload = [
             'product_id' => (string) $product->getKey(),
