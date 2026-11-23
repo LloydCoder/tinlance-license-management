@@ -2043,6 +2043,58 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+  /licenses/{licenseId}/transitions:
+    parameters:
+      - name: licenseId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 26
+          maxLength: 26
+    post:
+      tags: [Licences]
+      operationId: transitionLicenceLifecycle
+      summary: Apply an authorized licence lifecycle transition
+      description: Requires licences.mutate, an active vendor membership, product assignment (except vendor Super Admin), recent password confirmation and fresh MFA step-up. The X-Request-ID is vendor-scoped and idempotent. Every accepted transition locks the licence aggregate, increments its version exactly once and appends an immutable licence event in the same database transaction. User actions may activate, suspend or revoke; expiry is system-managed.
+      security:
+        - AdminSession: []
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseLifecycleTransitionRequest'
+      responses:
+        '200':
+          description: Lifecycle transition applied or idempotently replayed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseLifecycleTransitionResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
 components:
   securitySchemes:
     AdminSession:
@@ -3299,6 +3351,45 @@ components:
             delivery:
               type: string
               const: one_time
+        request_id:
+          type: string
+
+    LicenseLifecycleTransitionRequest:
+      type: object
+      additionalProperties: false
+      required: [to_status, reason]
+      properties:
+        to_status:
+          type: string
+          enum: [active, suspended, revoked]
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 500
+    LicenseLifecycleTransitionResult:
+      type: object
+      additionalProperties: false
+      required: [data, replayed, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [id, public_reference, status, version]
+          properties:
+            id:
+              type: string
+              minLength: 26
+              maxLength: 26
+            public_reference:
+              type: string
+            status:
+              type: string
+              enum: [issued, active, suspended, revoked, expired]
+            version:
+              type: integer
+              minimum: 1
+        replayed:
+          type: boolean
         request_id:
           type: string
 
