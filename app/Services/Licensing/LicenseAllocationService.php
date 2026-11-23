@@ -57,12 +57,7 @@ final readonly class LicenseAllocationService
         }
 
         $vendorId = (string) $license->vendor_account_id;
-        $subjectHash = hash_hmac(
-            'sha256',
-            mb_strtolower($subjectIdentifier, 'UTF-8'),
-            $this->keyMaterial->activePepperMaterial(),
-        );
-        $fingerprintKeyId = $this->keyMaterial->activePepperKeyId();
+        $normalizedSubject = mb_strtolower($subjectIdentifier, 'UTF-8');
 
         return DB::transaction(function () use (
             $actor,
@@ -71,8 +66,7 @@ final readonly class LicenseAllocationService
             $reason,
             $requestId,
             $vendorId,
-            $subjectHash,
-            $fingerprintKeyId,
+            $normalizedSubject,
         ): array {
             $vendor = VendorAccount::query()->whereKey($vendorId)->lockForUpdate()->firstOrFail();
             /** @var License $lockedLicense */
@@ -93,6 +87,15 @@ final readonly class LicenseAllocationService
             if ((string) $lockedLicense->vendor_account_id !== $vendorId) {
                 throw new AuthorizationException('The licence does not belong to the authorized vendor.');
             }
+
+            $fingerprintKeyId = (string) $lockedLicense->pepper_key_id;
+            $allocationKey = hash_hkdf(
+                'sha256',
+                $this->keyMaterial->pepperMaterial($fingerprintKeyId),
+                32,
+                'tlms:license-allocation-fingerprint:v1',
+            );
+            $subjectHash = hash_hmac('sha256', $normalizedSubject, $allocationKey);
 
             $existingEvent = LicenseAllocationEvent::query()
                 ->where('vendor_account_id', $vendorId)
