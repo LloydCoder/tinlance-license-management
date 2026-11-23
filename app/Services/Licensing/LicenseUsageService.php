@@ -116,8 +116,8 @@ final readonly class LicenseUsageService
                     || (int) $existingEvent->quantity_delta !== $quantity
                     || (string) $existingEvent->reason !== $reason
                     || ! $payloadIsValid
-                    || ! is_string($payload['period_start'] ?? null)
-                    || ! array_key_exists('period_end', $payload)
+                    || ($payload['period_start'] ?? null) !== $existingEvent->period_start->toISOString()
+                    || ($payload['period_end'] ?? null) !== $existingEvent->period_end?->toISOString()
                 ) {
                     throw new LicenseUsageConflictException('The request identifier was already used for a different usage operation.');
                 }
@@ -131,8 +131,8 @@ final readonly class LicenseUsageService
                 return [
                     'counter' => $existingCounter,
                     'limit' => $limit,
-                    'period_start' => $periodStart,
-                    'period_end' => $periodEnd,
+                    'period_start' => $existingEvent->period_start,
+                    'period_end' => $existingEvent->period_end,
                     'replayed' => true,
                 ];
             }
