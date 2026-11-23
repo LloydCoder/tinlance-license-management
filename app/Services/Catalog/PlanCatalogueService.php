@@ -327,7 +327,7 @@ final readonly class PlanCatalogueService
             $value = $entry['value'];
             $valid = match ($entry['type']) {
                 'boolean' => is_bool($value),
-                'integer' => is_int($value),
+                'integer' => is_int($value) && $value >= -9007199254740991 && $value <= 9007199254740991,
                 'string' => is_string($value) && mb_strlen($value) <= 1000,
                 default => false,
             };
