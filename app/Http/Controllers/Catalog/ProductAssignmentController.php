@@ -63,7 +63,7 @@ final class ProductAssignmentController
         Product $product,
         string $membership,
         ProductAssignmentService $assignments,
-    ): Response {
+    ): Response|JsonResponse {
         $actor = $request->user();
         abort_unless($actor instanceof User, 401);
         Gate::forUser($actor)->authorize('manageAssignments', $product);
