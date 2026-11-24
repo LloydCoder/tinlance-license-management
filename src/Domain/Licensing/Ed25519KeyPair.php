@@ -9,7 +9,7 @@ use LogicException;
 
 final class Ed25519KeyPair
 {
-    private string $secretKey;
+    private ?string $secretKey;
 
     private function __construct(
         private readonly string $publicKey,
@@ -60,7 +60,7 @@ final class Ed25519KeyPair
 
     public function sign(string $message): string
     {
-        if (strlen($this->secretKey) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES) {
+        if (! is_string($this->secretKey) || strlen($this->secretKey) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES) {
             throw new LogicException('The Ed25519 signing key has been destroyed.');
         }
 
