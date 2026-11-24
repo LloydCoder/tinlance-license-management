@@ -13,7 +13,7 @@ final class SigningTrustMetadataVerifier
      * Verify a complete sequential root update chain using one fixed update-start
      * time, then enforce expiry on the final trusted root only.
      *
-     * @param  list<array<string, mixed>>  $candidateEnvelopes
+     * @param  array<array-key, array<string, mixed>>  $candidateEnvelopes
      */
     public static function verifyRootRotationChain(
         array $candidateEnvelopes,
