@@ -16,6 +16,7 @@ final class SigningTrustMetadata
     private const MAX_ROLES = 32;
 
     private const MAX_ROLE_KEYS = 100;
+
     /**
      * @param  array<string, string>  $publicKeys  Raw Ed25519 public keys keyed by key ID.
      * @param  array<string, array{keyids: list<string>, threshold: int}>  $roles
