@@ -43,38 +43,35 @@ final class LicenseSigningKeyMaterialProvider
 
         try {
             foreach ($ring as $keyId => $encodedSeed) {
-            if (
-                ! is_string($keyId)
-                || preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1
-                || ! is_string($encodedSeed)
-            ) {
-                $activeKeyPair?->destroy();
-                throw new LicenseKeyConfigurationException('The licence signing key ring contains an invalid entry.');
-            }
+                if (
+                    ! is_string($keyId)
+                    || preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1
+                    || ! is_string($encodedSeed)
+                ) {
+                    throw new LicenseKeyConfigurationException('The licence signing key ring contains an invalid entry.');
+                }
 
-            $seed = $this->decodeSeed($encodedSeed);
+                $seed = $this->decodeSeed($encodedSeed);
 
-            try {
-                $keyPair = Ed25519KeyPair::fromSeed($seed);
-            } catch (InvalidArgumentException $exception) {
-                $activeKeyPair?->destroy();
-                throw new LicenseKeyConfigurationException('A licence signing seed could not be loaded.', 0, $exception);
-            } finally {
-                sodium_memzero($seed);
-            }
+                try {
+                    $keyPair = Ed25519KeyPair::fromSeed($seed);
+                } catch (InvalidArgumentException $exception) {
+                    throw new LicenseKeyConfigurationException('A licence signing seed could not be loaded.', 0, $exception);
+                } finally {
+                    sodium_memzero($seed);
+                }
 
-            if (! hash_equals($keyId, $keyPair->keyId())) {
-                $keyPair->destroy();
-                $activeKeyPair?->destroy();
-                throw new LicenseKeyConfigurationException('A licence signing seed does not match its configured key ID.');
-            }
+                if (! hash_equals($keyId, $keyPair->keyId())) {
+                    $keyPair->destroy();
+                    throw new LicenseKeyConfigurationException('A licence signing seed does not match its configured key ID.');
+                }
 
-            if ($keyId === $activeKeyId) {
-                $activeKeyPair?->destroy();
-                $activeKeyPair = $keyPair;
-            } else {
-                $keyPair->destroy();
-            }
+                if ($keyId === $activeKeyId) {
+                    $activeKeyPair?->destroy();
+                    $activeKeyPair = $keyPair;
+                } else {
+                    $keyPair->destroy();
+                }
             }
         } catch (Throwable $exception) {
             $activeKeyPair?->destroy();
