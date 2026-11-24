@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tlms\\Tests\\Unit\\Domain;
 
-use InvalidArgumentException;
+use InvalidArgumentException;\nuse LogicException;
 use Tlms\\Domain\\Licensing\\CanonicalJson;
 use Tlms\\Domain\\Licensing\\Ed25519Envelope;
 use Tlms\\Domain\\Licensing\\Ed25519KeyPair;
@@ -129,6 +129,48 @@ final class Ed25519EnvelopeTest
         $debug = json_encode($keyPair->__debugInfo(), JSON_THROW_ON_ERROR);
 
         expectTrue(str_contains($debug, '[REDACTED]'));
+    }
+
+    public function testCanonicalJsonRejectsIntegersOutsideTheCrossLanguageSafeRange(): void
+    {
+        expectThrows(
+            static fn () => CanonicalJson::encode(['counter' => 9007199254740992]),
+            InvalidArgumentException::class,
+        );
+    }
+
+    public function testSignatureThresholdAcceptsSignaturesFromDistinctTrustedKeys(): void
+    {
+        $first = $this->keyPair();
+        $second = Ed25519KeyPair::generate();
+        $payload = ['license_id' => 'license-two-person-threshold'];
+        $canonical = CanonicalJson::encode($payload);
+        $envelope = Ed25519Envelope::sign($payload, $first);
+        $secondSignature = $second->sign($canonical);
+        $envelope['signatures'][] = [
+            'keyid' => $second->keyId(),
+            'sig' => rtrim(strtr(base64_encode($secondSignature), '+/', '-_'), '='),
+        ];
+
+        expectTrue(Ed25519Envelope::verify(
+            $envelope,
+            [
+                $first->keyId() => $first->publicKey(),
+                $second->keyId() => $second->publicKey(),
+            ],
+            2,
+        ));
+    }
+
+    public function testPrivateKeyPairCannotBeSerializedAndDestroyedKeysCannotSign(): void
+    {
+        $keyPair = $this->keyPair();
+
+        expectThrows(static fn () => serialize($keyPair), LogicException::class);
+
+        $keyPair->destroy();
+
+        expectThrows(static fn () => $keyPair->sign('after-destroy'), LogicException::class);
     }
 
     private function keyPair(): Ed25519KeyPair
