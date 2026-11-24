@@ -308,10 +308,6 @@ final class SigningTrustMetadataTest
      */
     private function signMetadata(\stdClass $metadata, array $signers): array
     {
-        if ($signers === []) {
-            throw new InvalidArgumentException('At least one signing key is required.');
-        }
-
         $envelope = Ed25519Envelope::sign(get_object_vars($metadata), $signers[0]);
         $message = CanonicalJson::encodeObject($metadata);
 
