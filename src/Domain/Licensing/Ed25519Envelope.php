@@ -10,7 +10,7 @@ use stdClass;
 final class Ed25519Envelope
 {
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{signed: stdClass, signatures: list<array{keyid: string, sig: string}>}
      */
     public static function sign(array $payload, Ed25519KeyPair $keyPair): array
@@ -28,8 +28,8 @@ final class Ed25519Envelope
     }
 
     /**
-     * @param array<string, mixed> $envelope
-     * @param array<string, string> $trustedPublicKeys Raw 32-byte Ed25519 public keys keyed by key ID.
+     * @param  array<string, mixed>  $envelope
+     * @param  array<string, string>  $trustedPublicKeys Raw 32-byte Ed25519 public keys keyed by key ID.
      */
     public static function verify(array $envelope, array $trustedPublicKeys, int $threshold = 1): bool
     {
