@@ -10,6 +10,7 @@ use stdClass;
 final class SigningTrustMetadataVerifier
 {
     private const MAX_ROOT_ROTATION_STEPS = 1024;
+
     /**
      * Verify a complete sequential root update chain using one fixed update-start
      * time, then enforce expiry on the final trusted root only.
