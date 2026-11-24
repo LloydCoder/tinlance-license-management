@@ -53,7 +53,10 @@ final class SigningTrustMetadataTest
             new DateTimeImmutable('2030-01-01T00:00:00Z'),
         );
 
-        if (! ($rotated instanceof SigningTrustMetadata)) {\n            throw new RuntimeException('The valid root rotation was rejected.');\n        }\n        expectSame(2, $rotated->version);
+        if (! ($rotated instanceof SigningTrustMetadata)) {
+            throw new RuntimeException('The valid root rotation was rejected.');
+        }
+        expectSame(2, $rotated->version);
     }
 
     public function testRootRotationRejectsMissingPreviousRootThreshold(): void
@@ -165,7 +168,10 @@ final class SigningTrustMetadataTest
             new DateTimeImmutable('2030-01-01T00:00:00Z'),
         );
 
-        if (! ($rotated instanceof SigningTrustMetadata)) {\n            throw new RuntimeException('The valid root rotation was rejected.');\n        }\n        expectTrue($current->verifyRoleEnvelope(
+        if (! ($rotated instanceof SigningTrustMetadata)) {
+            throw new RuntimeException('The valid root rotation was rejected.');
+        }
+        expectTrue($current->verifyRoleEnvelope(
             $oldLicenseEnvelope,
             'license',
             new DateTimeImmutable('2030-01-01T00:00:00Z'),
@@ -303,7 +309,11 @@ final class SigningTrustMetadataTest
      */
     private function signMetadata(\stdClass $metadata, array $signers): array
     {
-        if ($signers === []) {\n            throw new InvalidArgumentException('At least one signing key is required.');\n        }\n\n        $envelope = Ed25519Envelope::sign(get_object_vars($metadata), $signers[0]);
+        if ($signers === []) {
+            throw new InvalidArgumentException('At least one signing key is required.');
+        }
+
+        $envelope = Ed25519Envelope::sign(get_object_vars($metadata), $signers[0]);
         $message = CanonicalJson::encodeObject($metadata);
 
         foreach (array_slice($signers, 1) as $signer) {
