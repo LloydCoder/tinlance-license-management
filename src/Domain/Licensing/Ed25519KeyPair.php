@@ -113,7 +113,7 @@ final class Ed25519KeyPair
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return never
      */
     public function __unserialize(array $data): void
