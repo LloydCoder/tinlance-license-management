@@ -22,7 +22,7 @@ final class Ed25519EnvelopeTest
     public function testRfc8032Ed25519TestVectorMatchesThePublishedSeedPublicKeyAndSignature(): void
     {
         $seed = hex2bin(self::RFC8032_SEED);
-        if (! is_string($seed)) {
+        if ($seed === false) {
             throw new InvalidArgumentException('The RFC 8032 test seed is invalid.');
         }
 
@@ -190,7 +190,7 @@ final class Ed25519EnvelopeTest
     private function keyPair(): Ed25519KeyPair
     {
         $seed = hex2bin(self::RFC8032_SEED);
-        if (! is_string($seed)) {
+        if ($seed === false) {
             throw new InvalidArgumentException('The RFC 8032 test seed is invalid.');
         }
 
