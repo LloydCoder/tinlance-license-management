@@ -9,6 +9,7 @@ use App\Models\License;
 use App\Models\LicenseAllocation;
 use App\Models\LicenseAllocationEvent;
 use App\Models\LicenseEvent;
+use App\Models\LicenseUsageEvent;
 use App\Models\PlanVersion;
 use App\Models\Product;
 use App\Models\ProductAssignment;
@@ -135,7 +136,11 @@ final readonly class LicenseAllocationService
             if (LicenseEvent::query()
                 ->where('vendor_account_id', $vendorId)
                 ->where('request_id', $requestId)
-                ->exists()) {
+                ->exists()
+                || LicenseUsageEvent::query()
+                    ->where('vendor_account_id', $vendorId)
+                    ->where('request_id', $requestId)
+                    ->exists()) {
                 throw new LicenseAllocationConflictException('The request identifier was already used by another licence operation.');
             }
 
@@ -294,7 +299,11 @@ final readonly class LicenseAllocationService
             if (LicenseEvent::query()
                 ->where('vendor_account_id', $vendorId)
                 ->where('request_id', $requestId)
-                ->exists()) {
+                ->exists()
+                || LicenseUsageEvent::query()
+                    ->where('vendor_account_id', $vendorId)
+                    ->where('request_id', $requestId)
+                    ->exists()) {
                 throw new LicenseAllocationConflictException('The request identifier was already used by another licence operation.');
             }
 

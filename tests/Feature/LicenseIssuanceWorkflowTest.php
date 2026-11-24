@@ -779,6 +779,21 @@ final class LicenseIssuanceWorkflowTest extends TestCase
             ], ['X-Request-ID' => 'usage-consumption-request-000002'])
             ->assertStatus(409);
 
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/allocations', [
+                'allocation_type' => 'site',
+                'subject_identifier' => 'usage-cross-stream-allocation-01',
+                'reason' => 'Attempt to reuse the usage request identifier in the allocation stream.',
+            ], ['X-Request-ID' => 'usage-consumption-request-000001'])
+            ->assertStatus(409);
+
+        $this->authenticated($actor)
+            ->postJson('/api/v1/licenses/'.$licenseId.'/transitions', [
+                'to_status' => 'suspended',
+                'reason' => 'Attempt to reuse the usage request identifier in the lifecycle stream.',
+            ], ['X-Request-ID' => 'usage-consumption-request-000001'])
+            ->assertStatus(409);
+
         $this->assertDatabaseHas('license_usage_counters', [
             'license_id' => $licenseId,
             'metric' => 'api_calls',
