@@ -9,6 +9,33 @@ use stdClass;
 final class SigningTrustMetadataVerifier
 {
     /**
+     * Verify a complete sequential root update chain using one fixed update-start
+     * time, then enforce expiry on the final trusted root only.
+     *
+     * @param  list<array<string, mixed>>  $candidateEnvelopes
+     */
+    public static function verifyRootRotationChain(
+        array $candidateEnvelopes,
+        SigningTrustMetadata $current,
+        DateTimeImmutable $updateStartedAt,
+    ): ?SigningTrustMetadata {
+        if (! array_is_list($candidateEnvelopes)) {
+            return null;
+        }
+
+        foreach ($candidateEnvelopes as $candidateEnvelope) {
+            $next = self::verifyRootRotation($candidateEnvelope, $current);
+            if (! ($next instanceof SigningTrustMetadata)) {
+                return null;
+            }
+
+            $current = $next;
+        }
+
+        return $current->isCurrentAt($updateStartedAt) ? $current : null;
+    }
+
+    /**
      * Verify a root metadata rotation against both the previously trusted root
      * threshold and the candidate root's self-signature threshold.
      *
