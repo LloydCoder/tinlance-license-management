@@ -20,7 +20,13 @@ final class Ed25519KeyPair
 
     public static function generate(): self
     {
-        return self::fromSeed(random_bytes(SODIUM_CRYPTO_SIGN_SEEDBYTES));
+        $seed = random_bytes(SODIUM_CRYPTO_SIGN_SEEDBYTES);
+
+        try {
+            return self::fromSeed($seed);
+        } finally {
+            sodium_memzero($seed);
+        }
     }
 
     public static function fromSeed(string $seed): self
@@ -31,10 +37,15 @@ final class Ed25519KeyPair
 
         $keyPair = sodium_crypto_sign_seed_keypair($seed);
 
-        return new self(
-            sodium_crypto_sign_publickey($keyPair),
-            sodium_crypto_sign_secretkey($keyPair),
-        );
+        try {
+            return new self(
+                sodium_crypto_sign_publickey($keyPair),
+                sodium_crypto_sign_secretkey($keyPair),
+            );
+        } finally {
+            sodium_memzero($keyPair);
+            sodium_memzero($seed);
+        }
     }
 
     public function publicKey(): string
