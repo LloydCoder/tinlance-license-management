@@ -93,6 +93,11 @@ final class Ed25519KeyPair
         return hash('sha256', CanonicalJson::encode($descriptor));
     }
 
+    public function __clone(): void
+    {
+        throw new LogicException('Ed25519 keypairs cannot be cloned.');
+    }
+
     public function __debugInfo(): array
     {
         return [
