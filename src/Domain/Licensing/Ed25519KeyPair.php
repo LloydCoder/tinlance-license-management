@@ -69,9 +69,11 @@ final class Ed25519KeyPair
 
     public function destroy(): void
     {
-        if ($this->secretKey !== '') {
+        if (is_string($this->secretKey) && $this->secretKey !== '') {
             sodium_memzero($this->secretKey);
         }
+
+        $this->secretKey = null;
     }
 
     public static function keyIdForPublicKey(string $publicKey): string
