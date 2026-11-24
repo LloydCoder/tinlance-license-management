@@ -23,6 +23,8 @@ return [
         'active_pepper_key_id' => env('TLMS_LICENSE_KEY_ACTIVE_PEPPER_ID', ''),
         'response_encryption_keys_json' => env('TLMS_LICENSE_RESPONSE_ENCRYPTION_KEYS_JSON', ''),
         'active_response_encryption_key_id' => env('TLMS_LICENSE_RESPONSE_ACTIVE_KEY_ID', ''),
+        'signing_private_seeds_json' => env('TLMS_LICENSE_SIGNING_PRIVATE_SEEDS_JSON', ''),
+        'active_signing_key_id' => env('TLMS_LICENSE_SIGNING_ACTIVE_KEY_ID', ''),
         'issuance_secret_ttl_seconds' => max(60, min(86400, (int) env('TLMS_LICENSE_ISSUANCE_SECRET_TTL_SECONDS', 900))),
     ],
 ];
