@@ -33,24 +33,27 @@ final class Ed25519Envelope
      */
     public static function verify(array $envelope, array $trustedPublicKeys, int $threshold = 1): bool
     {
+        $signed = $envelope['signed'] ?? null;
+        $signatures = $envelope['signatures'] ?? null;
+
         if (
             $threshold < 1
-            || ! (($envelope['signed'] ?? null) instanceof stdClass)
-            || ! is_array($envelope['signatures'] ?? null)
-            || ! array_is_list($envelope['signatures'])
+            || ! ($signed instanceof stdClass)
+            || ! is_array($signatures)
+            || ! array_is_list($signatures)
         ) {
             return false;
         }
 
         try {
-            $message = CanonicalJson::encodeObject($envelope['signed']);
+            $message = CanonicalJson::encodeObject($signed);
         } catch (InvalidArgumentException) {
             return false;
         }
 
         $verifiedKeyIds = [];
 
-        foreach ($envelope['signatures'] as $entry) {
+        foreach ($signatures as $entry) {
             if (
                 ! is_array($entry)
                 || ! is_string($entry['keyid'] ?? null)
