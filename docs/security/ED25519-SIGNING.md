@@ -14,13 +14,13 @@
 The signed envelope contains:
 
 - `signed`: the canonical JSON object containing the claims or metadata.
-- `signatures`: detached Ed25519 signatures, each containing a `keyid` and Base64URL-encoded `sig`.
+- `signatures`: detached Ed25519 signatures, each containing a `keyid` and hex-encoded `sig`.
 
-The signer signs only the canonical bytes of the `signed` object. The verifier resolves key IDs from an independently supplied trusted-public-key map, recomputes each key ID from the Ed25519 public-key descriptor, verifies detached signatures with libsodium, and counts each distinct trusted key ID at most once toward the configured threshold.
+The signer signs only the canonical bytes of the `signed` object. The verifier resolves key IDs from an independently supplied trusted-public-key map, recomputes each key ID from the Ed25519 public-key descriptor, verifies detached signatures with libsodium, and rejects duplicate key IDs in the signature list, and counts only distinct trusted public keys toward the configured threshold.
 
 The key identifier is SHA-256 over the canonical JSON encoding of the TUF-compatible public-key descriptor:
 
-`{ "keytype": "ed25519", "scheme": "ed25519", "keyval": { "public": "<base64url>" } }`
+`{ "keytype": "ed25519", "scheme": "ed25519", "keyval": { "public": "<64-character-hex-public-key>" } }`
 
 This makes the key identifier deterministic and compatible with the public-key descriptor shape used by TUF. It does not, by itself, establish trust: trust comes only from a separately verified root/delegation policy.
 
@@ -44,7 +44,7 @@ The profile avoids numeric representation ambiguity and keeps key ordering inter
 - Key seed: exactly 32 bytes.
 - Public key: 32 bytes.
 - Secret signing key: 64-byte libsodium Ed25519 secret-key representation derived from the seed.
-- Signature: 64 bytes, encoded as unpadded Base64URL in the envelope.
+- Signature: 64 bytes, encoded as 128 lowercase hexadecimal characters in the envelope.
 - Key ID: lowercase SHA-256 hex digest of the canonical public-key descriptor.
 
 The unit suite includes RFC 8032 test vector 1, canonicalization, tamper rejection, trusted-key matching, distinct-key threshold counting, malformed seed rejection and secret debug-output redaction.
