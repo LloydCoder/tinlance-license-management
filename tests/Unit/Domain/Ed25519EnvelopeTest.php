@@ -174,6 +174,17 @@ final class Ed25519EnvelopeTest
         expectThrows(static fn () => $keyPair->sign('after-destroy'), LogicException::class);
     }
 
+    public function testCanonicalJsonRejectsCyclicAndExcessivelyNestedObjects(): void
+    {
+        $cycle = new \\stdClass;
+        $cycle->self = $cycle;
+
+        expectThrows(
+            static fn () => CanonicalJson::encode(['cycle' => $cycle]),
+            InvalidArgumentException::class,
+        );
+    }
+
     private function keyPair(): Ed25519KeyPair
     {
         $seed = hex2bin(self::RFC8032_SEED);
