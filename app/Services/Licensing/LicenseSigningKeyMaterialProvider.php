@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use JsonException;
 use Tlms\Domain\Licensing\Ed25519KeyPair;
 use Tlms\Domain\Licensing\SigningTrustMetadata;
+use Throwable;
 
 final class LicenseSigningKeyMaterialProvider
 {
@@ -40,7 +41,8 @@ final class LicenseSigningKeyMaterialProvider
 
         $activeKeyPair = null;
 
-        foreach ($ring as $keyId => $encodedSeed) {
+        try {
+            foreach ($ring as $keyId => $encodedSeed) {
             if (
                 ! is_string($keyId)
                 || preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1
@@ -73,6 +75,10 @@ final class LicenseSigningKeyMaterialProvider
             } else {
                 $keyPair->destroy();
             }
+            }
+        } catch (Throwable $exception) {
+            $activeKeyPair?->destroy();
+            throw $exception;
         }
 
         if (! ($activeKeyPair instanceof Ed25519KeyPair)) {
