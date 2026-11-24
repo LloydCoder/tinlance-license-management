@@ -35,7 +35,7 @@ final class Ed25519Envelope
     {
         if (
             $threshold < 1
-            || ! ($envelope['signed'] ?? null) instanceof stdClass
+            || ! (($envelope['signed'] ?? null) instanceof stdClass)
             || ! is_array($envelope['signatures'] ?? null)
             || ! array_is_list($envelope['signatures'])
         ) {
