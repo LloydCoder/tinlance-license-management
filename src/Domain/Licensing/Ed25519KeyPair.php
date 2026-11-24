@@ -60,7 +60,7 @@ final class Ed25519KeyPair
 
     public function sign(string $message): string
     {
-        if (! is_string($this->secretKey) || strlen($this->secretKey) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES) {
+        if ($this->secretKey === null || strlen($this->secretKey) !== SODIUM_CRYPTO_SIGN_SECRETKEYBYTES) {
             throw new LogicException('The Ed25519 signing key has been destroyed.');
         }
 
@@ -69,7 +69,7 @@ final class Ed25519KeyPair
 
     public function destroy(): void
     {
-        if (is_string($this->secretKey) && $this->secretKey !== '') {
+        if ($this->secretKey !== null && $this->secretKey !== '') {
             sodium_memzero($this->secretKey);
         }
 
