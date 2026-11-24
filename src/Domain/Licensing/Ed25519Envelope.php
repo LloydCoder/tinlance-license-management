@@ -71,8 +71,12 @@ final class Ed25519Envelope
             }
             $seenKeyIds[$keyId] = true;
 
-            $publicKey = $trustedPublicKeys[$keyId] ?? null;
-            if (! is_string($publicKey) || strlen($publicKey) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
+            if (! array_key_exists($keyId, $trustedPublicKeys)) {
+                continue;
+            }
+
+            $publicKey = $trustedPublicKeys[$keyId];
+            if (strlen($publicKey) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
                 continue;
             }
 
