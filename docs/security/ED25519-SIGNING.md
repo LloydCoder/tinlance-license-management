@@ -1,6 +1,6 @@
 # TLMS Ed25519 signing foundation
 
-**Status:** Domain-level signing and verification primitives implemented. Production key custody, offline-root delegation, rotation/revocation policy, signing ceremonies and compromise recovery are not yet implemented or approved.
+**Status:** Domain-level Ed25519 signing, canonical envelopes, public-key trust metadata, role thresholds and sequential root-rotation verification are implemented on the current Phase 7 branch. Production key custody, offline-root ceremonies, persisted trust distribution and compromise recovery are not yet implemented or approved.
 
 ## Trust boundaries
 
@@ -16,7 +16,7 @@ The signed envelope contains:
 - `signed`: the canonical JSON object containing the claims or metadata.
 - `signatures`: detached Ed25519 signatures, each containing a `keyid` and hex-encoded `sig`.
 
-The signer signs only the canonical bytes of the `signed` object. The verifier resolves key IDs from an independently supplied trusted-public-key map, recomputes each key ID from the Ed25519 public-key descriptor, verifies detached signatures with libsodium, and rejects duplicate key IDs in the signature list, and counts only distinct trusted public keys toward the configured threshold.
+The signer signs only the canonical bytes of the `signed` object. The verifier resolves key IDs from an independently supplied trusted-public-key map, recomputes each key ID from the Ed25519 public-key descriptor, verifies detached signatures with libsodium, rejects duplicate key IDs, and counts only trusted public keys toward the configured threshold.
 
 The key identifier is SHA-256 over the canonical JSON encoding of the TUF-compatible public-key descriptor:
 
@@ -49,15 +49,19 @@ The profile avoids numeric representation ambiguity and keeps key ordering inter
 
 The unit suite includes RFC 8032 test vector 1, canonicalization, tamper rejection, trusted-key matching, distinct-key threshold counting, malformed seed rejection and secret debug-output redaction.
 
+## Signing trust metadata v1
+
+`SigningTrustMetadata` validates a TLMS root-trust object with `_type`, `schema_version`, monotonic `version`, canonical UTC `expires`, Ed25519 `keys`, and `roles`. The required roles are `root` and `license`; each role names distinct known key IDs and a threshold no greater than its key count. Every public-key descriptor is checked against its TUF-compatible key ID before it can enter the trust set. The parser bounds the metadata to 100 public keys, 32 roles and 100 key IDs per role.
+
+`SigningTrustMetadataVerifier` accepts a root rotation only when the candidate version is exactly the previous version plus one and the candidate envelope satisfies both the previously trusted root threshold and the candidate root's self-signature threshold. Intermediate root expiry is deferred while walking a sequential rotation chain. `verifyRootRotationChain` holds one fixed update-start time, limits a chain to 1,024 sequential updates and checks expiry only on the final root, matching the TUF root-update workflow; the final trust metadata must be unexpired before it can verify operational role envelopes. This follows the relevant TUF root-update safety rules without claiming that TLMS implements the complete TUF metadata/client workflow.
+
+Trust bootstrap must be supplied out-of-band. The runtime does not generate, store or trust its own root key. Removing an operational key from a newly accepted role policy revokes that key for subsequent role verification.
+
 ## Not yet implemented
 
-1. Offline root metadata and root-key ceremony.
-2. Delegated operational signing roles and threshold approval.
-3. Persisted public-key registry, activation/revocation states and key-rotation events.
-4. Trusted root update and compromise-recovery workflow.
-5. Production key-provider interface backed by a separately controlled secret facility.
-6. Signed licence claim schema bound to the immutable plan-version snapshot.
-7. Independent verifier package and cross-language golden fixtures.
-8. TUF root/targets/snapshot/timestamp metadata and update-client verification (Phase 10).
-
-Do not enable production licence signing until the trust hierarchy, custody, rotation, revocation and recovery decisions are approved and tested.
+1. Offline root-key ceremony, physical custody and recovery procedure.
+2. Persisted public-key registry, root metadata distribution and append-only key-rotation audit events.
+3. Production key-provider interface backed by a separately controlled secret facility.
+4. Signed licence claim schema bound to the immutable plan-version/entitlement snapshot.
+5. Independent verifier package and cross-language golden fixtures beyond the RFC 8032 and canonicalization vectors.
+6. Full TUF root/targets/snapshot/timestamp metadata and update-client verification (Phase 10).
