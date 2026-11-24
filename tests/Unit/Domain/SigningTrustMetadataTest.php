@@ -110,7 +110,7 @@ final class SigningTrustMetadataTest
         );
     }
 
-    public function testRootRotationAcceptsExpiredIntermediateButRequiresFreshFinalRoot(): void
+    public function testRootRotationChainAllowsExpiredIntermediateAndRequiresFreshFinalRoot(): void
     {
         $oldRoot = Ed25519KeyPair::generate();
         $intermediateRoot = Ed25519KeyPair::generate();
@@ -123,17 +123,6 @@ final class SigningTrustMetadataTest
             expires: '2029-12-31T23:59:59Z',
         );
         $intermediateEnvelope = $this->signMetadata($intermediate, [$oldRoot, $intermediateRoot]);
-
-        $rotatedIntermediate = SigningTrustMetadataVerifier::verifyRootRotation(
-            $intermediateEnvelope,
-            $current,
-        );
-
-        if (! ($rotatedIntermediate instanceof SigningTrustMetadata)) {
-            throw new RuntimeException('The valid intermediate root rotation was rejected.');
-        }
-        expectFalse($rotatedIntermediate->isCurrentAt(new DateTimeImmutable('2030-01-01T00:00:00Z')));
-
         $final = $this->metadata(
             [$intermediateRoot],
             [$license],
@@ -141,15 +130,61 @@ final class SigningTrustMetadataTest
             expires: '2035-01-01T00:00:00Z',
         );
         $finalEnvelope = $this->signMetadata($final, [$intermediateRoot]);
-        $rotatedFinal = SigningTrustMetadataVerifier::verifyRootRotation(
-            $finalEnvelope,
-            $rotatedIntermediate,
+
+        $rotated = SigningTrustMetadataVerifier::verifyRootRotationChain(
+            [$intermediateEnvelope, $finalEnvelope],
+            $current,
+            new DateTimeImmutable('2030-01-01T00:00:00Z'),
         );
 
-        if (! ($rotatedFinal instanceof SigningTrustMetadata)) {
-            throw new RuntimeException('The valid final root rotation was rejected.');
+        if (! ($rotated instanceof SigningTrustMetadata)) {
+            throw new RuntimeException('The valid sequential root rotation chain was rejected.');
         }
-        expectTrue($rotatedFinal->isCurrentAt(new DateTimeImmutable('2030-01-01T00:00:00Z')));
+        expectSame(3, $rotated->version);
+    }
+
+    public function testRootRotationChainRejectsExpiredFinalMetadata(): void
+    {
+        $oldRoot = Ed25519KeyPair::generate();
+        $newRoot = Ed25519KeyPair::generate();
+        $license = Ed25519KeyPair::generate();
+        $current = SigningTrustMetadata::fromSigned($this->metadata([$oldRoot], [$license], version: 1));
+        $candidate = $this->metadata(
+            [$newRoot],
+            [$license],
+            version: 2,
+            expires: '2029-12-31T23:59:59Z',
+        );
+        $envelope = $this->signMetadata($candidate, [$oldRoot, $newRoot]);
+
+        expectSame(
+            null,
+            SigningTrustMetadataVerifier::verifyRootRotationChain(
+                [$envelope],
+                $current,
+                new DateTimeImmutable('2030-01-01T00:00:00Z'),
+            ),
+        );
+    }
+
+    public function testRootRotationChainCanRecoverFromAnExpiredBootstrapRoot(): void
+    {
+        $oldRoot = Ed25519KeyPair::generate();
+        $newRoot = Ed25519KeyPair::generate();
+        $license = Ed25519KeyPair::generate();
+        $expiredCurrent = SigningTrustMetadata::fromSigned(
+            $this->metadata([$oldRoot], [$license], version: 1, expires: '2029-12-31T23:59:59Z'),
+        );
+        $candidate = $this->metadata([$newRoot], [$license], version: 2);
+        $envelope = $this->signMetadata($candidate, [$oldRoot, $newRoot]);
+
+        $rotated = SigningTrustMetadataVerifier::verifyRootRotationChain(
+            [$envelope],
+            $expiredCurrent,
+            new DateTimeImmutable('2030-01-01T00:00:00Z'),
+        );
+
+        expectTrue($rotated instanceof SigningTrustMetadata);
     }
 
     public function testAcceptedRootRotationRevokesThePreviousOperationalKey(): void
