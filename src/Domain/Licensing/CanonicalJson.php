@@ -41,7 +41,7 @@ final class CanonicalJson
     }
 
     /**
-     * @param  array<string, mixed>  $value
+     * @param  array<array-key, mixed>  $value
      */
     public static function normalizeObject(array $value): stdClass
     {
@@ -49,7 +49,7 @@ final class CanonicalJson
     }
 
     /**
-     * @param  array<string, mixed>  $value
+     * @param  array<array-key, mixed>  $value
      */
     private static function normalizeObjectAtDepth(array $value, int $depth): stdClass
     {
