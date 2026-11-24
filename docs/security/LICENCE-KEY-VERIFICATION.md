@@ -1,6 +1,6 @@
 # Licence-key verification and pepper lifecycle
 
-**Status:** Initial framework-independent domain primitive implemented; persistence, pepper custody and operational rotation are not yet implemented.
+**Status:** The 256-bit HMAC verifier and pepper key ID are persisted on each issued licence and are checked during one-time issuance-secret delivery. A dedicated customer-facing verification/activation API, atomic pepper rehash on customer key presentation, production pepper custody and approved operational rotation remain outstanding.
 
 ## Credential format
 
