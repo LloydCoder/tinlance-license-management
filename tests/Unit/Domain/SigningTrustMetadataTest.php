@@ -303,8 +303,8 @@ final class SigningTrustMetadataTest
     }
 
     /**
-     * @param non-empty-list<Ed25519KeyPair>  $signers
-     * @return  array{signed: \stdClass, signatures: list<array{keyid: string, sig: string}>}
+     * @param  non-empty-list<Ed25519KeyPair>  $signers
+     * @return array{signed: \stdClass, signatures: list<array{keyid: string, sig: string}>}
      */
     private function signMetadata(\stdClass $metadata, array $signers): array
     {
