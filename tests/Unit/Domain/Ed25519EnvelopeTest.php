@@ -162,7 +162,8 @@ final class Ed25519EnvelopeTest
     {
         $keyPair = $this->keyPair();
 
-        expectThrows(static fn () => serialize($keyPair), LogicException::class);\n        expectThrows(static fn () => clone $keyPair, LogicException::class);
+        expectThrows(static fn () => serialize($keyPair), LogicException::class);
+        expectThrows(static fn () => clone $keyPair, LogicException::class);
 
         $keyPair->destroy();
 
