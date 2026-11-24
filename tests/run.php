@@ -16,7 +16,7 @@ $tests = [
     new DomainNameTest,
     new LicenseLifecycleTest,
     new LicenseIssuanceFingerprintTest,
-    new LicenseResponseCipherRingTest,
+    new LicenseResponseCipherRingTest,\n    new Ed25519EnvelopeTest,
 ];
 
 $failures = 0;
