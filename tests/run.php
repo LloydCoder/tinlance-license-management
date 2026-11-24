@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use Tlms\Tests\Unit\Domain\DomainNameTest;
+use Tlms\Tests\Unit\Domain\Ed25519EnvelopeTest;
 use Tlms\Tests\Unit\Domain\LicenseIssuanceFingerprintTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyPepperRingTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyTest;
@@ -16,7 +17,8 @@ $tests = [
     new DomainNameTest,
     new LicenseLifecycleTest,
     new LicenseIssuanceFingerprintTest,
-    new LicenseResponseCipherRingTest,\n    new Ed25519EnvelopeTest,
+    new LicenseResponseCipherRingTest,
+    new Ed25519EnvelopeTest,
 ];
 
 $failures = 0;
