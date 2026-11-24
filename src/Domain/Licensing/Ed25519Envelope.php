@@ -29,7 +29,7 @@ final class Ed25519Envelope
 
     /**
      * @param  array<string, mixed>  $envelope
-     * @param  array<string, string>  $trustedPublicKeys Raw 32-byte Ed25519 public keys keyed by key ID.
+     * @param  array<string, string>  $trustedPublicKeys  Raw 32-byte Ed25519 public keys keyed by key ID.
      */
     public static function verify(array $envelope, array $trustedPublicKeys, int $threshold = 1): bool
     {
