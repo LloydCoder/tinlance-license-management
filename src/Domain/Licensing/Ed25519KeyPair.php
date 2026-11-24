@@ -86,7 +86,7 @@ final class Ed25519KeyPair
             'keytype' => 'ed25519',
             'scheme' => 'ed25519',
             'keyval' => [
-                'public' => self::base64UrlEncode($publicKey),
+                'public' => bin2hex($publicKey),
             ],
         ];
 
