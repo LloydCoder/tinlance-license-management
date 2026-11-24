@@ -21,7 +21,6 @@ final class SigningTrustMetadataVerifier
     public static function verifyRootRotation(
         array $candidateEnvelope,
         SigningTrustMetadata $current,
-        DateTimeImmutable $now,
     ): ?SigningTrustMetadata {
         $candidateSigned = $candidateEnvelope['signed'] ?? null;
         if (! ($candidateSigned instanceof stdClass)) {
@@ -37,7 +36,6 @@ final class SigningTrustMetadataVerifier
         if (
             $current->version >= 9007199254740991
             || $candidate->version !== $current->version + 1
-            || $candidate->expiresAt <= $now
         ) {
             return null;
         }
