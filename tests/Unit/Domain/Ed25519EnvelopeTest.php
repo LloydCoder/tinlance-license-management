@@ -86,21 +86,16 @@ final class Ed25519EnvelopeTest
         ));
     }
 
-    public function testSignatureThresholdCountsDistinctTrustedKeysOnly(): void
+    public function testDuplicateKeyIdSignatureIsRejected(): void
     {
         $keyPair = $this->keyPair();
         $envelope = Ed25519Envelope::sign(['license_id' => 'license-threshold'], $keyPair);
         $envelope['signatures'][] = $envelope['signatures'][0];
 
-        expectTrue(Ed25519Envelope::verify(
-            $envelope,
-            [$keyPair->keyId() => $keyPair->publicKey()],
-            1,
-        ));
         expectFalse(Ed25519Envelope::verify(
             $envelope,
             [$keyPair->keyId() => $keyPair->publicKey()],
-            2,
+            1,
         ));
     }
 
@@ -150,7 +145,7 @@ final class Ed25519EnvelopeTest
         $secondSignature = $second->sign($canonical);
         $envelope['signatures'][] = [
             'keyid' => $second->keyId(),
-            'sig' => rtrim(strtr(base64_encode($secondSignature), '+/', '-_'), '='),
+            'sig' => bin2hex($secondSignature),
         ];
 
         expectTrue(Ed25519Envelope::verify(
@@ -183,6 +178,13 @@ final class Ed25519EnvelopeTest
             static fn () => CanonicalJson::encode(['cycle' => $cycle]),
             InvalidArgumentException::class,
         );
+    }
+
+    public function testKeyIdMatchesTheTufEd25519PublicKeyDescriptorVector(): void
+    {
+        $keyPair = $this->keyPair();
+
+        expectSame('74c181c7ad8a0855d4b55e44d2ba87aabdddb196832571f15f92fece332e4916', $keyPair->keyId());
     }
 
     private function keyPair(): Ed25519KeyPair
