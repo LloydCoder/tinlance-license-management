@@ -85,7 +85,7 @@ final class Ed25519Envelope
             }
 
             $signature = hex2bin($entry['sig']);
-            if (! is_string($signature) || strlen($signature) !== SODIUM_CRYPTO_SIGN_BYTES) {
+            if ($signature === false || strlen($signature) !== SODIUM_CRYPTO_SIGN_BYTES) {
                 return false;
             }
 
