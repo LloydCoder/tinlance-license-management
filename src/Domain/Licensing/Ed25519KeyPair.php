@@ -97,7 +97,7 @@ final class Ed25519KeyPair
     {
         return [
             'key_id' => $this->keyId(),
-            'public_key' => self::base64UrlEncode($this->publicKey),
+            'public_key' => bin2hex($this->publicKey),
             'secret_key' => '[REDACTED]',
         ];
     }
@@ -126,8 +126,4 @@ final class Ed25519KeyPair
         $this->destroy();
     }
 
-    private static function base64UrlEncode(string $value): string
-    {
-        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
-    }
 }
