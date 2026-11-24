@@ -125,5 +125,4 @@ final class Ed25519KeyPair
     {
         $this->destroy();
     }
-
 }
