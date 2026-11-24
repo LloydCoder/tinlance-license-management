@@ -176,7 +176,7 @@ final class Ed25519EnvelopeTest
 
     public function testCanonicalJsonRejectsCyclicAndExcessivelyNestedObjects(): void
     {
-        $cycle = new \\stdClass;
+        $cycle = new \stdClass;
         $cycle->self = $cycle;
 
         expectThrows(
