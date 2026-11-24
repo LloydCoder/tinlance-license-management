@@ -24,7 +24,7 @@ final class CanonicalJson
      * Lists preserve order. Floating-point values are rejected; signed claims use
      * safe integers for numeric values. Empty objects must be supplied as stdClass.
      *
-     * @param array<string, mixed> $value
+     * @param  array<string, mixed>  $value
      */
     public static function encode(array $value): string
     {
@@ -41,7 +41,7 @@ final class CanonicalJson
     }
 
     /**
-     * @param array<string, mixed> $value
+     * @param  array<string, mixed>  $value
      */
     public static function normalizeObject(array $value): stdClass
     {
@@ -49,7 +49,7 @@ final class CanonicalJson
     }
 
     /**
-     * @param array<string, mixed> $value
+     * @param  array<string, mixed>  $value
      */
     private static function normalizeObjectAtDepth(array $value, int $depth): stdClass
     {
