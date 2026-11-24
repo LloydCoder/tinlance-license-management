@@ -49,7 +49,7 @@ final class SigningTrustMetadata
 
         $publicKeys = [];
         foreach (get_object_vars($keysObject) as $keyId => $descriptor) {
-            if (! is_string($keyId) || preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1) {
+            if (preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1) {
                 throw new InvalidArgumentException('Signing trust metadata contains an invalid key ID.');
             }
 
@@ -92,7 +92,7 @@ final class SigningTrustMetadata
 
         $roles = [];
         foreach (get_object_vars($rolesObject) as $roleName => $roleDescriptor) {
-            if (! is_string($roleName) || preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $roleName) !== 1) {
+            if (preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $roleName) !== 1) {
                 throw new InvalidArgumentException('Signing trust metadata contains an invalid role name.');
             }
 
