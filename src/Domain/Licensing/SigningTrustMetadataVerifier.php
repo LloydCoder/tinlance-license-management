@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tlms\Domain\Licensing;
 
+use DateTimeImmutable;
 use stdClass;
 
 final class SigningTrustMetadataVerifier
