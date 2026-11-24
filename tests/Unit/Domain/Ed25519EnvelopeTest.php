@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tlms\\Tests\\Unit\\Domain;
+namespace Tlms\Tests\Unit\Domain;
 
 use InvalidArgumentException;
 use LogicException;
-use Tlms\\Domain\\Licensing\\CanonicalJson;
-use Tlms\\Domain\\Licensing\\Ed25519Envelope;
-use Tlms\\Domain\\Licensing\\Ed25519KeyPair;
+use Tlms\Domain\Licensing\CanonicalJson;
+use Tlms\Domain\Licensing\Ed25519Envelope;
+use Tlms\Domain\Licensing\Ed25519KeyPair;
 
 final class Ed25519EnvelopeTest
 {
