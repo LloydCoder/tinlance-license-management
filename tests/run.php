@@ -7,7 +7,8 @@ use Tlms\Tests\Unit\Domain\LicenseIssuanceFingerprintTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyPepperRingTest;
 use Tlms\Tests\Unit\Domain\LicenseKeyTest;
 use Tlms\Tests\Unit\Domain\LicenseLifecycleTest;
-use Tlms\Tests\Unit\Domain\LicenseResponseCipherRingTest;\nuse Tlms\Tests\Unit\Domain\SigningTrustMetadataTest;
+use Tlms\Tests\Unit\Domain\LicenseResponseCipherRingTest;
+use Tlms\Tests\Unit\Domain\SigningTrustMetadataTest;
 
 require __DIR__.'/bootstrap.php';
 
@@ -18,7 +19,8 @@ $tests = [
     new LicenseLifecycleTest,
     new LicenseIssuanceFingerprintTest,
     new LicenseResponseCipherRingTest,
-    new Ed25519EnvelopeTest,\n    new SigningTrustMetadataTest,
+    new Ed25519EnvelopeTest,
+    new SigningTrustMetadataTest,
 ];
 
 $failures = 0;
