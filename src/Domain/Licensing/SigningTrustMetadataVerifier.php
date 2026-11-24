@@ -12,8 +12,8 @@ final class SigningTrustMetadataVerifier
      * Verify a root metadata rotation against both the previously trusted root
      * threshold and the candidate root's self-signature threshold.
      *
-     * The currently trusted root may already be expired; callers may continue
-     * the sequential root update chain, but the candidate root must be current.
+     * Expiry is checked after the sequential root-update chain, not on each
+     * intermediate root. Role verification requires the final metadata to be current.
      *
      * @param  array<string, mixed>  $candidateEnvelope
      */
