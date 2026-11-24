@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tlms\\Domain\\Licensing;
+namespace Tlms\Domain\Licensing;
 
 use InvalidArgumentException;
 use LogicException;
