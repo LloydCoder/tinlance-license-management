@@ -127,8 +127,8 @@ final class LicenseSigningServiceTest extends TestCase
     public function testSigningKeyRingRejectsMalformedSeedMaterial(): void
     {
         config([
-            'tlms.licensing.signing_private_seeds_json' => json_encode(['license-key-1' => 'not-base64url'], JSON_THROW_ON_ERROR),
-            'tlms.licensing.active_signing_key_id' => 'license-key-1',
+            'tlms.licensing.signing_private_seeds_json' => json_encode([str_repeat('a', 64) => 'not-base64url'], JSON_THROW_ON_ERROR),
+            'tlms.licensing.active_signing_key_id' => str_repeat('a', 64),
         ]);
 
         $key = Ed25519KeyPair::generate();
@@ -145,8 +145,8 @@ final class LicenseSigningServiceTest extends TestCase
     public function testSigningKeyRingRequiresTheConfiguredActiveKey(): void
     {
         config([
-            'tlms.licensing.signing_private_seeds_json' => json_encode(['license-key-1' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=')], JSON_THROW_ON_ERROR),
-            'tlms.licensing.active_signing_key_id' => 'missing-key',
+            'tlms.licensing.signing_private_seeds_json' => json_encode([str_repeat('a', 64) => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=')], JSON_THROW_ON_ERROR),
+            'tlms.licensing.active_signing_key_id' => str_repeat('b', 64),
         ]);
 
         $key = Ed25519KeyPair::generate();
@@ -163,8 +163,9 @@ final class LicenseSigningServiceTest extends TestCase
     public function testExpiredSigningTrustMetadataFailsClosedBeforeLoadingKeyMaterial(): void
     {
         $fixture = $this->configureSigningKey();
-        $expiredTrust = $this->trustFor(
-            $this->publicKeyOnly($fixture['key_id'], $fixture['public_key']),
+        $expiredTrust = $this->trustForPublicKey(
+            $fixture['key_id'],
+            $fixture['public_key'],
             '2029-12-31T23:59:59Z',
         );
 
@@ -211,20 +212,6 @@ final class LicenseSigningServiceTest extends TestCase
     private function trustFor(Ed25519KeyPair $keyPair, string $expires = '2035-01-01T00:00:00Z'): SigningTrustMetadata
     {
         return $this->trustForPublicKey($keyPair->keyId(), $keyPair->publicKey(), $expires);
-    }
-
-    private function publicKeyOnly(string $keyId, string $publicKey): Ed25519KeyPair
-    {
-        $seed = random_bytes(SODIUM_CRYPTO_SIGN_SEEDBYTES);
-        $pair = Ed25519KeyPair::fromSeed($seed);
-        sodium_memzero($seed);
-
-        if (! hash_equals($keyId, $pair->keyId()) || ! hash_equals($publicKey, $pair->publicKey())) {
-            $pair->destroy();
-            throw new InvalidArgumentException('The test public key material is inconsistent.');
-        }
-
-        return $pair;
     }
 
     private function trustForPublicKey(
