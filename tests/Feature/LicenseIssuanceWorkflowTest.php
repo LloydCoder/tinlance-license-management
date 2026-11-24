@@ -1175,6 +1175,20 @@ final class LicenseIssuanceWorkflowTest extends TestCase
         return [$actor, $vendor, $product, $planVersion, $customer];
     }
 
+    public function test_openapi_allocation_result_documents_domain_allocations(): void
+    {
+        $contract = file_get_contents(base_path('docs/api/openapi.yaml'));
+
+        if (! is_string($contract)) {
+            self::fail('The OpenAPI contract could not be read.');
+        }
+
+        $this->assertStringContainsString(
+            "            enum: [site, seat, user, domain]\n",
+            $contract,
+        );
+    }
+
     /**
      * @return array{User, VendorAccount}
      */
