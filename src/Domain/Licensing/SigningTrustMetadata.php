@@ -11,6 +11,11 @@ use stdClass;
 
 final class SigningTrustMetadata
 {
+    private const MAX_PUBLIC_KEYS = 100;
+
+    private const MAX_ROLES = 32;
+
+    private const MAX_ROLE_KEYS = 100;
     /**
      * @param  array<string, string>  $publicKeys  Raw Ed25519 public keys keyed by key ID.
      * @param  array<string, array{keyids: list<string>, threshold: int}>  $roles
@@ -48,8 +53,14 @@ final class SigningTrustMetadata
         }
 
         /** @var array<string, string> $publicKeys */
+        $keyDescriptors = get_object_vars($keysObject);
+        if ($keyDescriptors === [] || count($keyDescriptors) > self::MAX_PUBLIC_KEYS) {
+            throw new InvalidArgumentException('Signing trust metadata public-key count is outside the supported limit.');
+        }
+
+        /** @var array<string, string> $publicKeys */
         $publicKeys = [];
-        foreach (get_object_vars($keysObject) as $keyId => $descriptor) {
+        foreach ($keyDescriptors as $keyId => $descriptor) {
             if (preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1) {
                 throw new InvalidArgumentException('Signing trust metadata contains an invalid key ID.');
             }
@@ -87,13 +98,14 @@ final class SigningTrustMetadata
             $publicKeys[$keyId] = $publicKey;
         }
 
-        if ($publicKeys === []) {
-            throw new InvalidArgumentException('Signing trust metadata must contain at least one public key.');
+        $roleDescriptors = get_object_vars($rolesObject);
+        if ($roleDescriptors === [] || count($roleDescriptors) > self::MAX_ROLES) {
+            throw new InvalidArgumentException('Signing trust metadata role count is outside the supported limit.');
         }
 
         /** @var array<string, array{keyids: list<string>, threshold: int}> $roles */
         $roles = [];
-        foreach (get_object_vars($rolesObject) as $roleName => $roleDescriptor) {
+        foreach ($roleDescriptors as $roleName => $roleDescriptor) {
             if (preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $roleName) !== 1) {
                 throw new InvalidArgumentException('Signing trust metadata contains an invalid role name.');
             }
@@ -105,7 +117,12 @@ final class SigningTrustMetadata
             $roleData = get_object_vars($roleDescriptor);
             $keyIds = $roleData['keyids'] ?? null;
             $threshold = $roleData['threshold'] ?? null;
-            if (! is_array($keyIds) || ! array_is_list($keyIds) || ! is_int($threshold)) {
+            if (
+                ! is_array($keyIds)
+                || ! array_is_list($keyIds)
+                || count($keyIds) > self::MAX_ROLE_KEYS
+                || ! is_int($threshold)
+            ) {
                 throw new InvalidArgumentException('Signing trust roles must define a key ID list and integer threshold.');
             }
 
