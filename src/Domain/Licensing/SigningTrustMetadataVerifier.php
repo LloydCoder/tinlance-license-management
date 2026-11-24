@@ -15,7 +15,7 @@ final class SigningTrustMetadataVerifier
      * The currently trusted root may already be expired; callers may continue
      * the sequential root update chain, but the candidate root must be current.
      *
-     * @param array<string, mixed> $candidateEnvelope
+     * @param  array<string, mixed>  $candidateEnvelope
      */
     public static function verifyRootRotation(
         array $candidateEnvelope,
