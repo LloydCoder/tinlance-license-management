@@ -12,8 +12,8 @@ use stdClass;
 final class SigningTrustMetadata
 {
     /**
-     * @param array<string, string> $publicKeys Raw Ed25519 public keys keyed by key ID.
-     * @param array<string, array{keyids: list<string>, threshold: int}> $roles
+     * @param  array<string, string>  $publicKeys Raw Ed25519 public keys keyed by key ID.
+     * @param  array<string, array{keyids: list<string>, threshold: int}>  $roles
      */
     private function __construct(
         public readonly int $version,
@@ -172,7 +172,7 @@ final class SigningTrustMetadata
     }
 
     /**
-     * @param array<string, mixed> $envelope
+     * @param  array<string, mixed>  $envelope
      */
     public function verifyRoleEnvelope(array $envelope, string $role, DateTimeImmutable $now): bool
     {
