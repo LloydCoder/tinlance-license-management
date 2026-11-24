@@ -52,7 +52,7 @@ final class SigningTrustMetadata
             throw new InvalidArgumentException('Signing trust metadata keys and roles must be JSON objects.');
         }
 
-        /** @var array<string, string> $publicKeys */
+        /** @var array<string, mixed> $keyDescriptors */
         $keyDescriptors = get_object_vars($keysObject);
         if ($keyDescriptors === [] || count($keyDescriptors) > self::MAX_PUBLIC_KEYS) {
             throw new InvalidArgumentException('Signing trust metadata public-key count is outside the supported limit.');
