@@ -90,7 +90,7 @@ final class SigningTrustMetadata
             throw new InvalidArgumentException('Signing trust metadata must contain at least one public key.');
         }
 
-        $roles = [];
+        /** @var array<string, array{keyids: list<string>, threshold: int}> $roles */\n        $roles = [];
         foreach (get_object_vars($rolesObject) as $roleName => $roleDescriptor) {
             if (preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $roleName) !== 1) {
                 throw new InvalidArgumentException('Signing trust metadata contains an invalid role name.');
