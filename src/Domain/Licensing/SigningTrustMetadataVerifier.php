@@ -9,6 +9,7 @@ use stdClass;
 
 final class SigningTrustMetadataVerifier
 {
+    private const MAX_ROOT_ROTATION_STEPS = 1024;
     /**
      * Verify a complete sequential root update chain using one fixed update-start
      * time, then enforce expiry on the final trusted root only.
@@ -20,7 +21,7 @@ final class SigningTrustMetadataVerifier
         SigningTrustMetadata $current,
         DateTimeImmutable $updateStartedAt,
     ): ?SigningTrustMetadata {
-        if (! array_is_list($candidateEnvelopes)) {
+        if (! array_is_list($candidateEnvelopes) || count($candidateEnvelopes) > self::MAX_ROOT_ROTATION_STEPS) {
             return null;
         }
 
