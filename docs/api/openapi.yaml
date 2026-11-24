@@ -3809,7 +3809,7 @@ components:
               maxLength: 26
             allocation_type:
               type: string
-              enum: [site, seat, user]
+              enum: [site, seat, user, domain]
             status:
               type: string
               enum: [active, released]
