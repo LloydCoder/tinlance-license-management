@@ -47,6 +47,7 @@ final class SigningTrustMetadata
             throw new InvalidArgumentException('Signing trust metadata keys and roles must be JSON objects.');
         }
 
+        /** @var array<string, string> $publicKeys */
         $publicKeys = [];
         foreach (get_object_vars($keysObject) as $keyId => $descriptor) {
             if (preg_match('/\A[a-f0-9]{64}\z/D', $keyId) !== 1) {
@@ -108,6 +109,7 @@ final class SigningTrustMetadata
                 throw new InvalidArgumentException('Signing trust roles must define a key ID list and integer threshold.');
             }
 
+            /** @var array<string, true> $uniqueKeyIds */
             $uniqueKeyIds = [];
             foreach ($keyIds as $keyId) {
                 if (
