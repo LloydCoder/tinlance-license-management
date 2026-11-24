@@ -217,6 +217,43 @@ final class SigningTrustMetadataTest
         ));
     }
 
+    public function testMetadataRejectsMoreThanOneHundredPublicKeys(): void
+    {
+        /** @var list<Ed25519KeyPair> $rootKeys */
+        $rootKeys = [];
+        for ($index = 0; $index < 100; $index++) {
+            $rootKeys[] = Ed25519KeyPair::generate();
+        }
+
+        $license = Ed25519KeyPair::generate();
+        $metadata = $this->metadata($rootKeys, [$license]);
+
+        expectThrows(
+            static fn () => SigningTrustMetadata::fromSigned($metadata),
+            InvalidArgumentException::class,
+        );
+    }
+
+    public function testRootRotationChainRejectsMoreThanOneThousandAndTwentyFourSteps(): void
+    {
+        $root = Ed25519KeyPair::generate();
+        $license = Ed25519KeyPair::generate();
+        $current = SigningTrustMetadata::fromSigned($this->metadata([$root], [$license]));
+        $envelope = [
+            'signed' => CanonicalJson::normalizeObject([]),
+            'signatures' => [],
+        ];
+
+        expectSame(
+            null,
+            SigningTrustMetadataVerifier::verifyRootRotationChain(
+                array_fill(0, 1025, $envelope),
+                $current,
+                new DateTimeImmutable('2030-01-01T00:00:00Z'),
+            ),
+        );
+    }
+
     public function testMetadataRejectsRoleReferencesToUnknownKeys(): void
     {
         $root = Ed25519KeyPair::generate();
