@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tlms\Domain\Licensing;
+namespace Tlms\\Domain\\Licensing;
 
 use InvalidArgumentException;
 use JsonException;
@@ -15,12 +15,14 @@ final class CanonicalJson
         | JSON_UNESCAPED_UNICODE
         | JSON_UNESCAPED_LINE_TERMINATORS;
 
+    private const MAX_DEPTH = 32;
+
     /**
      * Encode a JSON object using the TLMS signed-payload canonicalization profile.
      *
      * Object keys are restricted to stable ASCII identifiers and sorted bytewise.
      * Lists preserve order. Floating-point values are rejected; signed claims use
-     * integers for numeric values. Empty objects must be supplied as stdClass.
+     * safe integers for numeric values. Empty objects must be supplied as stdClass.
      *
      * @param array<string, mixed> $value
      */
@@ -43,8 +45,19 @@ final class CanonicalJson
      */
     public static function normalizeObject(array $value): stdClass
     {
-        $keys = array_keys($value);
-        foreach ($keys as $key) {
+        return self::normalizeObjectAtDepth($value, 0);
+    }
+
+    /**
+     * @param array<string, mixed> $value
+     */
+    private static function normalizeObjectAtDepth(array $value, int $depth): stdClass
+    {
+        if ($depth > self::MAX_DEPTH) {
+            throw new InvalidArgumentException('The signed payload exceeds the maximum canonical JSON nesting depth.');
+        }
+
+        foreach (array_keys($value) as $key) {
             if (! is_string($key) || preg_match('/\\A[A-Za-z0-9_.-]+\\z/D', $key) !== 1) {
                 throw new InvalidArgumentException('Canonical JSON object keys must be stable ASCII identifiers.');
             }
@@ -54,28 +67,39 @@ final class CanonicalJson
         $object = new stdClass;
 
         foreach ($value as $key => $item) {
-            $object->{$key} = self::normalizeValue($item);
+            $object->{$key} = self::normalizeValue($item, $depth + 1);
         }
 
         return $object;
     }
 
-    private static function normalizeValue(mixed $value): mixed
+    private static function normalizeValue(mixed $value, int $depth): mixed
     {
+        if ($depth > self::MAX_DEPTH) {
+            throw new InvalidArgumentException('The signed payload exceeds the maximum canonical JSON nesting depth.');
+        }
+
         if ($value instanceof stdClass) {
-            return self::normalizeObject(get_object_vars($value));
+            return self::normalizeObjectAtDepth(get_object_vars($value), $depth);
         }
 
         if (is_array($value)) {
             if (array_is_list($value)) {
-                return array_map(self::normalizeValue(...), $value);
+                return array_map(
+                    static fn (mixed $item): mixed => self::normalizeValue($item, $depth + 1),
+                    $value,
+                );
             }
 
-            return self::normalizeObject($value);
+            return self::normalizeObjectAtDepth($value, $depth);
         }
 
         if (is_float($value)) {
             throw new InvalidArgumentException('Floating-point values are not permitted in TLMS signed payloads.');
+        }
+
+        if (is_int($value) && ($value < -9007199254740991 || $value > 9007199254740991)) {
+            throw new InvalidArgumentException('Canonical JSON integers must remain within the cross-language safe integer range.');
         }
 
         if (is_string($value) && preg_match('//u', $value) !== 1) {
