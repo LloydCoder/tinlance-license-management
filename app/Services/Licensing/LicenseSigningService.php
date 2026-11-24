@@ -75,16 +75,26 @@ final readonly class LicenseSigningService
             || ! $publishedAt instanceof Carbon
             || trim((string) $license->public_reference) === ''
             || trim((string) $license->customer_organization_id) === ''
-            || ! in_array($license->status, [
-                LicenseLifecycle::ISSUED,
-                LicenseLifecycle::ACTIVE,
-                LicenseLifecycle::SUSPENDED,
-                LicenseLifecycle::REVOKED,
-                LicenseLifecycle::EXPIRED,
-            ], true)
+            || ! LicenseLifecycle::isKnownState((string) $license->status)
             || (int) $license->version < 1
         ) {
             throw new InvalidArgumentException('The licence and published plan snapshot are not eligible for signing.');
+        }
+
+        $computedSnapshotHash = (new PlatformAccessAuditChainHasher)->hashPlanVersionSnapshot(
+            (string) $planVersion->plan_id,
+            (int) $planVersion->version_number,
+            (string) $planVersion->billing_model,
+            (string) $planVersion->currency,
+            (int) $planVersion->price_minor,
+            $planVersion->billing_interval,
+            (int) $planVersion->trial_days,
+            (int) $planVersion->maintenance_days,
+            $entitlements,
+        );
+
+        if (! hash_equals($snapshotHash, $computedSnapshotHash)) {
+            throw new InvalidArgumentException('The published plan snapshot digest does not match its immutable commercial terms.');
         }
 
         return [
