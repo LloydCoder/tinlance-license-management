@@ -31,7 +31,7 @@ TLMS signed payload v1 uses a deliberately constrained canonical JSON profile:
 - Object keys are stable ASCII identifiers and sorted bytewise.
 - Lists preserve their original order.
 - String values must be valid UTF-8.
-- Integer, boolean and null values are supported.
+- Integer, boolean and null values are supported; integers are limited to the JavaScript-safe range ±(2^53−1) for cross-language numeric fidelity.
 - Floating-point values and unsupported PHP values are rejected.
 - Empty JSON objects are represented explicitly as `stdClass`; empty PHP arrays represent JSON lists.
 
