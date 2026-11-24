@@ -138,6 +138,11 @@ final class SigningTrustMetadata
         return new self($version, $expiresAt, $publicKeys, $roles);
     }
 
+    public function isCurrentAt(DateTimeImmutable $now): bool
+    {
+        return $this->expiresAt > $now;
+    }
+
     /**
      * @return array<string, string>
      */
