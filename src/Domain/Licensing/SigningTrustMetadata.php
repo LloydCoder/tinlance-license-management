@@ -12,7 +12,7 @@ use stdClass;
 final class SigningTrustMetadata
 {
     /**
-     * @param  array<string, string>  $publicKeys Raw Ed25519 public keys keyed by key ID.
+     * @param  array<string, string>  $publicKeys  Raw Ed25519 public keys keyed by key ID.
      * @param  array<string, array{keyids: list<string>, threshold: int}>  $roles
      */
     private function __construct(
